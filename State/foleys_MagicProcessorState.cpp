@@ -91,6 +91,7 @@ std::unique_ptr<juce::SliderParameterAttachment> MagicProcessorState::createAtta
 
     // You have connected a control to a parameter that doesn't exist. Please fix your GUI.
     // You may safely click continue in your debugger
+  std::cerr << "*** foleys_MagicProcessorState.cpp: nonexistent paramID = " << paramID << "\n";
     jassertfalse;
     return {};
 }

@@ -122,6 +122,14 @@ public:
         if (valueID.isNotEmpty())
             slider.getValueObject().referTo (getMagicState().getPropertyAsValue (valueID));
 
+        // BEGIN JOS CHANGE
+        auto defaultID = configNode.getProperty (pDefaultValue, juce::String()).toString();
+        if (defaultID.isNotEmpty()) {
+          double defaultValue = getProperty (pDefaultValue);
+          slider.setDoubleClickReturnValue(/* shouldDoubleClickBeEnabled */ true, /* valueToSetOnDoubleClick */ defaultValue);
+        }
+        // END JOS CHANGE
+
         auto paramID = getControlledParameterID ({});
         if (paramID.isNotEmpty())
             attachment = getMagicState().createAttachment (paramID, slider);
@@ -147,6 +155,9 @@ public:
         props.push_back ({ configNode, pValue, SettableProperty::Choice, 1.0f, magicBuilder.createPropertiesMenuLambda() });
         props.push_back ({ configNode, pMinValue, SettableProperty::Number, 0.0f, {} });
         props.push_back ({ configNode, pMaxValue, SettableProperty::Number, 2.0f, {} });
+        // BEGIN JOS CHANGE
+        props.push_back ({ configNode, pDefaultValue, SettableProperty::Number, 1.0f, {} });
+        // END JOS CHANGE
         props.push_back ({ configNode, pInterval, SettableProperty::Number, 0.0f, {} });
         props.push_back ({ configNode, pSuffix, SettableProperty::Text, {}, {} });
         props.push_back ({ configNode, pFilmStrip, SettableProperty::Choice, 0.0f, magicBuilder.createChoicesMenuLambda(Resources::getResourceFileNames()) });
@@ -178,6 +189,9 @@ const juce::StringArray SliderItem::pTextBoxPositions { "no-textbox", "textbox-a
 const juce::Identifier  SliderItem::pValue      { "value" };
 const juce::Identifier  SliderItem::pMinValue   { "min-value" };
 const juce::Identifier  SliderItem::pMaxValue   { "max-value" };
+// BEGIN JOS CHANGE
+const juce::Identifier  SliderItem::pDefaultValue { "default" };
+// END JOS CHANGE
 const juce::Identifier  SliderItem::pInterval   { "interval" };
 const juce::Identifier  SliderItem::pSuffix     { "suffix" };
 const juce::Identifier  SliderItem::pFilmStrip  { "filmstrip" };
