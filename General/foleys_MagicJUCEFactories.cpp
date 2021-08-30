@@ -53,6 +53,7 @@ public:
     static const juce::StringArray pTextBoxPositions;
 
     static const juce::Identifier  pValue;
+    static const juce::Identifier  pDefaultValue;
     static const juce::Identifier  pMinValue;
     static const juce::Identifier  pMaxValue;
     static const juce::Identifier  pInterval;
@@ -153,11 +154,11 @@ public:
         props.push_back ({ configNode, pSliderType, SettableProperty::Choice, pSliderTypes [0], magicBuilder.createChoicesMenuLambda (pSliderTypes) });
         props.push_back ({ configNode, pSliderTextBox, SettableProperty::Choice, pTextBoxPositions [2], magicBuilder.createChoicesMenuLambda (pTextBoxPositions) });
         props.push_back ({ configNode, pValue, SettableProperty::Choice, 1.0f, magicBuilder.createPropertiesMenuLambda() });
-        props.push_back ({ configNode, pMinValue, SettableProperty::Number, 0.0f, {} });
-        props.push_back ({ configNode, pMaxValue, SettableProperty::Number, 2.0f, {} });
         // BEGIN JOS CHANGE
         props.push_back ({ configNode, pDefaultValue, SettableProperty::Number, 1.0f, {} });
         // END JOS CHANGE
+        props.push_back ({ configNode, pMinValue, SettableProperty::Number, 0.0f, {} });
+        props.push_back ({ configNode, pMaxValue, SettableProperty::Number, 2.0f, {} });
         props.push_back ({ configNode, pInterval, SettableProperty::Number, 0.0f, {} });
         props.push_back ({ configNode, pSuffix, SettableProperty::Text, {}, {} });
         props.push_back ({ configNode, pFilmStrip, SettableProperty::Choice, 0.0f, magicBuilder.createChoicesMenuLambda(Resources::getResourceFileNames()) });
