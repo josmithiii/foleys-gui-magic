@@ -428,6 +428,30 @@ public:
 
         label.setEditable (getProperty (pEditable));
 
+        auto parameterName = getProperty (IDs::parameter).toString();
+        if (parameterName.isNotEmpty())
+        {
+            auto* parameter = getMagicState().getParameter (parameterName);
+            if (parameter)
+            {
+                label.setEditable (true);
+                attachment = std::make_unique<juce::ParameterAttachment>(
+                    *parameter,
+                    [&, parameter](float value)
+                    {
+                        auto normalised = parameter->convertTo0to1 (value);
+                        label.setText (parameter->getText (normalised, 0),
+                                       juce::dontSendNotification);
+                    });
+                label.onTextChange = [&, parameter]
+                {
+                    auto denormalised = parameter->convertFrom0to1 (parameter->getValueForText (label.getText()));
+                    attachment->setValueAsCompleteGesture (denormalised);
+                };
+                attachment->sendInitialUpdate();
+            }
+        }
+
         auto propertyPath = getProperty (pValue).toString();
         if (propertyPath.isNotEmpty())
             label.getTextValue().referTo (getMagicState().getPropertyAsValue (propertyPath));
@@ -440,6 +464,7 @@ public:
         props.push_back ({ configNode, pJustification, SettableProperty::Choice, {}, magicBuilder.createChoicesMenuLambda (getAllKeyNames (makeJustificationsChoices())) });
         props.push_back ({ configNode, pFontSize, SettableProperty::Number, {}, {} });
         props.push_back ({ configNode, pEditable, SettableProperty::Toggle, {}, {} });
+        props.push_back ({ configNode, IDs::parameter, SettableProperty::Choice, {}, magicBuilder.createParameterMenuLambda() });
         props.push_back ({ configNode, pValue, SettableProperty::Choice, {}, magicBuilder.createPropertiesMenuLambda() });
         return props;
     }
@@ -450,7 +475,8 @@ public:
     }
 
 private:
-    juce::Label label;
+    juce::Label                                label;
+    std::unique_ptr<juce::ParameterAttachment> attachment;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (LabelItem)
 };
