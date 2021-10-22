@@ -39,41 +39,80 @@
 namespace foleys
 {
 
-class MagicLevelMeter : public juce::Component,
-                        public juce::SettableTooltipClient,
-                        private juce::Timer
+class MidiDrumpadComponent : public juce::Component,
+                             public juce::Timer
 {
 public:
     enum ColourIds
     {
-        backgroundColourId = 0x2002100,
-        barBackgroundColourId,
-        barFillColourId,
-        outlineColourId,
-        tickmarkColourId
+        background= 0x2002200,
+        padFill,
+        padOutline,
+        padDownFill,
+        padDownOutline,
+        touch
     };
 
-    struct LookAndFeelMethods
-    {
-        virtual ~LookAndFeelMethods()=default;
-        virtual void drawLevelMeter (juce::Graphics& g,
-                                     MagicLevelMeter& meter,
-                                     MagicLevelSource* source,
-                                     juce::Rectangle<int> bounds) = 0;
-    };
-
-    MagicLevelMeter();
+    MidiDrumpadComponent (juce::MidiKeyboardState& keyboardState);
+    ~MidiDrumpadComponent() override;
 
     void paint (juce::Graphics& g) override;
+    void resized() override;
 
-    void setLevelSource (MagicLevelSource* newSource);
+    /**
+     Set the number of rows and columns. The note numbers are ascending top left to bottom right.
+     */
+    void setMatrix (int rows, int columns);
+
+    /**
+     Set the note number of the top left pad
+     */
+    void setRootNote (int noteNumber);
 
     void timerCallback() override;
 
-private:
-    juce::WeakReference<MagicLevelSource> source;
+    class Pad : public juce::Component,
+                public juce::MidiKeyboardState::Listener
+    {
+    public:
+        Pad (MidiDrumpadComponent& owner, int noteNumber);
+        ~Pad() override;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MagicLevelMeter)
+        void paint (juce::Graphics& g) override;
+
+        void mouseDown (const juce::MouseEvent& event) override;
+        void mouseDrag (const juce::MouseEvent& event) override;
+        void mouseUp (const juce::MouseEvent& event) override;
+
+        void handleNoteOn (juce::MidiKeyboardState* source,
+                           int midiChannel, int midiNoteNumber, float velocity) override;
+
+        void handleNoteOff (juce::MidiKeyboardState* source,
+                            int midiChannel, int midiNoteNumber, float velocity) override;
+
+    private:
+        MidiDrumpadComponent& owner;
+        int                   noteNumber = 60;
+        std::atomic_bool      isDown { false };
+        juce::Point<int>      lastPos;
+        float                 pressure = 0.0f;
+
+        JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Pad)
+    };
+
+private:
+    void updateButtons();
+
+    juce::MidiKeyboardState& keyboardState;
+
+    int rootNote   = 60;  // C3
+    int numRows    =  3;
+    int numColumns =  3;
+
+    std::atomic_bool                  needsPaint { true };
+    std::vector<std::unique_ptr<Pad>> pads;
+    
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MidiDrumpadComponent)
 };
 
 
