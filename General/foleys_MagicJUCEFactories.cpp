@@ -473,6 +473,86 @@ const juce::Identifier  LabelItem::pValue           { "value" };
 
 //==============================================================================
 
+class TextEditorItem : public GuiItem
+{
+public:
+  FOLEYS_DECLARE_GUI_FACTORY (TextEditorItem)
+
+  static const juce::Identifier  pText;
+  static const juce::Identifier  pJustification;
+  static const juce::Identifier  pFontSize;
+  static const juce::Identifier  pReadOnly;
+  static const juce::Identifier  pValue;
+
+  TextEditorItem (MagicGUIBuilder& builder, const juce::ValueTree& node) : GuiItem (builder, node)
+  {
+    setColourTranslation (
+                          {
+                            // Following https://docs.juce.com/master/classTextEditor.html#aa805220923c93cd808a92fff0e3fb71daf840969fe4a492f0e5fbe30f5948c8ca
+                            { "textEditor-background",         juce::TextEditor::backgroundColourId },
+                              { "textEditor-text",               juce::TextEditor::textColourId },
+                                { "textEditor-highlight",          juce::TextEditor::highlightColourId },
+                                  { "textEditor-highlightedText",    juce::TextEditor::highlightedTextColourId },
+                                    { "textEditor-outline",            juce::TextEditor::outlineColourId },
+                                      { "textEditor-focusedOutline",     juce::TextEditor::focusedOutlineColourId },
+                                        { "textEditor-shadow",             juce::TextEditor::shadowColourId }
+                          });
+
+    addAndMakeVisible (textEditor);
+  }
+
+  void update() override
+  {
+    textEditor.setText (magicBuilder.getStyleProperty (pText, configNode), juce::dontSendNotification);
+
+    textEditor.setMultiLine (/* shouldBeMultiLine */ true, /* shouldWordWrap */ true); // otherwise use a label!
+    textEditor.setReturnKeyStartsNewLine(/* shouldStartNewLine */ true);
+    auto justifications = makeJustificationsChoices();
+    auto justification = getProperty (pJustification).toString();
+    if (justification.isNotEmpty())
+      textEditor.setJustification (juce::Justification (justifications.getWithDefault (justification, juce::Justification::centredLeft)));
+    else
+      textEditor.setJustification (juce::Justification::centredLeft);
+
+    textEditor.setFont (juce::Font (getProperty (pFontSize)));
+
+    textEditor.setReadOnly (getProperty (pReadOnly));
+
+    auto propertyPath = getProperty (pValue).toString();
+    if (propertyPath.isNotEmpty())
+      textEditor.getTextValue().referTo (getMagicState().getPropertyAsValue (propertyPath));
+  }
+
+  std::vector<SettableProperty> getSettableProperties() const override
+  {
+    std::vector<SettableProperty> props;
+    props.push_back ({ configNode, pText, SettableProperty::Text, {}, {} });
+    props.push_back ({ configNode, pJustification, SettableProperty::Choice, {}, magicBuilder.createChoicesMenuLambda (getAllKeyNames (makeJustificationsChoices())) });
+    props.push_back ({ configNode, pFontSize, SettableProperty::Number, {}, {} });
+    props.push_back ({ configNode, pReadOnly, SettableProperty::Toggle, {}, {} });
+    props.push_back ({ configNode, pValue, SettableProperty::Choice, {}, magicBuilder.createPropertiesMenuLambda() });
+    return props;
+  }
+
+  juce::Component* getWrappedComponent() override
+  {
+    return &textEditor;
+  }
+
+private:
+  juce::TextEditor textEditor;
+  std::unique_ptr<juce::ParameterAttachment> attachment;
+
+  JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TextEditorItem)
+};
+const juce::Identifier  TextEditorItem::pText            { "text" };
+const juce::Identifier  TextEditorItem::pJustification   { "justification" };
+const juce::Identifier  TextEditorItem::pFontSize        { "font-size" };
+const juce::Identifier  TextEditorItem::pReadOnly        { "read-only" };
+const juce::Identifier  TextEditorItem::pValue           { "value" };
+
+//==============================================================================
+
 class PlotItem : public GuiItem
 {
 public:
@@ -901,11 +981,13 @@ private:
 
 void MagicGUIBuilder::registerJUCEFactories()
 {
+  // IDs below defined in ./foleys_StringDefinitions.h
     registerFactory (IDs::slider, &SliderItem::factory);
     registerFactory (IDs::comboBox, &ComboBoxItem::factory);
     registerFactory (IDs::textButton, &TextButtonItem::factory);
     registerFactory (IDs::toggleButton, &ToggleButtonItem::factory);
     registerFactory (IDs::label, &LabelItem::factory);
+    registerFactory (IDs::textEditor, &TextEditorItem::factory);
     registerFactory (IDs::plot, &PlotItem::factory);
     registerFactory (IDs::xyDragComponent, &XYDraggerItem::factory);
     registerFactory (IDs::keyboardComponent, &KeyboardItem::factory);

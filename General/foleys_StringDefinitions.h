@@ -52,6 +52,7 @@ namespace IDs
     static juce::Identifier textButton   { "TextButton" };
     static juce::Identifier toggleButton { "ToggleButton" };
     static juce::Identifier label        { "Label" };
+    static juce::Identifier textEditor   { "TextEditor" };
     static juce::Identifier listBox      { "ListBox" };
     static juce::Identifier comboBox     { "ComboBox" };
     static juce::Identifier meter        { "Meter" };
