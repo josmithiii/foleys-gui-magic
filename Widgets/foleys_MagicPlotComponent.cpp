@@ -61,11 +61,22 @@ void MagicPlotComponent::setDecayFactor (float decayFactor)
     updateGlowBufferSize();
 }
 
+void MagicPlotComponent::setSkip (int skipToUse)
+{
+    skip = skipToUse;
+    skipCounter = 0;
+}
+
 void MagicPlotComponent::paint (juce::Graphics& g)
 {
     if (plotSource == nullptr)
         return;
-
+    if (skipCounter > 0) {
+        skipCounter--;
+        return;
+    } else {
+        skipCounter = skip;
+    }
     const auto lastUpdate = plotSource->getLastDataUpdate();
     if (lastUpdate > lastDataTimestamp)
     {
