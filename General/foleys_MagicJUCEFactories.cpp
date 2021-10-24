@@ -415,7 +415,8 @@ public:
 
     void update() override
     {
-        label.setText (magicBuilder.getStyleProperty (pText, configNode), juce::dontSendNotification);
+        juce::String labelText = magicBuilder.getStyleProperty (pText, configNode);
+        label.setText (labelText, juce::dontSendNotification);
 
         auto justifications = makeJustificationsChoices();
         auto justification = getProperty (pJustification).toString();
@@ -518,7 +519,8 @@ public:
 
   void update() override
   {
-    textEditor.setText (magicBuilder.getStyleProperty (pText, configNode), juce::dontSendNotification);
+    juce::String text = magicBuilder.getStyleProperty (pText, configNode);
+    textEditor.setText (text, juce::dontSendNotification);
 
     textEditor.setMultiLine (/* shouldBeMultiLine */ true, /* shouldWordWrap */ true); // otherwise use a label!
     textEditor.setReturnKeyStartsNewLine(/* shouldStartNewLine */ true);

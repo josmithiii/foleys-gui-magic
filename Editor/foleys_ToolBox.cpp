@@ -198,7 +198,8 @@ void ToolBox::saveDialog()
 void ToolBox::loadGUI (const juce::File& xmlFile)
 {
     juce::FileInputStream stream (xmlFile);
-    auto tree = juce::ValueTree::fromXml (stream.readEntireStreamAsString());
+    auto xmlString = stream.readEntireStreamAsString();
+    auto tree = juce::ValueTree::fromXml (xmlString);
 
     if (tree.isValid() && tree.getType() == IDs::magic)
     {
