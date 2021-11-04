@@ -576,7 +576,6 @@ public:
     FOLEYS_DECLARE_GUI_FACTORY (PlotItem)
 
     static const juce::Identifier  pDecay;
-    static const juce::Identifier  pSkip;
 
     PlotItem (MagicGUIBuilder& builder, const juce::ValueTree& node) : GuiItem (builder, node)
     {
@@ -599,8 +598,6 @@ public:
 
         auto decay = float (getProperty (pDecay));
         plot.setDecayFactor (decay);
-        auto skip = float (getProperty (pSkip));
-        plot.setSkip (skip);
     }
 
     std::vector<SettableProperty> getSettableProperties() const override
@@ -608,7 +605,6 @@ public:
         std::vector<SettableProperty> props;
         props.push_back ({ configNode, IDs::source, SettableProperty::Choice, {}, magicBuilder.createObjectsMenuLambda<MagicPlotSource>() });
         props.push_back ({ configNode, pDecay,      SettableProperty::Number, {}, {} });
-        props.push_back ({ configNode, pSkip,       SettableProperty::Number, {}, {} });
         return props;
     }
 
@@ -623,7 +619,6 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PlotItem)
 };
 const juce::Identifier  PlotItem::pDecay {"plot-decay"};
-const juce::Identifier  PlotItem::pSkip {"plot-skip"};
 
 //==============================================================================
 
