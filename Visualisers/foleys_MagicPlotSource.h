@@ -59,6 +59,14 @@ public:
     virtual void pushSamples (const juce::AudioBuffer<float>& buffer)=0;
 
     /**
+     This form of the callback provides two channels of data for a scatterplot.
+     The two buffers should have the same number of channels.
+     */
+     virtual void pushSamples (const juce::AudioBuffer<float>& bufferX,
+                               const juce::AudioBuffer<float>& bufferY)
+     { pushSamples(bufferX); } // default implementation ignores Y
+
+    /**
      This is the callback that creates the plot for drawing.
 
      @param path is the path instance that is constructed by the MagicPlotSource

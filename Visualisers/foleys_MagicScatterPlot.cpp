@@ -44,30 +44,41 @@ MagicScatterPlot::MagicScatterPlot (int channelToDisplay)
 {
 }
 
-void MagicScatterPlot::pushSamples (const juce::AudioBuffer<float>& buffer)
+void MagicScatterPlot::pushSamples (const juce::AudioBuffer<float>& bufferX,
+                                    const juce::AudioBuffer<float>& bufferY)
 {
     auto w = writePosition.load();
-    const auto numSamples = buffer.getNumSamples();
-    const auto available  = samples.getNumSamples() - w;
+    const auto numSamples = bufferX.getNumSamples();
+    jassert(numSamples == bufferY.getNumSamples());
+    const auto available  = samplesX.getNumSamples() - w;
+    const auto numChannels = bufferX.getNumChannels();
+    jassert(numChannels == bufferY.getNumChannels());
 
     if (channel < 0)
     {
         // mono summing all channels and average
-        const auto gain = 1.0f / buffer.getNumChannels();
+        const auto gain = 1.0f / numChannels;
         if (available >= numSamples)
         {
-            samples.copyFrom (0, w, buffer.getReadPointer (0), numSamples, gain);
-            for (int c = 1; c < buffer.getNumChannels(); ++c)
-                samples.addFrom (0, w, buffer.getReadPointer (c), numSamples, gain);
+            samplesX.copyFrom (0, w, bufferX.getReadPointer (0), numSamples, gain);
+            samplesY.copyFrom (0, w, bufferY.getReadPointer (0), numSamples, gain);
+            for (int c = 1; c < numChannels; ++c) {
+                samplesX.addFrom (0, w, bufferX.getReadPointer (c), numSamples, gain);
+                samplesY.addFrom (0, w, bufferY.getReadPointer (c), numSamples, gain);
+            }
         }
         else
         {
-            samples.copyFrom (0, w, buffer.getReadPointer (0),            available, gain);
-            samples.copyFrom (0, 0, buffer.getReadPointer (0, available), numSamples - available, gain);
-            for (int c = 1; c < buffer.getNumChannels(); ++c)
+            samplesX.copyFrom (0, w, bufferX.getReadPointer (0),            available, gain);
+            samplesY.copyFrom (0, w, bufferY.getReadPointer (0),            available, gain);
+            samplesX.copyFrom (0, 0, bufferX.getReadPointer (0, available), numSamples - available, gain);
+            samplesY.copyFrom (0, 0, bufferY.getReadPointer (0, available), numSamples - available, gain);
+            for (int c = 1; c < bufferX.getNumChannels(); ++c)
             {
-                samples.addFrom (0, w, buffer.getReadPointer (c),            available, gain);
-                samples.addFrom (0, 0, buffer.getReadPointer (c, available), numSamples - available, gain);
+                samplesX.addFrom (0, w, bufferX.getReadPointer (c),            available, gain);
+                samplesY.addFrom (0, w, bufferY.getReadPointer (c),            available, gain);
+                samplesX.addFrom (0, 0, bufferX.getReadPointer (c, available), numSamples - available, gain);
+                samplesY.addFrom (0, 0, bufferY.getReadPointer (c, available), numSamples - available, gain);
             }
         }
     }
@@ -76,12 +87,15 @@ void MagicScatterPlot::pushSamples (const juce::AudioBuffer<float>& buffer)
         // plotting individual channel
         if (available >= numSamples)
         {
-            samples.copyFrom (0, w, buffer.getReadPointer (channel), numSamples);
+            samplesX.copyFrom (0, w, bufferX.getReadPointer (channel), numSamples);
+            samplesY.copyFrom (0, w, bufferY.getReadPointer (channel), numSamples);
         }
         else
         {
-            samples.copyFrom (0, w, buffer.getReadPointer (channel),            available);
-            samples.copyFrom (0, 0, buffer.getReadPointer (channel, available), numSamples - available);
+            samplesX.copyFrom (0, w, bufferX.getReadPointer (channel),            available);
+            samplesY.copyFrom (0, w, bufferY.getReadPointer (channel),            available);
+            samplesX.copyFrom (0, 0, bufferX.getReadPointer (channel, available), numSamples - available);
+            samplesY.copyFrom (0, 0, bufferY.getReadPointer (channel, available), numSamples - available);
         }
     }
 
@@ -99,44 +113,45 @@ void MagicScatterPlot::createPlotPaths (juce::Path& path, juce::Path& filledPath
         return;
 
     const auto  numToDisplay = int (0.01 * sampleRate) - 1;
-    const auto* data = samples.getReadPointer (0);
+    const auto* dataX = samplesX.getReadPointer (0);
+    const auto* dataY = samplesY.getReadPointer (0);
 
     auto pos = writePosition.load() - numToDisplay;
     if (pos < 0)
-        pos += samples.getNumSamples();
+        pos += samplesX.getNumSamples();
 
-    // trigger
-    auto sign = data [pos] > 0.0f;
+    // trigger - FIXME: consider looking similarly at dataY as well
+    auto sign = dataX [pos] > 0.0f;
     auto bail = int (sampleRate / 20.0f);
 
     while (sign == false && --bail > 0)
     {
         if (--pos < 0)
-            pos += samples.getNumSamples();
+            pos += samplesX.getNumSamples();
 
-        sign = data [pos] > 0.0f;
+        sign = dataX [pos] > 0.0f;
     }
 
     while (sign == true && --bail > 0)
     {
         if (--pos < 0)
-            pos += samples.getNumSamples();
+            pos += samplesX.getNumSamples();
 
-        sign = data [pos] > 0.0f;
+        sign = dataX [pos] > 0.0f;
     }
 
     path.clear();
-    path.startNewSubPath (bounds.getX(),
-                          juce::jmap (data [pos], -1.0f, 1.0f, bounds.getBottom(), bounds.getY()));
+    path.startNewSubPath (juce::jmap (dataX [pos], -1.0f, 1.0f, bounds.getX(), bounds.getRight()),
+                          juce::jmap (dataY [pos], -1.0f, 1.0f, bounds.getBottom(), bounds.getY()));
 
     for (int i = 1; i < numToDisplay; ++i)
     {
         ++pos;
-        if (pos >= samples.getNumSamples())
-            pos -= samples.getNumSamples();
+        if (pos >= samplesX.getNumSamples())
+            pos -= samplesX.getNumSamples();
 
-        path.lineTo (juce::jmap (float (i),   0.0f, float (numToDisplay), bounds.getX(), bounds.getRight()),
-                     juce::jmap (data [pos], -1.0f, 1.0f,                 bounds.getBottom(), bounds.getY()));
+        path.lineTo (juce::jmap (dataX [pos], -1.0f, 1.0f, bounds.getX(), bounds.getRight()),
+                     juce::jmap (dataX [pos], -1.0f, 1.0f, bounds.getBottom(), bounds.getY()));
     }
 
     filledPath = path;
@@ -149,8 +164,11 @@ void MagicScatterPlot::prepareToPlay (double sampleRateToUse, int)
 {
     sampleRate = sampleRateToUse;
 
-    samples.setSize (1, static_cast<int> (sampleRate));
-    samples.clear();
+    samplesX.setSize (1, static_cast<int> (sampleRate));
+    samplesX.clear();
+
+    samplesY.setSize (1, static_cast<int> (sampleRate));
+    samplesY.clear();
 
     writePosition.store (0);
 }

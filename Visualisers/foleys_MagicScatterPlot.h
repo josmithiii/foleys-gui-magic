@@ -40,15 +40,16 @@ namespace foleys
 {
 
 /**
- This class collects your samples in a circular buffer and allows the GUI to
- draw it in the style of an oscilloscope
+ This class collects two buffers of samples in a circular buffer and
+ allows the GUI to draw them in the style of an scatterplot, or
+ XY-plot.  For example, sin(t) and cos(t) produce a circle.
  */
 class MagicScatterPlot : public MagicPlotSource
 {
 public:
 
     /**
-     Create an oscilloscope adapter to push samples into for later display in the GUI.
+     Create a scatterplot adapter to push samples into for later display in the GUI.
 
      @param channel lets you select the channel to analyse. -1 means summing all together (the default)
      */
@@ -57,7 +58,8 @@ public:
     /**
      Push samples to a buffer to be visualised.
      */
-    void pushSamples (const juce::AudioBuffer<float>& buffer) override;
+    void pushSamples (const juce::AudioBuffer<float>& bufferX,
+                      const juce::AudioBuffer<float>& bufferY) override;
 
     /**
      This is the callback that creates the frequency plot for drawing.
@@ -75,7 +77,8 @@ private:
     int                      channel = -1;
     double                   sampleRate = 0.0;
 
-    juce::AudioBuffer<float> samples;
+    juce::AudioBuffer<float> samplesX;
+    juce::AudioBuffer<float> samplesY;
     std::atomic<int>         writePosition;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MagicScatterPlot)
