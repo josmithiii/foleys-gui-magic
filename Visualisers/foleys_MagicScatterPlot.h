@@ -56,18 +56,18 @@ public:
     MagicScatterPlot (int channel=-1);
 
     /**
+     Push samples to a buffer to be visualised as a scatterplot (XY plot) of channels 0 (X) and 1 (Y).
+     */
+    void pushSamples (const juce::AudioBuffer<float>& buffer) override;
+
+    /**
      Push samples to a buffer to be visualised as a scatterplot (XY plot).
 
       @param bufferX is plotted as the X-axis coordinate.
       @param bufferY is plotted as the Y-axis coordinate.
      */
-    void pushSamples (const juce::AudioBuffer<float>& bufferX,
-                      const juce::AudioBuffer<float>& bufferY) override;
-
-    /**
-     Push samples to a buffer to be visualised as a scatterplot (XY plot) of channels 0 (X) and 1 (Y).
-     */
-    void pushSamples (const juce::AudioBuffer<float>& buffer) override;
+    void pushSamples (const juce::AudioBuffer<float>& bufferX, int channelX
+                      const juce::AudioBuffer<float>& bufferY, int channelY) override;
 
     /**
      This is the callback that creates the frequency plot for drawing.

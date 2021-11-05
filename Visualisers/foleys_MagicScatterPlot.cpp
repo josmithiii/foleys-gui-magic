@@ -46,11 +46,11 @@ MagicScatterPlot::MagicScatterPlot (int channelToDisplay)
 
 void MagicScatterPlot::pushSamples (const juce::AudioBuffer<float>& buffer)
 {
-  pushSamples(buffer, buffer);
+  pushSamples(buffer, 0, buffer, buffer.getNumChannels()>1 ? 1 : 0);
 }
 
-void MagicScatterPlot::pushSamples (const juce::AudioBuffer<float>& bufferX,
-                                    const juce::AudioBuffer<float>& bufferY)
+void MagicScatterPlot::pushSamples (const juce::AudioBuffer<float>& bufferX, int channelX,
+                                    const juce::AudioBuffer<float>& bufferY, int channelY)
 {
     auto w = writePosition.load();
 
@@ -61,71 +61,19 @@ void MagicScatterPlot::pushSamples (const juce::AudioBuffer<float>& bufferX,
     const auto numChannels = bufferX.getNumChannels();
     jassert(numChannels == bufferY.getNumChannels());
 
-    bool oneBuffer = (&bufferX == &bufferY);
+    // plot (channelX,channelY):
 
-    if (oneBuffer && numChannels >= 2)
+    if (available >= numSamples)
     {
-        // plot channel 0 as X, and channel 1 as Y
-
-        if (available >= numSamples)
-        {
-            samplesX.copyFrom (0, w, bufferX.getReadPointer (0), numSamples);
-            samplesY.copyFrom (0, w, bufferX.getReadPointer (1), numSamples);
-        }
-        else
-        {
-            samplesX.copyFrom (0, w, bufferX.getReadPointer (0), available);
-            samplesY.copyFrom (0, w, bufferX.getReadPointer (1), available);
-            samplesX.copyFrom (0, 0, bufferX.getReadPointer (0, available), numSamples - available);
-            samplesY.copyFrom (0, 0, bufferX.getReadPointer (1, available), numSamples - available);
-        }
+        samplesX.copyFrom (0, w, bufferX.getReadPointer (channelX), numSamples);
+        samplesY.copyFrom (0, w, bufferY.getReadPointer (channelY), numSamples);
     }
     else
     {
-        if (channel < 0)
-        {
-            // mono summing all channels and average
-            const auto gain = 1.0f / numChannels;
-            if (available >= numSamples)
-            {
-                samplesX.copyFrom (0, w, bufferX.getReadPointer (0), numSamples, gain);
-                samplesY.copyFrom (0, w, bufferY.getReadPointer (0), numSamples, gain);
-                for (int c = 1; c < numChannels; ++c) {
-                    samplesX.addFrom (0, w, bufferX.getReadPointer (c), numSamples, gain);
-                    samplesY.addFrom (0, w, bufferY.getReadPointer (c), numSamples, gain);
-                }
-            }
-            else
-            {
-                samplesX.copyFrom (0, w, bufferX.getReadPointer (0),            available, gain);
-                samplesY.copyFrom (0, w, bufferY.getReadPointer (0),            available, gain);
-                samplesX.copyFrom (0, 0, bufferX.getReadPointer (0, available), numSamples - available, gain);
-                samplesY.copyFrom (0, 0, bufferY.getReadPointer (0, available), numSamples - available, gain);
-                for (int c = 1; c < bufferX.getNumChannels(); ++c)
-                {
-                    samplesX.addFrom (0, w, bufferX.getReadPointer (c),            available, gain);
-                    samplesY.addFrom (0, w, bufferY.getReadPointer (c),            available, gain);
-                    samplesX.addFrom (0, 0, bufferX.getReadPointer (c, available), numSamples - available, gain);
-                    samplesY.addFrom (0, 0, bufferY.getReadPointer (c, available), numSamples - available, gain);
-                }
-            }
-        }
-        else
-        {
-            // plotting individual channel
-            if (available >= numSamples)
-            {
-                samplesX.copyFrom (0, w, bufferX.getReadPointer (channel), numSamples);
-                samplesY.copyFrom (0, w, bufferY.getReadPointer (channel), numSamples);
-            }
-            else
-            {
-                samplesX.copyFrom (0, w, bufferX.getReadPointer (channel),            available);
-                samplesY.copyFrom (0, w, bufferY.getReadPointer (channel),            available);
-                samplesX.copyFrom (0, 0, bufferX.getReadPointer (channel, available), numSamples - available);
-                samplesY.copyFrom (0, 0, bufferY.getReadPointer (channel, available), numSamples - available);
-            }
-        }
+        samplesX.copyFrom (0, w, bufferX.getReadPointer (channelX), available);
+        samplesY.copyFrom (0, w, bufferY.getReadPointer (channelY), available);
+        samplesX.copyFrom (0, 0, bufferX.getReadPointer (channelX, available), numSamples - available);
+        samplesY.copyFrom (0, 0, bufferY.getReadPointer (channelY, available), numSamples - available);
     }
 
     if (available > numSamples)
