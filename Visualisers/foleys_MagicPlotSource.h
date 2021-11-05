@@ -65,8 +65,8 @@ public:
      and it has at least two channels, its first channel is plotted as
      X and its second channel as Y.
      */
-     virtual void pushSamples (const juce::AudioBuffer<float>& bufferX,
-                               const juce::AudioBuffer<float>& bufferY) { };
+     virtual void pushSamples (const juce::AudioBuffer<float>& bufferX, int channelX,
+                               const juce::AudioBuffer<float>& bufferY, int channelY) { };
 
     /**
      This is the callback that creates the plot for drawing.

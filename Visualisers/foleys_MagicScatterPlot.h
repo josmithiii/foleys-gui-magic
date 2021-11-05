@@ -66,7 +66,7 @@ public:
       @param bufferX is plotted as the X-axis coordinate.
       @param bufferY is plotted as the Y-axis coordinate.
      */
-    void pushSamples (const juce::AudioBuffer<float>& bufferX, int channelX
+    void pushSamples (const juce::AudioBuffer<float>& bufferX, int channelX,
                       const juce::AudioBuffer<float>& bufferY, int channelY) override;
 
     /**
