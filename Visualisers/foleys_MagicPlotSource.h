@@ -59,11 +59,7 @@ public:
     virtual void pushSamples (const juce::AudioBuffer<float>& buffer)=0;
 
     /**
-     This form of the callback provides two channels of data for a scatterplot.
-     The two buffers should have the same number of channels.
-     As a special case, if the second buffer is the same as the first,
-     and it has at least two channels, its first channel is plotted as
-     X and its second channel as Y.
+     This form of the callback provides two channels of plot data, used for XY scatterplots.
      */
      virtual void pushSamples (const juce::AudioBuffer<float>& bufferX, int channelX,
                                const juce::AudioBuffer<float>& bufferY, int channelY) { };
