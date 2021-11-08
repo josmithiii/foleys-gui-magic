@@ -38,9 +38,8 @@
 namespace foleys
 {
 
-
-MagicScatterPlot::MagicScatterPlot (int channelToDisplay)
-  : channel (channelToDisplay)
+MagicScatterPlot::MagicScatterPlot (bool tiggeredOnZeroCrossing, int plotLength)
+  : triggered(tiggeredOnZeroCrossing), length(plotLength)
 {
 }
 

@@ -50,8 +50,9 @@ public:
 
     /**
      Create a scatterplot adapter to push samples into for later display in the GUI.
-
-     MagicScatterPlot ()
+     @param triggered means each plot begins at a zero-crossing (default = true).
+     */
+     MagicScatterPlot (bool tiggeredOnZeroCrossing = true, int plotLength = 0);
 
     /**
      Push samples to a buffer to be visualised as a scatterplot (XY plot) of channels 0 (X) and 1 (Y).
@@ -81,6 +82,8 @@ public:
 
 private:
     double                   sampleRate = 0.0;
+    bool                     triggered = true;
+    int                      length = 0;
 
     juce::AudioBuffer<float> samplesX;
     juce::AudioBuffer<float> samplesY;
