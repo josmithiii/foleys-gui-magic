@@ -97,7 +97,7 @@ void MagicScatterPlot::createPlotPaths (juce::Path& path, juce::Path& filledPath
     if (pos < 0)
         pos += samplesX.getNumSamples();
 
-    // trigger - FIXME: consider looking similarly at dataY as well
+    // trigger - find first zero-crossing in circular plot-buffer samplesX, giving up after 50 ms <-> 20 Hz fundamental:
     auto sign = dataX [pos] > 0.0f;
     auto bail = int (sampleRate / 20.0f);
 
@@ -128,7 +128,7 @@ void MagicScatterPlot::createPlotPaths (juce::Path& path, juce::Path& filledPath
             pos -= samplesX.getNumSamples();
 
         path.lineTo (juce::jmap (dataX [pos], -1.0f, 1.0f, bounds.getX(), bounds.getRight()),
-                     juce::jmap (dataX [pos], -1.0f, 1.0f, bounds.getBottom(), bounds.getY()));
+                     juce::jmap (dataY [pos], -1.0f, 1.0f, bounds.getBottom(), bounds.getY()));
     }
 
     filledPath = path;

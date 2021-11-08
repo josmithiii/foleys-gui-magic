@@ -51,9 +51,7 @@ public:
     /**
      Create a scatterplot adapter to push samples into for later display in the GUI.
 
-     @param channel lets you select the channel to analyse. -1 means summing all together (the default)
-     */
-    MagicScatterPlot (int channel=-1);
+     MagicScatterPlot ()
 
     /**
      Push samples to a buffer to be visualised as a scatterplot (XY plot) of channels 0 (X) and 1 (Y).
@@ -82,7 +80,6 @@ public:
     void prepareToPlay (double sampleRate, int samplesPerBlockExpected) override;
 
 private:
-    int                      channel = -1;
     double                   sampleRate = 0.0;
 
     juce::AudioBuffer<float> samplesX;
