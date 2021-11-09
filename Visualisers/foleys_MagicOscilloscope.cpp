@@ -50,38 +50,58 @@ void MagicOscilloscope::pushSamples (const juce::AudioBuffer<float>& buffer)
     const auto numSamples = buffer.getNumSamples();
     const auto available  = samples.getNumSamples() - w;
 
-    if (channel < 0)
+    const auto  numChannelsIn = buffer.getNumChannels();
+    const auto  numChannelsOut = numChannelsIn; // until determined otherwise
+
+    if (channel >= 0) {
+      numChannelsOut = 1;
+    }
+
+    bool averageChannels = (numChannelsOut>1) && not overlayPlots;
+
+    if (averageChannels)
     {
-        // mono summing all channels and average
-        const auto gain = 1.0f / buffer.getNumChannels();
+        numChannelsOut = 1;
+        const auto gain = 1.0f /  numChannelsIn;
         if (available >= numSamples)
         {
             samples.copyFrom (0, w, buffer.getReadPointer (0), numSamples, gain);
-            for (int c = 1; c < buffer.getNumChannels(); ++c)
+            for (int c = 1; c <  numChannelsIn; ++c)
                 samples.addFrom (0, w, buffer.getReadPointer (c), numSamples, gain);
         }
         else
         {
             samples.copyFrom (0, w, buffer.getReadPointer (0),            available, gain);
             samples.copyFrom (0, 0, buffer.getReadPointer (0, available), numSamples - available, gain);
-            for (int c = 1; c < buffer.getNumChannels(); ++c)
+            for (int c = 1; c <  numChannelsIn; ++c)
             {
                 samples.addFrom (0, w, buffer.getReadPointer (c),            available, gain);
                 samples.addFrom (0, 0, buffer.getReadPointer (c, available), numSamples - available, gain);
             }
         }
     }
-    else
+
+    jassert(channel >= 0);
+
+    // Copy available samples
+    if (available >= numSamples)
     {
-        // plotting individual channel
-        if (available >= numSamples)
+        if (overlayPlots)
         {
             samples.copyFrom (0, w, buffer.getReadPointer (channel), numSamples);
+        } else {
+            samples.copyFrom (0, w, buffer, numSamples);
         }
-        else
-        {
-            samples.copyFrom (0, w, buffer.getReadPointer (channel),            available);
-            samples.copyFrom (0, 0, buffer.getReadPointer (channel, available), numSamples - available);
+        if (numChannelsOut>1) {
+          ...
+        }
+    }
+    else
+    {
+        samples.copyFrom (0, w, buffer.getReadPointer (channel),            available);
+        samples.copyFrom (0, 0, buffer.getReadPointer (channel, available), numSamples - available);
+        if (numChannelsOut>1) {
+          ...
         }
     }
 
@@ -105,24 +125,26 @@ void MagicOscilloscope::createPlotPaths (juce::Path& path, juce::Path& filledPat
     if (pos < 0)
         pos += samples.getNumSamples();
 
-    // trigger
-    auto sign = data [pos] > 0.0f;
-    auto bail = int (sampleRate / 20.0f);
-
-    while (sign == false && --bail > 0)
+    if (triggered) // find first zero-crossing in circular plot-buffer samplesX, giving up after 50 ms <-> 20 Hz fundamental:
     {
-        if (--pos < 0)
-            pos += samples.getNumSamples();
+        auto positive = data [pos] > 0.0f;
+        auto bail = int (sampleRate / 20.0f);
 
-        sign = data [pos] > 0.0f;
-    }
+        while (positive == false && --bail > 0)
+        {
+            if (--pos < 0)
+                pos += samples.getNumSamples();
 
-    while (sign == true && --bail > 0)
-    {
-        if (--pos < 0)
-            pos += samples.getNumSamples();
+            positive = data [pos] > 0.0f;
+        }
 
-        sign = data [pos] > 0.0f;
+        while (positive == true && --bail > 0)
+        {
+            if (--pos < 0)
+                pos += samples.getNumSamples();
+
+            positive = data [pos] > 0.0f;
+        }
     }
 
     path.clear();

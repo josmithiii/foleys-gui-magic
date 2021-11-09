@@ -90,7 +90,7 @@ public:
     /**
      Set whether plot is triggered by a zero-crossing or free runs. Default is triggered.
      */
-    virtual void setOverlay (bool doOverlay) { overlay = doOverlay; }
+    virtual void setOverlay (bool overlay) { overlayPlots = overlay; }
 
     /**
      Set audio channel to plot (numbering from 0) or -1 to plot all channels (overlay or sum). Default is -1.
@@ -140,7 +140,7 @@ private:
 
 protected:
     bool triggered = true;
-    bool overlay = false; // When false, plot either a single channel or the sum of all channels
+    bool overlayPlots = false; // When false, plot either a single channel or the sum of all channels
     int plotChannel = -1; // -1 denotes the sum of all channels
     int maxPlotLength = 0;
 
