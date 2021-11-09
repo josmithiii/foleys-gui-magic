@@ -50,13 +50,8 @@ public:
 
     /**
      Create an XY ScatterPlot adapter to push samples into for later display in the GUI.
-     @param triggered, if true, means each plot begins at a zero-crossing (default = true).
-            Otherwise, the latest samples received are plotted for each audio buffer.
-     @param maxPlotLength, if positive, gives the maximum expected preferred length of
-            each plot in samples (e.g., one period, or a multiple of the period).
-            The default plot length is 10 ms expressed in samples (sampleRate/100).
      */
-     MagicScatterPlot (bool tiggeredOnZeroCrossing = true, int maxPlotLength = 0);
+    MagicScatterPlot () : MagicPlotSource() {}
 
     /**
      Push samples to a buffer to be visualised as a scatterplot (XY plot) of channels 0 (X) and 1 (Y).
@@ -90,8 +85,6 @@ public:
 
 private:
     double                   sampleRate = 0.0;
-    bool                     triggered = true;
-    int                      maxPlotLength = 0;
     int                      currentPlotLength = 0;
 
     juce::AudioBuffer<float> samplesX;

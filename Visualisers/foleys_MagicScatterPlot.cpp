@@ -38,14 +38,18 @@
 namespace foleys
 {
 
-MagicScatterPlot::MagicScatterPlot (bool tiggeredOnZeroCrossing, int maxPlotLengthExpected)
-  : triggered(tiggeredOnZeroCrossing), maxPlotLength(maxPlotLengthExpected)
-{
-}
-
 void MagicScatterPlot::pushSamples (const juce::AudioBuffer<float>& buffer)
 {
-  pushSamples(/* bufferX */ buffer, /* chanX */ 0, /* bufferY */ buffer, /* chanY */ buffer.getNumChannels()>1 ? 1 : 0, /* plotLength */ 0);
+  int numChannels = buffer.getNumChannels();
+  int chanX = 0;
+  int chanY = 1;
+  if (plotChannel >= 0) { // from parent MagicPlotSource and set by Editor
+    chanX = plotChannel;
+    chanY = plotChannel+1;
+  }
+  chanX = std::min<int>(chanX,numChannels-1);
+  chanY = std::min<int>(chanY,numChannels-1);
+  pushSamples(/* bufferX */ buffer, chanX, /* bufferY */ buffer, chanY, maxPlotLength);
 }
 
 void MagicScatterPlot::pushSamples (const juce::AudioBuffer<float>& bufferX, int channelX,
@@ -121,6 +125,8 @@ void MagicScatterPlot::createPlotPaths (juce::Path& path, juce::Path& filledPath
         }
     }
 
+    // FIXME: Sum channels here if X and Y are multichannel and overlay is false
+
     path.clear();
     path.startNewSubPath (juce::jmap (dataX [position], -1.0f, 1.0f, bounds.getX(), bounds.getRight()),
                           juce::jmap (dataY [position], -1.0f, 1.0f, bounds.getBottom(), bounds.getY()));
@@ -134,6 +140,8 @@ void MagicScatterPlot::createPlotPaths (juce::Path& path, juce::Path& filledPath
         path.lineTo (juce::jmap (dataX [position], -1.0f, 1.0f, bounds.getX(), bounds.getRight()),
                      juce::jmap (dataY [position], -1.0f, 1.0f, bounds.getBottom(), bounds.getY()));
     }
+
+    // FIXME: Make more paths here if X and Y are multichannel and overlay is true
 
     filledPath = path;
     filledPath.lineTo (bounds.getBottomRight());

@@ -64,13 +64,22 @@ void MagicPlotComponent::setDecayFactor (float decayFactor)
 void MagicPlotComponent::setTriggered (bool t)
 {
     triggered = t;
-    plotSource->setTriggered (triggered);
+    if (plotSource)
+      plotSource->setTriggered (triggered);
+}
+
+void MagicPlotComponent::setChannel (int c)
+{
+    channel = c;
+    if (plotSource)
+      plotSource->setChannel (channel);
 }
 
 void MagicPlotComponent::setOverlay (bool o)
 {
     overlay = o;
-    plotSource->setOverlay (o);
+    if (plotSource)
+      plotSource->setOverlay (overlay);
 }
 
 void MagicPlotComponent::paint (juce::Graphics& g)
@@ -81,6 +90,11 @@ void MagicPlotComponent::paint (juce::Graphics& g)
     const auto lastUpdate = plotSource->getLastDataUpdate();
     if (lastUpdate > lastDataTimestamp)
     {
+        if (plotSource) { // these may be have been set before plotSource existed:
+            plotSource->setTriggered (triggered);
+            plotSource->setChannel (channel);
+            plotSource->setOverlay (overlay);
+        }
         plotSource->createPlotPaths (path, filledPath, getLocalBounds().toFloat(), *this);
         lastDataTimestamp = lastUpdate;
     }

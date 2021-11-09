@@ -61,6 +61,7 @@ public:
     void setDecayFactor (float decayFactor);
     void setTriggered (bool triggered);
     void setOverlay (bool overlay);
+    void setChannel (int channel);
 
     void paint (juce::Graphics& g) override;
     void resized() override;
@@ -83,6 +84,7 @@ private:
     float       decay = 0.0f;
     bool        triggered = true;
     bool        overlay = false;
+    int         channel = 0;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MagicPlotComponent)
 };

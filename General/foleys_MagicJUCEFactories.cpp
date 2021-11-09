@@ -578,6 +578,7 @@ public:
     static const juce::Identifier  pDecay;
     static const juce::Identifier  pTriggered;
     static const juce::Identifier  pOverlay;
+    static const juce::Identifier  pChannel;
 
     PlotItem (MagicGUIBuilder& builder, const juce::ValueTree& node) : GuiItem (builder, node)
     {
@@ -606,6 +607,9 @@ public:
 
         auto overlay = bool (getProperty (pOverlay));
         plot.setOverlay (overlay);
+
+        auto channel = int (getProperty (pChannel));
+        plot.setChannel (channel);
     }
 
     std::vector<SettableProperty> getSettableProperties() const override
@@ -615,6 +619,7 @@ public:
         props.push_back ({ configNode, pDecay,      SettableProperty::Number, {}, {} });
         props.push_back ({ configNode, pTriggered,  SettableProperty::Toggle, {}, {} });
         props.push_back ({ configNode, pOverlay,    SettableProperty::Toggle, {}, {} });
+        props.push_back ({ configNode, pChannel,    SettableProperty::Number, {}, {} });
         return props;
     }
 
@@ -631,6 +636,7 @@ private:
 const juce::Identifier  PlotItem::pDecay {"plot-decay"};
 const juce::Identifier  PlotItem::pTriggered {"plot-triggered"};
 const juce::Identifier  PlotItem::pOverlay {"plot-overlay"};
+const juce::Identifier  PlotItem::pChannel {"plot-channel"};
 
 //==============================================================================
 
