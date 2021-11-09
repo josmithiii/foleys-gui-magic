@@ -576,6 +576,8 @@ public:
     FOLEYS_DECLARE_GUI_FACTORY (PlotItem)
 
     static const juce::Identifier  pDecay;
+    static const juce::Identifier  pTriggered;
+    static const juce::Identifier  pOverlay;
 
     PlotItem (MagicGUIBuilder& builder, const juce::ValueTree& node) : GuiItem (builder, node)
     {
@@ -598,6 +600,12 @@ public:
 
         auto decay = float (getProperty (pDecay));
         plot.setDecayFactor (decay);
+
+        auto triggered = bool (getProperty (pTriggered));
+        plot.setTriggered (triggered);
+
+        auto overlay = bool (getProperty (pOverlay));
+        plot.setOverlay (overlay);
     }
 
     std::vector<SettableProperty> getSettableProperties() const override
@@ -605,6 +613,8 @@ public:
         std::vector<SettableProperty> props;
         props.push_back ({ configNode, IDs::source, SettableProperty::Choice, {}, magicBuilder.createObjectsMenuLambda<MagicPlotSource>() });
         props.push_back ({ configNode, pDecay,      SettableProperty::Number, {}, {} });
+        props.push_back ({ configNode, pTriggered,  SettableProperty::Toggle, {}, {} });
+        props.push_back ({ configNode, pOverlay,    SettableProperty::Toggle, {}, {} });
         return props;
     }
 
@@ -619,6 +629,8 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PlotItem)
 };
 const juce::Identifier  PlotItem::pDecay {"plot-decay"};
+const juce::Identifier  PlotItem::pTriggered {"plot-triggered"};
+const juce::Identifier  PlotItem::pOverlay {"plot-overlay"};
 
 //==============================================================================
 

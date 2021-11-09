@@ -61,6 +61,18 @@ void MagicPlotComponent::setDecayFactor (float decayFactor)
     updateGlowBufferSize();
 }
 
+void MagicPlotComponent::setTriggered (bool t)
+{
+    triggered = t;
+    plotSource->setTriggered (triggered);
+}
+
+void MagicPlotComponent::setOverlay (bool o)
+{
+    overlay = o;
+    plotSource->setOverlay (o);
+}
+
 void MagicPlotComponent::paint (juce::Graphics& g)
 {
     if (plotSource == nullptr)

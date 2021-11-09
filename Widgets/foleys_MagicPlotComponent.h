@@ -59,6 +59,8 @@ public:
 
     void setPlotSource (MagicPlotSource* source);
     void setDecayFactor (float decayFactor);
+    void setTriggered (bool triggered);
+    void setOverlay (bool overlay);
 
     void paint (juce::Graphics& g) override;
     void resized() override;
@@ -79,6 +81,8 @@ private:
     juce::int64 lastDataTimestamp = 0;
     juce::Image glowBuffer;
     float       decay = 0.0f;
+    bool        triggered = true;
+    bool        overlay = false;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MagicPlotComponent)
 };

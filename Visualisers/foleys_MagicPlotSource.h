@@ -63,7 +63,7 @@ public:
      */
      virtual void pushSamples (const juce::AudioBuffer<float>& bufferX, int channelX,
                                const juce::AudioBuffer<float>& bufferY, int channelY,
-                               const int plotLength) { };
+                               const int plotLength) { }
 
     /**
      This is the callback that creates the plot for drawing.
