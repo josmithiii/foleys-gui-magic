@@ -62,7 +62,8 @@ public:
      This form of the callback provides two channels of plot data, used for XY scatterplots.
      */
      virtual void pushSamples (const juce::AudioBuffer<float>& bufferX, int channelX,
-                               const juce::AudioBuffer<float>& bufferY, int channelY) { };
+                               const juce::AudioBuffer<float>& bufferY, int channelY,
+                               const int plotLength) { };
 
     /**
      This is the callback that creates the plot for drawing.

@@ -38,18 +38,19 @@
 namespace foleys
 {
 
-MagicScatterPlot::MagicScatterPlot (bool tiggeredOnZeroCrossing, int plotLength)
-  : triggered(tiggeredOnZeroCrossing), length(plotLength)
+MagicScatterPlot::MagicScatterPlot (bool tiggeredOnZeroCrossing, int maxPlotLengthExpected)
+  : triggered(tiggeredOnZeroCrossing), maxPlotLength(maxPlotLengthExpected)
 {
 }
 
 void MagicScatterPlot::pushSamples (const juce::AudioBuffer<float>& buffer)
 {
-  pushSamples(buffer, 0, buffer, buffer.getNumChannels()>1 ? 1 : 0);
+  pushSamples(/* bufferX */ buffer, /* chanX */ 0, /* bufferY */ buffer, /* chanY */ buffer.getNumChannels()>1 ? 1 : 0, /* plotLength */ 0);
 }
 
 void MagicScatterPlot::pushSamples (const juce::AudioBuffer<float>& bufferX, int channelX,
-                                    const juce::AudioBuffer<float>& bufferY, int channelY)
+                                    const juce::AudioBuffer<float>& bufferY, int channelY,
+                                    int plotLength)
 {
     auto w = writePosition.load();
 
@@ -88,46 +89,50 @@ void MagicScatterPlot::createPlotPaths (juce::Path& path, juce::Path& filledPath
     if (sampleRate < 20.0f)
         return;
 
-    const auto  numToDisplay = int (0.01 * sampleRate) - 1;
+    const auto  numToDisplay = (currentPlotLength > 0 ?
+                                std::min<int>(currentPlotLength,samplesX.getNumSamples()) :
+                                int (0.01 * sampleRate) - 1); // 10 ms default
     const auto* dataX = samplesX.getReadPointer (0);
     const auto* dataY = samplesY.getReadPointer (0);
 
-    auto pos = writePosition.load() - numToDisplay;
-    if (pos < 0)
-        pos += samplesX.getNumSamples();
+    auto position = writePosition.load() - numToDisplay;
+    if (position < 0)
+        position += samplesX.getNumSamples();
 
-    // trigger - find first zero-crossing in circular plot-buffer samplesX, giving up after 50 ms <-> 20 Hz fundamental:
-    auto sign = dataX [pos] > 0.0f;
-    auto bail = int (sampleRate / 20.0f);
-
-    while (sign == false && --bail > 0)
+    if (triggered) // find first zero-crossing in circular plot-buffer samplesX, giving up after 50 ms <-> 20 Hz fundamental:
     {
-        if (--pos < 0)
-            pos += samplesX.getNumSamples();
+        auto positive = dataX [position] > 0.0f;
+        auto bail = int (sampleRate / 20.0f);
 
-        sign = dataX [pos] > 0.0f;
-    }
+        while (positive == false && --bail > 0)
+        {
+            if (--position < 0)
+                position += samplesX.getNumSamples();
 
-    while (sign == true && --bail > 0)
-    {
-        if (--pos < 0)
-            pos += samplesX.getNumSamples();
+            positive = dataX [position] > 0.0f;
+        }
 
-        sign = dataX [pos] > 0.0f;
+        while (positive == true && --bail > 0)
+        {
+            if (--position < 0)
+                position += samplesX.getNumSamples();
+
+            positive = dataX [position] > 0.0f;
+        }
     }
 
     path.clear();
-    path.startNewSubPath (juce::jmap (dataX [pos], -1.0f, 1.0f, bounds.getX(), bounds.getRight()),
-                          juce::jmap (dataY [pos], -1.0f, 1.0f, bounds.getBottom(), bounds.getY()));
+    path.startNewSubPath (juce::jmap (dataX [position], -1.0f, 1.0f, bounds.getX(), bounds.getRight()),
+                          juce::jmap (dataY [position], -1.0f, 1.0f, bounds.getBottom(), bounds.getY()));
 
     for (int i = 1; i < numToDisplay; ++i)
     {
-        ++pos;
-        if (pos >= samplesX.getNumSamples())
-            pos -= samplesX.getNumSamples();
+        ++position;
+        if (position >= samplesX.getNumSamples())
+            position -= samplesX.getNumSamples();
 
-        path.lineTo (juce::jmap (dataX [pos], -1.0f, 1.0f, bounds.getX(), bounds.getRight()),
-                     juce::jmap (dataY [pos], -1.0f, 1.0f, bounds.getBottom(), bounds.getY()));
+        path.lineTo (juce::jmap (dataX [position], -1.0f, 1.0f, bounds.getX(), bounds.getRight()),
+                     juce::jmap (dataY [position], -1.0f, 1.0f, bounds.getBottom(), bounds.getY()));
     }
 
     filledPath = path;

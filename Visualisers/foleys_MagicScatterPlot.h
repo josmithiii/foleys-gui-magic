@@ -49,10 +49,14 @@ class MagicScatterPlot : public MagicPlotSource
 public:
 
     /**
-     Create a scatterplot adapter to push samples into for later display in the GUI.
-     @param triggered means each plot begins at a zero-crossing (default = true).
+     Create an XY ScatterPlot adapter to push samples into for later display in the GUI.
+     @param triggered, if true, means each plot begins at a zero-crossing (default = true).
+            Otherwise, the latest samples received are plotted for each audio buffer.
+     @param maxPlotLength, if positive, gives the maximum expected preferred length of
+            each plot in samples (e.g., one period, or a multiple of the period).
+            The default plot length is 10 ms expressed in samples (sampleRate/100).
      */
-     MagicScatterPlot (bool tiggeredOnZeroCrossing = true, int plotLength = 0);
+     MagicScatterPlot (bool tiggeredOnZeroCrossing = true, int maxPlotLength = 0);
 
     /**
      Push samples to a buffer to be visualised as a scatterplot (XY plot) of channels 0 (X) and 1 (Y).
@@ -64,9 +68,13 @@ public:
 
       @param bufferX is plotted as the X-axis coordinate.
       @param bufferY is plotted as the Y-axis coordinate.
+      @param plotLength, if positive, gives the preferred length of
+             the next plot in samples (e.g., one period).
+             Otherwise, 10 ms of samples is plotted.
      */
     void pushSamples (const juce::AudioBuffer<float>& bufferX, int channelX,
-                      const juce::AudioBuffer<float>& bufferY, int channelY) override;
+                      const juce::AudioBuffer<float>& bufferY, int channelY,
+                      const int plotLength) override;
 
     /**
      This is the callback that creates the frequency plot for drawing.
@@ -83,7 +91,8 @@ public:
 private:
     double                   sampleRate = 0.0;
     bool                     triggered = true;
-    int                      length = 0;
+    int                      maxPlotLength = 0;
+    int                      currentPlotLength = 0;
 
     juce::AudioBuffer<float> samplesX;
     juce::AudioBuffer<float> samplesY;
