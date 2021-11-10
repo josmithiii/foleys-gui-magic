@@ -579,6 +579,9 @@ public:
     static const juce::Identifier  pTriggered;
     static const juce::Identifier  pOverlay;
     static const juce::Identifier  pChannel;
+    static const juce::Identifier  pNumChannels;
+    static const juce::Identifier  pPlotLength;
+    static const juce::Identifier  pPlotOffset;
 
     PlotItem (MagicGUIBuilder& builder, const juce::ValueTree& node) : GuiItem (builder, node)
     {
@@ -610,6 +613,15 @@ public:
 
         auto channel = int (getProperty (pChannel));
         plot.setChannel (channel);
+
+        auto numChannels = int (getProperty (pNumChannels));
+        plot.setNumChannels (numChannels);
+
+        auto plotLength = int (getProperty (pPlotLength));
+        plot.setPlotLength (plotLength);
+
+        auto plotOffset = int (getProperty (pPlotOffset));
+        plot.setPlotOffset (plotOffset);
     }
 
     std::vector<SettableProperty> getSettableProperties() const override
@@ -620,6 +632,9 @@ public:
         props.push_back ({ configNode, pTriggered,  SettableProperty::Toggle, {}, {} });
         props.push_back ({ configNode, pOverlay,    SettableProperty::Toggle, {}, {} });
         props.push_back ({ configNode, pChannel,    SettableProperty::Number, {}, {} });
+        props.push_back ({ configNode, pNumChannels,SettableProperty::Number, {}, {} });
+        props.push_back ({ configNode, pPlotLength, SettableProperty::Number, {}, {} });
+        props.push_back ({ configNode, pPlotOffset, SettableProperty::Number, {}, {} });
         return props;
     }
 
@@ -637,6 +652,9 @@ const juce::Identifier  PlotItem::pDecay {"plot-decay"};
 const juce::Identifier  PlotItem::pTriggered {"plot-triggered"};
 const juce::Identifier  PlotItem::pOverlay {"plot-overlay"};
 const juce::Identifier  PlotItem::pChannel {"plot-channel"};
+const juce::Identifier  PlotItem::pNumChannels {"plot-num-channels"};
+const juce::Identifier  PlotItem::pPlotLength {"plot-length"};
+const juce::Identifier  PlotItem::pPlotOffset {"plot-offset"};
 
 //==============================================================================
 

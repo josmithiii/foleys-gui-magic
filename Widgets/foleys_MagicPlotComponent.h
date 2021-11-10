@@ -62,6 +62,9 @@ public:
     void setTriggered (bool triggered);
     void setOverlay (bool overlay);
     void setChannel (int channel);
+    void setNumChannels (int numChannels);
+    void setPlotLength (int plotLength);
+    void setPlotOffset (int plotOffset);
 
     void paint (juce::Graphics& g) override;
     void resized() override;
@@ -85,6 +88,9 @@ private:
     bool        triggered = true;
     bool        overlay = false;
     int         channel = 0;
+    int         numChannels = 0;
+    int         plotLength = 0;
+    int         plotOffset = 0;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MagicPlotComponent)
 };

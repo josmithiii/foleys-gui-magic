@@ -68,6 +68,13 @@ void MagicPlotComponent::setTriggered (bool t)
       plotSource->setTriggered (triggered);
 }
 
+void MagicPlotComponent::setOverlay (bool o)
+{
+    overlay = o;
+    if (plotSource)
+      plotSource->setOverlay (overlay);
+}
+
 void MagicPlotComponent::setChannel (int c)
 {
     channel = c;
@@ -75,11 +82,25 @@ void MagicPlotComponent::setChannel (int c)
       plotSource->setChannel (channel);
 }
 
-void MagicPlotComponent::setOverlay (bool o)
+void MagicPlotComponent::setNumChannels (int nc)
 {
-    overlay = o;
+    numChannels = nc;
     if (plotSource)
-      plotSource->setOverlay (overlay);
+      plotSource->setNumChannels (numChannels);
+}
+
+void MagicPlotComponent::setPlotLength (int pl)
+{
+    plotLength = pl;
+    if (plotSource)
+      plotSource->setPlotLength (plotLength);
+}
+
+void MagicPlotComponent::setPlotOffset (int pl)
+{
+    plotOffset = pl;
+    if (plotSource)
+      plotSource->setPlotOffset (plotOffset);
 }
 
 void MagicPlotComponent::paint (juce::Graphics& g)
@@ -92,8 +113,11 @@ void MagicPlotComponent::paint (juce::Graphics& g)
     {
         if (plotSource) { // these may be have been set before plotSource existed:
             plotSource->setTriggered (triggered);
-            plotSource->setChannel (channel);
             plotSource->setOverlay (overlay);
+            plotSource->setChannel (channel);
+            plotSource->setNumChannels (numChannels);
+            plotSource->setPlotLength (plotLength);
+            plotSource->setPlotOffset (plotOffset);
         }
         plotSource->createPlotPaths (path, filledPath, getLocalBounds().toFloat(), *this);
         lastDataTimestamp = lastUpdate;

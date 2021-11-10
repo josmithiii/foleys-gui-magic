@@ -62,7 +62,15 @@ public:
     /** Destructor. */
     virtual ~MagicPlotAudioSource() override =default;
 
-    void pushSamples (const juce::AudioBuffer<float>& buffer) override = 0; // { MagicPlotSource:pushSamples(buffer);};
+    virtual void prepareToPlay (double sampleRateToUse, int samplesPerBlockExpected) override
+    {
+        sampleRate = sampleRateToUse;
+        samples.setSize (1, static_cast<int> (sampleRate));
+        samples.clear();
+        writePosition.store (0);
+    }
+
+    virtual void pushSamples (const juce::AudioBuffer<float>& buffer) override = 0; // { MagicPlotSource:pushSamples(buffer);};
 
     /**
      This form of the pushSamples() callback provides two channels of
@@ -97,6 +105,33 @@ public:
     virtual void setChannel (int channelCode) { channel = channelCode; }
 
     /**
+     Set number of audio channels to plot in overlay mode, or to average if not overlaid, with 0 meaning all channels.
+     */
+    virtual void setNumChannels (int nChans)
+    {
+        if (nChans > samples.getNumChannels())
+            samples.setSize (nChans, static_cast<int> (sampleRate));
+    }
+
+    /**
+     Set audio plot length in samples.
+     */
+    virtual void setPlotLength (int pl)
+    {
+        plotLength = pl;
+        if (plotLength > samples.getNumSamples())
+            samples.setSize(samples.getNumChannels(), plotLength);
+    }
+
+    /**
+     Set offset between plots as a fractional value between 0 and 1.
+     */
+    virtual void setPlotOffset (float po)
+    {
+        plotOffset = po;
+    }
+
+    /**
      This is the callback that creates the plot for drawing.
 
      @param path is the path instance that is constructed by the MagicPlotSource
@@ -104,7 +139,7 @@ public:
      @param bounds the bounds of the plot
      @param component grants access to the plot component, e.g. to find the colours from it
      */
-    virtual void createPlotPaths (juce::Path& path, juce::Path& filledPath, juce::Rectangle<float> bounds, MagicPlotComponent& component) = 0;
+    virtual void createPlotPaths (juce::Path& path, juce::Path& filledPath, juce::Rectangle<float> bounds, MagicPlotComponent& component) override = 0;
 
 protected:
     double                   sampleRate = 0.0;
@@ -112,8 +147,10 @@ protected:
     std::atomic<int>         writePosition;
     bool triggered = true;
     bool overlayPlots = false; // When false, plot either a single channel or the sum of all channels
-    int channel = -1; // -1 denotes the sum of all channels (note that we could use -2 in place of bool overlayPlots)
-    int maxPlotLength = 0;
+    int channel = -1;          // -1 denotes the sum of all channels (note that we could use -2 in place of bool overlayPlots)
+    int maxPlotLength = 0;     // when this is right, samples array never needs to resize itself while plotting
+    int plotLength = 0;
+    int plotOffset = 0;
 
     inline void averageAllChannelsToSamplesChannel0(const juce::AudioBuffer<float>& buffer)
     {
@@ -139,6 +176,36 @@ protected:
                 samples.addFrom (0, 0, buffer.getReadPointer (c, available), numSamples - available, gain);
             }
         }
+    }
+
+    int getReadPosition(const float* data, const int pos0)
+    {
+        int pos = pos0;
+        if (pos < 0)
+            pos += samples.getNumSamples();
+
+        if (triggered) // find first zero-crossing in circular plot-buffer samplesX, giving up after 50 ms <-> 20 Hz fundamental:
+        {
+            auto positive = data [pos] > 0.0f;
+            auto bail = int (sampleRate / 20.0f);
+
+            while (positive == false && --bail > 0)
+            {
+                if (--pos < 0)
+                    pos += samples.getNumSamples();
+
+                positive = data [pos] > 0.0f;
+            }
+
+            while (positive == true && --bail > 0)
+            {
+                if (--pos < 0)
+                    pos += samples.getNumSamples();
+
+                positive = data [pos] > 0.0f;
+            }
+        }
+        return pos;
     }
 
     JUCE_DECLARE_WEAK_REFERENCEABLE (MagicPlotAudioSource)
