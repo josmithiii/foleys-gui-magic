@@ -60,9 +60,9 @@ public:
     : maxPlotLength(maxPlotLengthExpected) {}
 
     /** Destructor. */
-    virtual ~MagicPlotAudioSource()=default;
+    virtual ~MagicPlotAudioSource() override =default;
 
-    void pushSamples (const juce::AudioBuffer<float>& buffer) override;
+    void pushSamples (const juce::AudioBuffer<float>& buffer) override = 0; // { MagicPlotSource:pushSamples(buffer);};
 
     /**
      This form of the pushSamples() callback provides two channels of

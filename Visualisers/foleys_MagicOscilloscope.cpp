@@ -51,6 +51,8 @@ void MagicOscilloscope::pushSamples (const juce::AudioBuffer<float>& buffer)
 
     if (channel >= 0) {
       numChannelsOut = 1;
+    } else {
+      channel = 0; // default
     }
 
     bool averageChannels = (numChannelsOut>1) && not overlayPlots;
@@ -73,10 +75,10 @@ void MagicOscilloscope::pushSamples (const juce::AudioBuffer<float>& buffer)
         {
             samples.copyFrom (0, w, buffer.getReadPointer (channel), numSamples);
         } else {
-            samples.copyFrom (0, w, buffer, numSamples);
+            // FIXME: samples.copyFrom (0, w, buffer, numSamples);
         }
         if (numChannelsOut>1) {
-          ...
+          // FIXME: ...
         }
     }
     else
@@ -84,7 +86,7 @@ void MagicOscilloscope::pushSamples (const juce::AudioBuffer<float>& buffer)
         samples.copyFrom (0, w, buffer.getReadPointer (channel),            available);
         samples.copyFrom (0, 0, buffer.getReadPointer (channel, available), numSamples - available);
         if (numChannelsOut>1) {
-          ...
+          // FIXME: ...
         }
     }
 

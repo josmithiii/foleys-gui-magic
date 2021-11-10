@@ -597,7 +597,7 @@ public:
     {
         auto sourceID = configNode.getProperty (IDs::source, juce::String()).toString();
         if (sourceID.isNotEmpty())
-            plot.setPlotSource (getMagicState().getObjectWithType<MagicPlotSource>(sourceID));
+            plot.setPlotSource (getMagicState().getObjectWithType<MagicPlotAudioSource>(sourceID));
 
         auto decay = float (getProperty (pDecay));
         plot.setDecayFactor (decay);

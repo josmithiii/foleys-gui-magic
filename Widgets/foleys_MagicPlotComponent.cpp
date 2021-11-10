@@ -50,7 +50,7 @@ MagicPlotComponent::MagicPlotComponent()
     setPaintingIsUnclipped (true);
 }
 
-void MagicPlotComponent::setPlotSource (MagicPlotSource* source)
+void MagicPlotComponent::setPlotSource (MagicPlotAudioSource* source)
 {
     plotSource = source;
 }

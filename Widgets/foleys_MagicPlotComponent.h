@@ -57,7 +57,7 @@ public:
 
     MagicPlotComponent();
 
-    void setPlotSource (MagicPlotSource* source);
+    void setPlotSource (MagicPlotAudioSource* source);
     void setDecayFactor (float decayFactor);
     void setTriggered (bool triggered);
     void setOverlay (bool overlay);
@@ -75,7 +75,7 @@ private:
     void drawPlotGlowing (juce::Graphics& g);
     void updateGlowBufferSize();
 
-    juce::WeakReference<MagicPlotSource> plotSource;
+    juce::WeakReference<MagicPlotAudioSource> plotSource;
     juce::Path  path;
     juce::Path  filledPath;
 
