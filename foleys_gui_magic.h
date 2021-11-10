@@ -121,6 +121,7 @@
 
 #include "Visualisers/foleys_MagicLevelSource.h"
 #include "Visualisers/foleys_MagicPlotSource.h"
+#include "Visualisers/foleys_MagicPlotAudioSource.h"
 #include "Visualisers/foleys_MagicFilterPlot.h"
 #include "Visualisers/foleys_MagicAnalyser.h"
 #include "Visualisers/foleys_MagicOscilloscope.h"

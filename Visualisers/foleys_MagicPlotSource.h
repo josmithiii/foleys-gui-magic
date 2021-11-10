@@ -49,53 +49,17 @@ class MagicPlotSource
 {
 public:
 
+    /** Constructor. */
     MagicPlotSource()=default;
+
+    /** Destructor. */
     virtual ~MagicPlotSource()=default;
 
-    /**
-     Alternate Constructor which can be used to avoid truncated synchronous plots:
-     @param maxPlotLength, if positive, gives the maximum expected preferred length of
-            each plot in samples (e.g., one period, or a multiple of the period).
-            The default plot length is 10 ms expressed in samples (sampleRate/100).
-     */
-    MagicPlotSource(int maxPlotLengthExpected)
-    : maxPlotLength(maxPlotLengthExpected) {}
     /**
      This is the callback whenever new sample data arrives. It is the subclasses
      responsibility to put that into a FIFO and return as quickly as possible.
      */
     virtual void pushSamples (const juce::AudioBuffer<float>& buffer)=0;
-
-    /**
-     This form of the callback provides two channels of plot data, as needed for XY scatterplots.
-
-     @param bufferX is the audio buffer to serve as the X axis of the scatterplot.
-     @param channelX is the audio channel number (from 0) to use for the X axis of the scatterplot.
-     @param bufferY is the audio buffer to serve as the Y axis of the scatterplot.
-     @param channelY is the audio channel number (from 0) to use for the Y axis of the scatterplot.
-     @param plotLength specifies the desired length of plots involving this audio buffer.
-            Default is 0 meaning take system default (10 ms of audio data).
-     */
-    virtual void pushSamples (const juce::AudioBuffer<float>& bufferX, int channelX,
-                               const juce::AudioBuffer<float>& bufferY, int channelY,
-                               const int plotLength=0) { }
-
-    /**
-     Set whether a multichannel plot is an overlay or sum of all channels. Default is sum.
-     @param isTriggered, if true, means each plot begins at a zero-crossing (default = true).
-            Otherwise, the latest samples received are plotted for each audio buffer.
-     */
-    virtual void setTriggered (bool isTriggered) { triggered = isTriggered; }
-
-    /**
-     Set whether plot is triggered by a zero-crossing or free runs. Default is triggered.
-     */
-    virtual void setOverlay (bool overlay) { overlayPlots = overlay; }
-
-    /**
-     Set audio channel to plot (numbering from 0) or -1 to plot all channels (overlay or sum). Default is -1.
-     */
-    virtual void setChannel (int channelCode) { plotChannel = channelCode; }
 
     /**
      This is the callback that creates the plot for drawing.
@@ -137,12 +101,6 @@ public:
 private:
     std::atomic<juce::int64> lastData { 0 };
     bool active = true;
-
-protected:
-    bool triggered = true;
-    bool overlayPlots = false; // When false, plot either a single channel or the sum of all channels
-    int plotChannel = -1; // -1 denotes the sum of all channels
-    int maxPlotLength = 0;
 
     JUCE_DECLARE_WEAK_REFERENCEABLE (MagicPlotSource)
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MagicPlotSource)

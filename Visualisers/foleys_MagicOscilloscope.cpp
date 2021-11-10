@@ -40,18 +40,14 @@ namespace foleys
 
 
 MagicOscilloscope::MagicOscilloscope (int channelToDisplay)
-  : channel (channelToDisplay)
+  : MagicPlotAudioSource(channelToDisplay)
 {
 }
 
 void MagicOscilloscope::pushSamples (const juce::AudioBuffer<float>& buffer)
 {
-    auto w = writePosition.load();
-    const auto numSamples = buffer.getNumSamples();
-    const auto available  = samples.getNumSamples() - w;
-
-    const auto  numChannelsIn = buffer.getNumChannels();
-    const auto  numChannelsOut = numChannelsIn; // until determined otherwise
+    const int  numChannelsIn = buffer.getNumChannels();
+    int numChannelsOut = numChannelsIn; // until determined otherwise
 
     if (channel >= 0) {
       numChannelsOut = 1;
@@ -61,29 +57,16 @@ void MagicOscilloscope::pushSamples (const juce::AudioBuffer<float>& buffer)
 
     if (averageChannels)
     {
-        numChannelsOut = 1;
-        const auto gain = 1.0f /  numChannelsIn;
-        if (available >= numSamples)
-        {
-            samples.copyFrom (0, w, buffer.getReadPointer (0), numSamples, gain);
-            for (int c = 1; c <  numChannelsIn; ++c)
-                samples.addFrom (0, w, buffer.getReadPointer (c), numSamples, gain);
-        }
-        else
-        {
-            samples.copyFrom (0, w, buffer.getReadPointer (0),            available, gain);
-            samples.copyFrom (0, 0, buffer.getReadPointer (0, available), numSamples - available, gain);
-            for (int c = 1; c <  numChannelsIn; ++c)
-            {
-                samples.addFrom (0, w, buffer.getReadPointer (c),            available, gain);
-                samples.addFrom (0, 0, buffer.getReadPointer (c, available), numSamples - available, gain);
-            }
-        }
+      averageAllChannelsToSamplesChannel0(buffer);
+      numChannelsOut = 1;
     }
 
     jassert(channel >= 0);
 
     // Copy available samples
+    int numSamples = buffer.getNumSamples();
+    int w = writePosition.load();
+    const auto available  = samples.getNumSamples() - w;
     if (available >= numSamples)
     {
         if (overlayPlots)

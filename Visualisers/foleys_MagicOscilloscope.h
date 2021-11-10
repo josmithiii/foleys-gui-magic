@@ -43,7 +43,7 @@ namespace foleys
  This class collects your samples in a circular buffer and allows the GUI to
  draw it in the style of an oscilloscope
  */
-class MagicOscilloscope : public MagicPlotSource
+class MagicOscilloscope : public MagicPlotAudioSource
 {
 public:
 
@@ -52,7 +52,7 @@ public:
 
      @param channel lets you select the channel to analyse. -1 means summing all together (the default)
      */
-    MagicOscilloscope (int channel=-1);
+    MagicOscilloscope (int channelToDisplay=-1);
 
     /**
      Push samples to a buffer to be visualised.
@@ -70,13 +70,6 @@ public:
     void createPlotPaths (juce::Path& path, juce::Path& filledPath, juce::Rectangle<float> bounds, MagicPlotComponent& component) override;
 
     void prepareToPlay (double sampleRate, int samplesPerBlockExpected) override;
-
-private:
-    int                      channel = -1;
-    double                   sampleRate = 0.0;
-
-    juce::AudioBuffer<float> samples;
-    std::atomic<int>         writePosition;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MagicOscilloscope)
 };

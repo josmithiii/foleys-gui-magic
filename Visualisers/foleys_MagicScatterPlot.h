@@ -44,14 +44,14 @@ namespace foleys
  allows the GUI to draw them in the style of an scatterplot, or
  XY-plot.  For example, sin(t) and cos(t) produce a circle.
  */
-class MagicScatterPlot : public MagicPlotSource
+class MagicScatterPlot : public MagicPlotAudioSource
 {
 public:
 
     /**
      Create an XY ScatterPlot adapter to push samples into for later display in the GUI.
      */
-    MagicScatterPlot () : MagicPlotSource() {}
+    MagicScatterPlot () : MagicPlotAudioSource() {}
 
     /**
      Push samples to a buffer to be visualised as a scatterplot (XY plot) of channels 0 (X) and 1 (Y).
