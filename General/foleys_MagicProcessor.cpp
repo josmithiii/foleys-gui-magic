@@ -77,6 +77,10 @@ juce::ValueTree MagicProcessor::createGuiValueTree()
     if (plotView.isValid())
         rootNode.appendChild (plotView, nullptr);
 
+    auto plotAudioView = DefaultGuiTrees::createPlotAudioView (magicState);
+    if (plotAudioView.isValid())
+        rootNode.appendChild (plotAudioView, nullptr);
+
     auto params = DefaultGuiTrees::createProcessorGui (getParameterTree());
     rootNode.appendChild (params, nullptr);
 

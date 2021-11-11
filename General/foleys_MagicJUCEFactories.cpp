@@ -1074,6 +1074,7 @@ void MagicGUIBuilder::registerJUCEFactories()
     registerFactory (IDs::label, &LabelItem::factory);
     registerFactory (IDs::textEditor, &TextEditorItem::factory);
     registerFactory (IDs::plot, &PlotItem::factory);
+    registerFactory (IDs::plotAudio, &AudioPlotItem::factory);
     registerFactory (IDs::xyDragComponent, &XYDraggerItem::factory);
     registerFactory (IDs::keyboardComponent, &KeyboardItem::factory);
     registerFactory (IDs::drumpadComponent, &DrumpadItem::factory);

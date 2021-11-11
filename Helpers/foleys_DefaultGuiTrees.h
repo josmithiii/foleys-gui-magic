@@ -53,6 +53,7 @@ static inline juce::ValueTree createProcessorGui (const juce::AudioProcessorPara
 static inline void createDefaultFromParameters (juce::ValueTree& node, const juce::AudioProcessorParameterGroup& tree);
 
 static inline juce::ValueTree createPlotView (const MagicGUIState& magicState);
+static inline juce::ValueTree createPlotAudioView (const MagicGUIState& magicState);
 
 static inline juce::ValueTree createDefaultStylesheet();
 
