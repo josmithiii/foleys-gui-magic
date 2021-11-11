@@ -56,7 +56,7 @@ public:
 
     MagicAudioPlotComponent();
 
-    virtual void setPlotSource (MagicPlotSource* source) override;
+    void setPlotSource (MagicAudioPlotSource* source);
     void setDecayFactor (float decayFactor);
     void setTriggered (bool triggered);
     void setOverlay (bool overlay);
@@ -65,25 +65,16 @@ public:
     void setPlotLength (int plotLength);
     void setPlotOffset (int plotOffset);
 
-    void paint (juce::Graphics& g) override;
-    void resized() override;
+    virtual void paint (juce::Graphics& g) override;
 
     bool hitTest (int, int) override { return false; }
 
     bool needsUpdate() const;
 
-private:
-    void drawPlot (juce::Graphics& g);
-    void drawPlotGlowing (juce::Graphics& g);
-    void updateGlowBufferSize();
+  private:
 
     juce::WeakReference<MagicAudioPlotSource> plotSource;
-    juce::Path  path;
-    juce::Path  filledPath;
 
-    juce::int64 lastDataTimestamp = 0;
-    juce::Image glowBuffer;
-    float       decay = 0.0f;
     bool        triggered = true;
     bool        overlay = false;
     int         channel = 0;

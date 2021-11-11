@@ -57,22 +57,26 @@ public:
 
     MagicPlotComponent();
 
-    virtual void setPlotSource (MagicPlotSource* source);
+    void setPlotSource (MagicPlotSource* source);
     void setDecayFactor (float decayFactor);
-
-    void paint (juce::Graphics& g) override;
-    void resized() override;
 
     bool hitTest (int, int) override { return false; }
 
     bool needsUpdate() const;
 
-private:
+  private:
+
+    juce::WeakReference<MagicPlotSource> plotSource;
+
+  protected:
+
+    virtual void paint (juce::Graphics& g) override;
+    virtual void resized() override;
+
     void drawPlot (juce::Graphics& g);
     void drawPlotGlowing (juce::Graphics& g);
     void updateGlowBufferSize();
 
-    juce::WeakReference<MagicPlotSource> plotSource;
     juce::Path  path;
     juce::Path  filledPath;
 

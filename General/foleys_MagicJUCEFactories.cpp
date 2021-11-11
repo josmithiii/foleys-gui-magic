@@ -636,9 +636,14 @@ public:
 
     AudioPlotItem (MagicGUIBuilder& builder, const juce::ValueTree& node) : PlotItem (builder, node) { }
 
-    void update() override
+    void update() override // and REPLACE, since plotSource must be our specific derived class MagicAudioPlotSource
     {
-        PlotItem::update();
+        auto sourceID = configNode.getProperty (IDs::source, juce::String()).toString();
+        if (sourceID.isNotEmpty())
+            plot.setPlotSource (getMagicState().getObjectWithType<MagicAudioPlotSource>(sourceID)); // using MagicPlotSource would require much dynamic casting below
+
+        auto decay = float (getProperty (pDecay));
+        plot.setDecayFactor (decay);
 
         auto triggered = bool (getProperty (pTriggered));
         plot.setTriggered (triggered);

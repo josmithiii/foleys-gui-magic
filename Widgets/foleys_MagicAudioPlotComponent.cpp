@@ -50,9 +50,10 @@ MagicAudioPlotComponent::MagicAudioPlotComponent()
     setPaintingIsUnclipped (true);
 }
 
-void MagicAudioPlotComponent::setPlotSource (MagicPlotSource* source)
+void MagicAudioPlotComponent::setPlotSource (MagicAudioPlotSource* source)
 {
     plotSource = dynamic_cast<MagicAudioPlotSource*>(source);
+    jassert(plotSource != nullptr);
 }
 
 void MagicAudioPlotComponent::setDecayFactor (float decayFactor)
@@ -130,62 +131,5 @@ void MagicAudioPlotComponent::paint (juce::Graphics& g)
         drawPlot (g);
     }
 }
-
-void MagicAudioPlotComponent::drawPlot (juce::Graphics& g)
-{
-    const auto active = plotSource->isActive();
-    auto colour = findColour (active ? plotFillColourId : plotInactiveFillColourId);
-    if (colour.isTransparent() == false)
-    {
-        g.setColour (colour);
-        g.fillPath (filledPath);
-    }
-
-    colour = findColour (active ? plotColourId : plotInactiveColourId);
-    if (colour.isTransparent() == false)
-    {
-        g.setColour (colour);
-        g.strokePath (path, juce::PathStrokeType (2.0));
-    }
-}
-
-void MagicAudioPlotComponent::drawPlotGlowing (juce::Graphics& g)
-{
-    if (decay < 1.0f)
-        glowBuffer.multiplyAllAlphas (decay);
-
-    juce::Graphics glow (glowBuffer);
-    drawPlot (glow);
-
-    g.drawImageAt (glowBuffer, 0, 0);
-}
-
-void MagicAudioPlotComponent::updateGlowBufferSize()
-{
-    const auto w = getWidth();
-    const auto h = getHeight();
-
-    if (decay > 0.0f && w > 0 && h > 0)
-    {
-        if (glowBuffer.getWidth() != w || glowBuffer.getHeight() != h)
-            glowBuffer = juce::Image (juce::Image::ARGB, w, h, true);
-    }
-    else
-    {
-        glowBuffer = juce::Image();
-    }
-}
-
-bool MagicAudioPlotComponent::needsUpdate() const
-{
-    return plotSource ? (lastDataTimestamp < plotSource->getLastDataUpdate()) : false;
-}
-
-void MagicAudioPlotComponent::resized()
-{
-    lastDataTimestamp = 0;
-    updateGlowBufferSize();
-}
-
 
 } // namespace foleys
