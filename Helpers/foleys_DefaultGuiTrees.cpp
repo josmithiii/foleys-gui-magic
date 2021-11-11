@@ -102,6 +102,7 @@ juce::ValueTree DefaultGuiTrees::createProcessorGui (const juce::AudioProcessorP
 juce::ValueTree DefaultGuiTrees::createPlotView (const MagicGUIState& magicState)
 {
     auto plotNames = magicState.getObjectIDsByType<MagicPlotSource>();
+    plotNames.addArray(magicState.getObjectIDsByType<MagicAudioPlotSource>());
 
     if (plotNames.isEmpty())
         return {};
@@ -116,34 +117,6 @@ juce::ValueTree DefaultGuiTrees::createPlotView (const MagicGUIState& magicState
     for (auto plotName : plotNames)
     {
         child.appendChild ({IDs::plot, {
-            { IDs::source, plotName },
-            { IDs::styleClass, "transparent" },
-            { "plot-color", colours [nextColour++] }}}, nullptr);
-
-        if (nextColour >= colours.size())
-            nextColour = 0;
-    }
-
-    return child;
-}
-
-juce::ValueTree DefaultGuiTrees::createPlotAudioView (const MagicGUIState& magicState)
-{
-    auto plotNames = magicState.getObjectIDsByType<MagicAudioPlotSource>();
-
-    if (plotNames.isEmpty())
-        return {};
-
-    juce::StringArray colours { "orange", "blue", "red", "silver", "green", "cyan", "brown", "white" };
-    int nextColour = 0;
-
-    juce::ValueTree child { IDs::view, {
-        { IDs::id, "plot-audio-view" },
-        { IDs::styleClass, "plot-audio-view" }}};
-
-    for (auto plotName : plotNames)
-    {
-        child.appendChild ({IDs::plotAudio, {
             { IDs::source, plotName },
             { IDs::styleClass, "transparent" },
             { "plot-color", colours [nextColour++] }}}, nullptr);
