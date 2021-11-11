@@ -39,6 +39,8 @@
 namespace foleys
 {
 
+class MagicAudioPlotComponent;
+
 /**
  This class collects your samples in a circular buffer and allows the GUI to
  draw it in the style of an oscilloscope
@@ -64,12 +66,12 @@ public:
     /**
      This is the callback that creates the frequency plot for drawing.
 
-      @param path is the path instance that is constructed by the MagicPlotSource
-      @param filledPath is the path instance that is constructed by the MagicPlotSource to be filled
+      @param path is the path instance that is constructed by the MagicAudioPlotSource
+      @param filledPath is the path instance that is constructed by the MagicAudioPlotSource to be filled
       @param bounds the bounds of the plot
       @param component grants access to the plot component, e.g. to find the colours from it
       */
-    void createPlotPaths (juce::Path& path, juce::Path& filledPath, juce::Rectangle<float> bounds, MagicPlotComponent& component) override;
+    void createPlotPaths (juce::Path& path, juce::Path& filledPath, juce::Rectangle<float> bounds, MagicAudioPlotComponent& component) override;
 
     void prepareToPlay (double sampleRate, int samplesPerBlockExpected) override;
 

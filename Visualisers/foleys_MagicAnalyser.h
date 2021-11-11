@@ -39,6 +39,8 @@
 namespace foleys
 {
 
+class MagicAudioPlotComponent;
+
 /**
  This will plot the magnitudes of the frequencies in a signal. The processing happens in a worker thread
  to keep the audio thread free.
@@ -70,7 +72,7 @@ public:
      @param bounds the bounds of the plot
      @param component grants access to the plot component, e.g. to find the colours from it
      */
-    void createPlotPaths (juce::Path& path, juce::Path& filledPath, juce::Rectangle<float> bounds, MagicPlotComponent& component) override;
+    void createPlotPaths (juce::Path& path, juce::Path& filledPath, juce::Rectangle<float> bounds, MagicAudioPlotComponent& component) override;
 
     /**
      This method is called by the MagicProcessorState to allow the plot computation to be set up

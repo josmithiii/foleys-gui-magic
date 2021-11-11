@@ -39,6 +39,8 @@
 namespace foleys
 {
 
+class MagicAudioPlotComponent;
+
 /**
  This class collects two buffers of samples in a circular buffer and
  allows the GUI to draw them in the style of an scatterplot, or
@@ -79,9 +81,9 @@ public:
       @param bounds the bounds of the plot
       @param component grants access to the plot component, e.g. to find the colours from it
       */
-    void createPlotPaths (juce::Path& path, juce::Path& filledPath, juce::Rectangle<float> bounds, MagicPlotComponent& component) override;
+    virtual void createPlotPaths (juce::Path& path, juce::Path& filledPath, juce::Rectangle<float> bounds, MagicAudioPlotComponent& component) override;
 
-    void prepareToPlay (double sampleRate, int samplesPerBlockExpected) override;
+    virtual void prepareToPlay (double sampleRate, int samplesPerBlockExpected) override;
 
 private:
     double                   sampleRate = 0.0;

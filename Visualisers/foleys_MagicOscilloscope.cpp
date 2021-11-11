@@ -125,7 +125,7 @@ void MagicOscilloscope::pushSamples (const juce::AudioBuffer<float>& buffer)
     resetLastDataFlag();
 }
 
-void MagicOscilloscope::createPlotPaths (juce::Path& path, juce::Path& filledPath, juce::Rectangle<float> bounds, MagicPlotComponent&)
+void MagicOscilloscope::createPlotPaths (juce::Path& path, juce::Path& filledPath, juce::Rectangle<float> bounds, MagicAudioPlotComponent&)
 {
     if (sampleRate < 20.0f)
         return;

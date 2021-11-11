@@ -42,7 +42,8 @@ namespace foleys
 /**
  The MagicAudioPlotComponent allows drawing the data from a MagicAudioPlotSource.
  */
-class MagicAudioPlotComponent  : public MagicPlotComponent
+class MagicAudioPlotComponent : public juce::Component,
+                                juce::SettableTooltipClient
 {
 public:
 
@@ -58,6 +59,14 @@ public:
 
     void setPlotSource (MagicAudioPlotSource* source);
     void setDecayFactor (float decayFactor);
+
+    void paint (juce::Graphics& g) override;
+    void resized() override;
+
+    bool hitTest (int, int) override { return false; }
+
+    bool needsUpdate() const;
+
     void setTriggered (bool triggered);
     void setOverlay (bool overlay);
     void setChannel (int channel);
@@ -65,15 +74,18 @@ public:
     void setPlotLength (int plotLength);
     void setPlotOffset (int plotOffset);
 
-    virtual void paint (juce::Graphics& g) override;
-
-    bool hitTest (int, int) override { return false; }
-
-    bool needsUpdate() const;
-
   private:
+    void drawPlot (juce::Graphics& g);
+    void drawPlotGlowing (juce::Graphics& g);
+    void updateGlowBufferSize();
 
     juce::WeakReference<MagicAudioPlotSource> plotSource;
+    juce::Path  path;
+    juce::Path  filledPath;
+
+    juce::int64 lastDataTimestamp = 0;
+    juce::Image glowBuffer;
+    float       decay = 0.0f;
 
     bool        triggered = true;
     bool        overlay = false;

@@ -88,7 +88,7 @@ void MagicScatterPlot::pushSamples (const juce::AudioBuffer<float>& bufferX, int
     resetLastDataFlag();
 }
 
-void MagicScatterPlot::createPlotPaths (juce::Path& path, juce::Path& filledPath, juce::Rectangle<float> bounds, MagicPlotComponent&)
+void MagicScatterPlot::createPlotPaths (juce::Path& path, juce::Path& filledPath, juce::Rectangle<float> bounds, MagicAudioPlotComponent&)
 {
     if (sampleRate < 20.0f)
         return;

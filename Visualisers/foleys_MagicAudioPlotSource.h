@@ -39,53 +39,24 @@
 namespace foleys
 {
 
-class MagicPlotComponent;
+class MagicAudioPlotComponent;
 
 /**
- The MagicPlotSources act as an interface, so the GUI can visualise an arbitrary plot
+ The MagicAudioPlotSources act as an interface, so the GUI can visualise an arbitrary plot
  of data. To create a specific new plot, create a subclass and implement drawPlot.
  */
-  class MagicAudioPlotSource : public MagicPlotSource
+class MagicAudioPlotSource // not worth the trouble : public MagicPlotSource
 {
 public:
 
-    /**
-     Constructor.
-     @param maxPlotLength, if positive, gives the maximum expected preferred length of
-            each plot in samples (e.g., one period, or a multiple of the period).
-            The default plot length is 10 ms expressed in samples (sampleRate/100).
-            Increase it to avoid truncated triggered plots at fundamentals below 100 Hz.
-     */
-    MagicAudioPlotSource(int maxPlotLengthExpected=0)
-    : maxPlotLength(maxPlotLengthExpected) {}
+    /** Constructor. */
+    MagicAudioPlotSource()=default;
+
+    /** Constructor allowing specification of a channel to display, or -1 to indicate all channels. */
+    MagicAudioPlotSource(int channelToDisplay) : channel(channelToDisplay) {}
 
     /** Destructor. */
-    virtual ~MagicAudioPlotSource() override =default;
-
-    virtual void prepareToPlay (double sampleRateToUse, int samplesPerBlockExpected) override
-    {
-        sampleRate = sampleRateToUse;
-        samples.setSize (1, static_cast<int> (sampleRate));
-        samples.clear();
-        writePosition.store (0);
-    }
-
-    virtual void pushSamples (const juce::AudioBuffer<float>& buffer) override = 0; // { MagicPlotSource:pushSamples(buffer);};
-
-    /**
-     This form of the pushSamples() callback provides two channels of
-     plot data, needed for XY scatterplots.
-
-     @param bufferX is the audio buffer to serve as the X axis of the scatterplot.
-     @param channelX is the audio channel number (from 0) to use for the X axis of the scatterplot.
-     @param bufferY is the audio buffer to serve as the Y axis of the scatterplot.
-     @param channelY is the audio channel number (from 0) to use for the Y axis of the scatterplot.
-     @param plotLength specifies the desired length of plots involving this audio buffer.
-            Default is 0 meaning take system default (10 ms of audio data).
-     */
-    virtual void pushSamples (const juce::AudioBuffer<float>& bufferX, int channelX,
-                               const juce::AudioBuffer<float>& bufferY, int channelY,
-                               const int plotLength=0) { }
+    virtual ~MagicAudioPlotSource()=default;
 
     /**
      Set whether a multichannel plot is an overlay or sum of all channels. Default is sum.
@@ -135,6 +106,38 @@ public:
     }
 
     /**
+     This method is called by the MagicProcessorState to allow the plot computation to be set up
+     */
+    virtual void prepareToPlay (double sampleRateToUse, int samplesPerBlockExpected)
+    {
+        sampleRate = sampleRateToUse;
+        samples.setSize (1, static_cast<int> (sampleRate));
+        samples.clear();
+        writePosition.store (0);
+    }
+
+    /**
+     This is the callback whenever new sample data arrives. It is the subclasses
+     responsibility to put that into a FIFO and return as quickly as possible.
+     */
+    virtual void pushSamples (const juce::AudioBuffer<float>& buffer)=0;
+
+    /**
+     This form of the pushSamples() callback provides two channels of
+     plot data, needed for XY scatterplots.
+
+     @param bufferX is the audio buffer to serve as the X axis of the scatterplot.
+     @param channelX is the audio channel number (from 0) to use for the X axis of the scatterplot.
+     @param bufferY is the audio buffer to serve as the Y axis of the scatterplot.
+     @param channelY is the audio channel number (from 0) to use for the Y axis of the scatterplot.
+     @param plotLength specifies the desired length of plots involving this audio buffer.
+            Default is 0 meaning take system default (10 ms of audio data).
+     */
+    virtual void pushSamples (const juce::AudioBuffer<float>& bufferX, int channelX,
+                               const juce::AudioBuffer<float>& bufferY, int channelY,
+                               const int plotLength=0) { }
+
+    /**
      This is the callback that creates the plot for drawing.
 
      @param path is the path instance that is constructed by the MagicPlotSource
@@ -142,7 +145,29 @@ public:
      @param bounds the bounds of the plot
      @param component grants access to the plot component, e.g. to find the colours from it
      */
-    virtual void createPlotPaths (juce::Path& path, juce::Path& filledPath, juce::Rectangle<float> bounds, MagicPlotComponent& component) override = 0;
+    virtual void createPlotPaths (juce::Path& path, juce::Path& filledPath, juce::Rectangle<float> bounds, MagicAudioPlotComponent& component) = 0;
+
+    /**
+     You can add an active state to your plot to allow to paint in different colours
+     */
+    virtual bool isActive() const { return active; }
+    virtual void setActive (bool shouldBeActive) { active = shouldBeActive; }
+
+    /**
+     Use this information to invalidate your plot drawing
+     */
+    juce::int64 getLastDataUpdate() const { return lastData.load(); }
+
+    /**
+     Call this to invalidate the lastData flag
+     */
+    void resetLastDataFlag() { lastData.store (juce::Time::currentTimeMillis()); }
+
+    /**
+     If your plot needs background processing, return here a pointer to your TimeSliceClient,
+     and it will automatically be added to the common background thread.
+     */
+    virtual juce::TimeSliceClient* getBackgroundJob() { return nullptr; }
 
 protected:
     double                   sampleRate = 0.0;
@@ -153,7 +178,7 @@ protected:
     int channel = -1;          // -1 denotes the sum of all channels (note that we could use -2 in place of bool overlayPlots)
     int maxPlotLength = 0;     // when this is right, samples array never needs to resize itself while plotting
     int plotLength = 0;
-    int plotOffset = 0;
+    float plotOffset = 0;
 
     inline void averageAllChannelsToSamplesChannel0(const juce::AudioBuffer<float>& buffer)
     {
@@ -210,6 +235,10 @@ protected:
         }
         return pos;
     }
+
+private:
+    std::atomic<juce::int64> lastData { 0 };
+    bool active = true;
 
     JUCE_DECLARE_WEAK_REFERENCEABLE (MagicAudioPlotSource)
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MagicAudioPlotSource)
