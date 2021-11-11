@@ -121,7 +121,7 @@
 
 #include "Visualisers/foleys_MagicLevelSource.h"
 #include "Visualisers/foleys_MagicPlotSource.h"
-#include "Visualisers/foleys_MagicPlotAudioSource.h"
+#include "Visualisers/foleys_MagicAudioPlotSource.h"
 #include "Visualisers/foleys_MagicFilterPlot.h"
 #include "Visualisers/foleys_MagicAnalyser.h"
 #include "Visualisers/foleys_MagicOscilloscope.h"
@@ -130,6 +130,7 @@
 #include "Widgets/foleys_AutoOrientationSlider.h"
 #include "Widgets/foleys_MagicLevelMeter.h"
 #include "Widgets/foleys_MagicPlotComponent.h"
+#include "Widgets/foleys_MagicAudioPlotComponent.h"
 #include "Widgets/foleys_XYDragComponent.h"
 #include "Widgets/foleys_FileBrowserDialog.h"
 #include "Widgets/foleys_MidiLearnComponent.h"

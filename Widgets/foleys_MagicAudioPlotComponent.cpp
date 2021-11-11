@@ -39,7 +39,7 @@ namespace foleys
 {
 
 
-MagicPlotComponent::MagicPlotComponent()
+MagicAudioPlotComponent::MagicAudioPlotComponent()
 {
     setColour (plotColourId, juce::Colours::orange);
     setColour (plotFillColourId, juce::Colours::orange.withAlpha (0.5f));
@@ -50,18 +50,60 @@ MagicPlotComponent::MagicPlotComponent()
     setPaintingIsUnclipped (true);
 }
 
-void MagicPlotComponent::setPlotSource (MagicPlotSource* source)
+void MagicAudioPlotComponent::setPlotSource (MagicPlotSource* source)
 {
-    plotSource = source;
+    plotSource = dynamic_cast<MagicAudioPlotSource*>(source);
 }
 
-void MagicPlotComponent::setDecayFactor (float decayFactor)
+void MagicAudioPlotComponent::setDecayFactor (float decayFactor)
 {
     decay = decayFactor;
     updateGlowBufferSize();
 }
 
-void MagicPlotComponent::paint (juce::Graphics& g)
+void MagicAudioPlotComponent::setTriggered (bool t)
+{
+    triggered = t;
+    if (plotSource)
+      plotSource->setTriggered (triggered);
+}
+
+void MagicAudioPlotComponent::setOverlay (bool o)
+{
+    overlay = o;
+    if (plotSource)
+      plotSource->setOverlay (overlay);
+}
+
+void MagicAudioPlotComponent::setChannel (int c)
+{
+    channel = c;
+    if (plotSource)
+      plotSource->setChannel (channel);
+}
+
+void MagicAudioPlotComponent::setNumChannels (int nc)
+{
+    numChannels = nc;
+    if (plotSource)
+      plotSource->setNumChannels (numChannels);
+}
+
+void MagicAudioPlotComponent::setPlotLength (int pl)
+{
+    plotLength = pl;
+    if (plotSource)
+      plotSource->setPlotLength (plotLength);
+}
+
+void MagicAudioPlotComponent::setPlotOffset (int pl)
+{
+    plotOffset = pl;
+    if (plotSource)
+      plotSource->setPlotOffset (plotOffset);
+}
+
+void MagicAudioPlotComponent::paint (juce::Graphics& g)
 {
     if (plotSource == nullptr)
         return;
@@ -69,6 +111,14 @@ void MagicPlotComponent::paint (juce::Graphics& g)
     const auto lastUpdate = plotSource->getLastDataUpdate();
     if (lastUpdate > lastDataTimestamp)
     {
+        if (plotSource) { // these may be have been set before plotSource existed:
+            plotSource->setTriggered (triggered);
+            plotSource->setOverlay (overlay);
+            plotSource->setChannel (channel);
+            plotSource->setNumChannels (numChannels);
+            plotSource->setPlotLength (plotLength);
+            plotSource->setPlotOffset (plotOffset);
+        }
         plotSource->createPlotPaths (path, filledPath, getLocalBounds().toFloat(), *this);
         lastDataTimestamp = lastUpdate;
     }
@@ -81,7 +131,7 @@ void MagicPlotComponent::paint (juce::Graphics& g)
     }
 }
 
-void MagicPlotComponent::drawPlot (juce::Graphics& g)
+void MagicAudioPlotComponent::drawPlot (juce::Graphics& g)
 {
     const auto active = plotSource->isActive();
     auto colour = findColour (active ? plotFillColourId : plotInactiveFillColourId);
@@ -99,7 +149,7 @@ void MagicPlotComponent::drawPlot (juce::Graphics& g)
     }
 }
 
-void MagicPlotComponent::drawPlotGlowing (juce::Graphics& g)
+void MagicAudioPlotComponent::drawPlotGlowing (juce::Graphics& g)
 {
     if (decay < 1.0f)
         glowBuffer.multiplyAllAlphas (decay);
@@ -110,7 +160,7 @@ void MagicPlotComponent::drawPlotGlowing (juce::Graphics& g)
     g.drawImageAt (glowBuffer, 0, 0);
 }
 
-void MagicPlotComponent::updateGlowBufferSize()
+void MagicAudioPlotComponent::updateGlowBufferSize()
 {
     const auto w = getWidth();
     const auto h = getHeight();
@@ -126,12 +176,12 @@ void MagicPlotComponent::updateGlowBufferSize()
     }
 }
 
-bool MagicPlotComponent::needsUpdate() const
+bool MagicAudioPlotComponent::needsUpdate() const
 {
     return plotSource ? (lastDataTimestamp < plotSource->getLastDataUpdate()) : false;
 }
 
-void MagicPlotComponent::resized()
+void MagicAudioPlotComponent::resized()
 {
     lastDataTimestamp = 0;
     updateGlowBufferSize();

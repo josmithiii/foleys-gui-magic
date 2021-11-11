@@ -57,14 +57,8 @@ public:
 
     MagicPlotComponent();
 
-    void setPlotSource (MagicPlotAudioSource* source);
+    virtual void setPlotSource (MagicPlotSource* source);
     void setDecayFactor (float decayFactor);
-    void setTriggered (bool triggered);
-    void setOverlay (bool overlay);
-    void setChannel (int channel);
-    void setNumChannels (int numChannels);
-    void setPlotLength (int plotLength);
-    void setPlotOffset (int plotOffset);
 
     void paint (juce::Graphics& g) override;
     void resized() override;
@@ -78,19 +72,13 @@ private:
     void drawPlotGlowing (juce::Graphics& g);
     void updateGlowBufferSize();
 
-    juce::WeakReference<MagicPlotAudioSource> plotSource;
+    juce::WeakReference<MagicPlotSource> plotSource;
     juce::Path  path;
     juce::Path  filledPath;
 
     juce::int64 lastDataTimestamp = 0;
     juce::Image glowBuffer;
     float       decay = 0.0f;
-    bool        triggered = true;
-    bool        overlay = false;
-    int         channel = 0;
-    int         numChannels = 0;
-    int         plotLength = 0;
-    int         plotOffset = 0;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MagicPlotComponent)
 };

@@ -476,7 +476,7 @@ public:
     }
 
 private:
-    juce::Label                                label;
+    juce::Label label;
     std::unique_ptr<juce::ParameterAttachment> attachment;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (LabelItem)
@@ -576,12 +576,6 @@ public:
     FOLEYS_DECLARE_GUI_FACTORY (PlotItem)
 
     static const juce::Identifier  pDecay;
-    static const juce::Identifier  pTriggered;
-    static const juce::Identifier  pOverlay;
-    static const juce::Identifier  pChannel;
-    static const juce::Identifier  pNumChannels;
-    static const juce::Identifier  pPlotLength;
-    static const juce::Identifier  pPlotOffset;
 
     PlotItem (MagicGUIBuilder& builder, const juce::ValueTree& node) : GuiItem (builder, node)
     {
@@ -596,32 +590,14 @@ public:
         addAndMakeVisible (plot);
     }
 
-    void update() override
+    virtual void update() override
     {
         auto sourceID = configNode.getProperty (IDs::source, juce::String()).toString();
         if (sourceID.isNotEmpty())
-            plot.setPlotSource (getMagicState().getObjectWithType<MagicPlotAudioSource>(sourceID));
+            plot.setPlotSource (getMagicState().getObjectWithType<MagicPlotSource>(sourceID));
 
         auto decay = float (getProperty (pDecay));
         plot.setDecayFactor (decay);
-
-        auto triggered = bool (getProperty (pTriggered));
-        plot.setTriggered (triggered);
-
-        auto overlay = bool (getProperty (pOverlay));
-        plot.setOverlay (overlay);
-
-        auto channel = int (getProperty (pChannel));
-        plot.setChannel (channel);
-
-        auto numChannels = int (getProperty (pNumChannels));
-        plot.setNumChannels (numChannels);
-
-        auto plotLength = int (getProperty (pPlotLength));
-        plot.setPlotLength (plotLength);
-
-        auto plotOffset = int (getProperty (pPlotOffset));
-        plot.setPlotOffset (plotOffset);
     }
 
     std::vector<SettableProperty> getSettableProperties() const override
@@ -629,12 +605,6 @@ public:
         std::vector<SettableProperty> props;
         props.push_back ({ configNode, IDs::source, SettableProperty::Choice, {}, magicBuilder.createObjectsMenuLambda<MagicPlotSource>() });
         props.push_back ({ configNode, pDecay,      SettableProperty::Number, {}, {} });
-        props.push_back ({ configNode, pTriggered,  SettableProperty::Toggle, {}, {} });
-        props.push_back ({ configNode, pOverlay,    SettableProperty::Toggle, {}, {} });
-        props.push_back ({ configNode, pChannel,    SettableProperty::Number, {}, {} });
-        props.push_back ({ configNode, pNumChannels,SettableProperty::Number, {}, {} });
-        props.push_back ({ configNode, pPlotLength, SettableProperty::Number, {}, {} });
-        props.push_back ({ configNode, pPlotOffset, SettableProperty::Number, {}, {} });
         return props;
     }
 
@@ -649,12 +619,74 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PlotItem)
 };
 const juce::Identifier  PlotItem::pDecay {"plot-decay"};
-const juce::Identifier  PlotItem::pTriggered {"plot-triggered"};
-const juce::Identifier  PlotItem::pOverlay {"plot-overlay"};
-const juce::Identifier  PlotItem::pChannel {"plot-channel"};
-const juce::Identifier  PlotItem::pNumChannels {"plot-num-channels"};
-const juce::Identifier  PlotItem::pPlotLength {"plot-length"};
-const juce::Identifier  PlotItem::pPlotOffset {"plot-offset"};
+
+//==============================================================================
+
+class AudioPlotItem : public PlotItem
+{
+public:
+    FOLEYS_DECLARE_GUI_FACTORY (AudioPlotItem)
+
+    static const juce::Identifier  pTriggered;
+    static const juce::Identifier  pOverlay;
+    static const juce::Identifier  pChannel1Based;
+    static const juce::Identifier  pNumChannels;
+    static const juce::Identifier  pPlotLength;
+    static const juce::Identifier  pPlotOffset;
+
+    AudioPlotItem (MagicGUIBuilder& builder, const juce::ValueTree& node) : PlotItem (builder, node) { }
+
+    void update() override
+    {
+        PlotItem::update();
+
+        auto triggered = bool (getProperty (pTriggered));
+        plot.setTriggered (triggered);
+
+        auto overlay = bool (getProperty (pOverlay));
+        plot.setOverlay (overlay);
+
+        auto channel1Based = int (getProperty (pChannel1Based));
+        plot.setChannel (channel1Based-1);
+
+        auto numChannels = int (getProperty (pNumChannels));
+        plot.setNumChannels (numChannels);
+
+        auto plotLength = int (getProperty (pPlotLength));
+        plot.setPlotLength (plotLength);
+
+        auto plotOffset = int (getProperty (pPlotOffset));
+        plot.setPlotOffset (plotOffset);
+    }
+
+    std::vector<SettableProperty> getSettableProperties() const override
+    {
+        std::vector<SettableProperty> props { PlotItem::getSettableProperties() };
+        props.push_back ({ configNode, pTriggered,     SettableProperty::Toggle, {}, {} });
+        props.push_back ({ configNode, pOverlay,       SettableProperty::Toggle, {}, {} });
+        props.push_back ({ configNode, pChannel1Based, SettableProperty::Number, {}, {} });
+        props.push_back ({ configNode, pNumChannels,   SettableProperty::Number, {}, {} });
+        props.push_back ({ configNode, pPlotLength,    SettableProperty::Number, {}, {} });
+        props.push_back ({ configNode, pPlotOffset,    SettableProperty::Number, {}, {} });
+        return props;
+    }
+
+    juce::Component* getWrappedComponent() override
+    {
+        return &plot;
+    }
+
+private:
+    MagicAudioPlotComponent plot;
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioPlotItem)
+};
+const juce::Identifier  AudioPlotItem::pTriggered {"plot-triggered"};
+const juce::Identifier  AudioPlotItem::pOverlay {"plot-overlay"};
+const juce::Identifier  AudioPlotItem::pChannel1Based {"plot-channel"};
+const juce::Identifier  AudioPlotItem::pNumChannels {"plot-num-channels"};
+const juce::Identifier  AudioPlotItem::pPlotLength {"plot-length"};
+const juce::Identifier  AudioPlotItem::pPlotOffset {"plot-offset"};
 
 //==============================================================================
 

@@ -72,6 +72,7 @@
 
 #include "Widgets/foleys_MagicLevelMeter.cpp"
 #include "Widgets/foleys_MagicPlotComponent.cpp"
+#include "Widgets/foleys_MagicAudioPlotComponent.cpp"
 #include "Widgets/foleys_XYDragComponent.cpp"
 #include "Widgets/foleys_FileBrowserDialog.cpp"
 #include "Widgets/foleys_MidiLearnComponent.cpp"

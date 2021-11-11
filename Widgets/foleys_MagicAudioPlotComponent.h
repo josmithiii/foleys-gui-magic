@@ -40,40 +40,58 @@ namespace foleys
 {
 
 /**
- This class collects your samples in a circular buffer and allows the GUI to
- draw it in the style of an oscilloscope
+ The MagicAudioPlotComponent allows drawing the data from a MagicAudioPlotSource.
  */
-class MagicOscilloscope : public MagicAudioPlotSource
+class MagicAudioPlotComponent  : public MagicPlotComponent
 {
 public:
 
-    /**
-     Create an oscilloscope adapter to push samples into for later display in the GUI.
+    enum ColourIds
+    {
+        plotColourId = 0x2001000,
+        plotInactiveColourId,
+        plotFillColourId,
+        plotInactiveFillColourId
+    };
 
-     @param channel lets you select the channel to analyse. -1 means summing all together (the default)
-     */
-    MagicOscilloscope (int channelToDisplay=-1);
+    MagicAudioPlotComponent();
 
-    void checkAudioBufferForNaNs (juce::AudioBuffer<float>& buffer);
+    virtual void setPlotSource (MagicPlotSource* source) override;
+    void setDecayFactor (float decayFactor);
+    void setTriggered (bool triggered);
+    void setOverlay (bool overlay);
+    void setChannel (int channel);
+    void setNumChannels (int numChannels);
+    void setPlotLength (int plotLength);
+    void setPlotOffset (int plotOffset);
 
-    /**
-     Push samples to a buffer to be visualised.
-     */
-    void pushSamples (const juce::AudioBuffer<float>& buffer) override;
+    void paint (juce::Graphics& g) override;
+    void resized() override;
 
-    /**
-     This is the callback that creates the frequency plot for drawing.
+    bool hitTest (int, int) override { return false; }
 
-      @param path is the path instance that is constructed by the MagicPlotSource
-      @param filledPath is the path instance that is constructed by the MagicPlotSource to be filled
-      @param bounds the bounds of the plot
-      @param component grants access to the plot component, e.g. to find the colours from it
-      */
-    void createPlotPaths (juce::Path& path, juce::Path& filledPath, juce::Rectangle<float> bounds, MagicPlotComponent& component) override;
+    bool needsUpdate() const;
 
-    void prepareToPlay (double sampleRate, int samplesPerBlockExpected) override;
+private:
+    void drawPlot (juce::Graphics& g);
+    void drawPlotGlowing (juce::Graphics& g);
+    void updateGlowBufferSize();
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MagicOscilloscope)
+    juce::WeakReference<MagicAudioPlotSource> plotSource;
+    juce::Path  path;
+    juce::Path  filledPath;
+
+    juce::int64 lastDataTimestamp = 0;
+    juce::Image glowBuffer;
+    float       decay = 0.0f;
+    bool        triggered = true;
+    bool        overlay = false;
+    int         channel = 0;
+    int         numChannels = 0;
+    int         plotLength = 0;
+    int         plotOffset = 0;
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MagicAudioPlotComponent)
 };
 
 } // namespace foleys

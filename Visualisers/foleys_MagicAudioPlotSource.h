@@ -45,7 +45,7 @@ class MagicPlotComponent;
  The MagicPlotSources act as an interface, so the GUI can visualise an arbitrary plot
  of data. To create a specific new plot, create a subclass and implement drawPlot.
  */
-  class MagicPlotAudioSource : public MagicPlotSource
+  class MagicAudioPlotSource : public MagicPlotSource
 {
 public:
 
@@ -56,11 +56,11 @@ public:
             The default plot length is 10 ms expressed in samples (sampleRate/100).
             Increase it to avoid truncated triggered plots at fundamentals below 100 Hz.
      */
-    MagicPlotAudioSource(int maxPlotLengthExpected=0)
+    MagicAudioPlotSource(int maxPlotLengthExpected=0)
     : maxPlotLength(maxPlotLengthExpected) {}
 
     /** Destructor. */
-    virtual ~MagicPlotAudioSource() override =default;
+    virtual ~MagicAudioPlotSource() override =default;
 
     virtual void prepareToPlay (double sampleRateToUse, int samplesPerBlockExpected) override
     {
@@ -110,7 +110,10 @@ public:
     virtual void setNumChannels (int nChans)
     {
         if (nChans > samples.getNumChannels())
+        {
             samples.setSize (nChans, static_cast<int> (sampleRate));
+            samples.clear();
+        }
     }
 
     /**
@@ -208,8 +211,8 @@ protected:
         return pos;
     }
 
-    JUCE_DECLARE_WEAK_REFERENCEABLE (MagicPlotAudioSource)
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MagicPlotAudioSource)
-}; // MagicPlotAudioSource
+    JUCE_DECLARE_WEAK_REFERENCEABLE (MagicAudioPlotSource)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MagicAudioPlotSource)
+}; // MagicAudioPlotSource
 
 } // namespace foleys
