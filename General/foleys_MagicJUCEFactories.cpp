@@ -622,11 +622,12 @@ const juce::Identifier  PlotItem::pDecay {"plot-decay"};
 
 //==============================================================================
 
-class AudioPlotItem : public PlotItem
+class AudioPlotItem : public GuiItem //? : public PlotItem
 {
 public:
     FOLEYS_DECLARE_GUI_FACTORY (AudioPlotItem)
 
+    static const juce::Identifier  pDecay;
     static const juce::Identifier  pTriggered;
     static const juce::Identifier  pOverlay;
     static const juce::Identifier  pChannel1Based;
@@ -634,7 +635,7 @@ public:
     static const juce::Identifier  pPlotLength;
     static const juce::Identifier  pPlotOffset;
 
-    AudioPlotItem (MagicGUIBuilder& builder, const juce::ValueTree& node) : PlotItem (builder, node) { }
+    AudioPlotItem (MagicGUIBuilder& builder, const juce::ValueTree& node) : GuiItem (builder, node) { } //? PlotItem (builder, node) { }
 
     void update() override // and REPLACE, since plotSource must be our specific derived class MagicAudioPlotSource
     {
@@ -666,7 +667,8 @@ public:
 
     std::vector<SettableProperty> getSettableProperties() const override
     {
-        std::vector<SettableProperty> props { PlotItem::getSettableProperties() };
+        std::vector<SettableProperty> props; //? { AudioPlotItem::getSettableProperties() };
+        props.push_back ({ configNode, pDecay,         SettableProperty::Number, {}, {} });
         props.push_back ({ configNode, pTriggered,     SettableProperty::Toggle, {}, {} });
         props.push_back ({ configNode, pOverlay,       SettableProperty::Toggle, {}, {} });
         props.push_back ({ configNode, pChannel1Based, SettableProperty::Number, {}, {} });
@@ -686,6 +688,7 @@ private:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioPlotItem)
 };
+const juce::Identifier  AudioPlotItem::pDecay {"plot-decay"};
 const juce::Identifier  AudioPlotItem::pTriggered {"plot-triggered"};
 const juce::Identifier  AudioPlotItem::pOverlay {"plot-overlay"};
 const juce::Identifier  AudioPlotItem::pChannel1Based {"plot-channel"};
