@@ -590,7 +590,7 @@ public:
         addAndMakeVisible (plot);
     }
 
-    virtual void update() override
+    void update() override
     {
         auto sourceID = configNode.getProperty (IDs::source, juce::String()).toString();
         if (sourceID.isNotEmpty())
@@ -635,13 +635,24 @@ public:
     static const juce::Identifier  pPlotLength;
     static const juce::Identifier  pPlotOffset;
 
-    AudioPlotItem (MagicGUIBuilder& builder, const juce::ValueTree& node) : GuiItem (builder, node) { } //? PlotItem (builder, node) { }
+    AudioPlotItem (MagicGUIBuilder& builder, const juce::ValueTree& node) : GuiItem (builder, node) //? PlotItem (builder, node) { }
+    {
+        setColourTranslation (
+        {
+            { "plot-color", MagicAudioPlotComponent::plotColourId },
+            { "plot-fill-color", MagicAudioPlotComponent::plotFillColourId },
+            { "plot-inactive-color", MagicAudioPlotComponent::plotInactiveColourId },
+            { "plot-inactive-fill-color", MagicAudioPlotComponent::plotInactiveFillColourId }
+        });
+
+        addAndMakeVisible (plot);
+    }
 
     void update() override // and REPLACE, since plotSource must be our specific derived class MagicAudioPlotSource
     {
         auto sourceID = configNode.getProperty (IDs::source, juce::String()).toString();
         if (sourceID.isNotEmpty())
-            plot.setPlotSource (getMagicState().getObjectWithType<MagicAudioPlotSource>(sourceID)); // using MagicPlotSource would require much dynamic casting below
+            plot.setPlotSource (getMagicState().getObjectWithType<MagicAudioPlotSource>(sourceID));
 
         auto decay = float (getProperty (pDecay));
         plot.setDecayFactor (decay);
@@ -668,6 +679,7 @@ public:
     std::vector<SettableProperty> getSettableProperties() const override
     {
         std::vector<SettableProperty> props; //? { AudioPlotItem::getSettableProperties() };
+        props.push_back ({ configNode, IDs::source, SettableProperty::Choice, {}, magicBuilder.createObjectsMenuLambda<MagicAudioPlotSource>() });
         props.push_back ({ configNode, pDecay,         SettableProperty::Number, {}, {} });
         props.push_back ({ configNode, pTriggered,     SettableProperty::Toggle, {}, {} });
         props.push_back ({ configNode, pOverlay,       SettableProperty::Toggle, {}, {} });

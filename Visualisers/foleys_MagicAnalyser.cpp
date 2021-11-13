@@ -49,7 +49,7 @@ void MagicAnalyser::pushSamples (const juce::AudioBuffer<float>& buffer)
     analyserJob.pushSamples (buffer, channel);
 }
 
-void MagicAnalyser::createPlotPaths (juce::Path& path, juce::Path& filledPath, juce::Rectangle<float> bounds, MagicAudioPlotComponent&)
+void MagicAnalyser::createPlotPaths (juce::Path& path, juce::Path& filledPath, juce::Rectangle<float> bounds, MagicPlotComponent&)
 {
     const float minFreq = 20.0f;
     const auto& data = analyserJob.getAnalyserData();
