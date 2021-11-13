@@ -39,8 +39,6 @@
 namespace foleys
 {
 
-class MagicAudioPlotComponent;
-
 /**
  This will plot the magnitudes of the frequencies in a signal. The processing happens in a worker thread
  to keep the audio thread free.

@@ -40,82 +40,50 @@ namespace foleys
 
 
 MagicOscilloscope::MagicOscilloscope (int channelToDisplay)
-  : MagicAudioPlotSource(channelToDisplay)
+  : channel (channelToDisplay)
 {
-}
-
-void MagicOscilloscope::checkAudioBufferForNaNs (juce::AudioBuffer<float>& buffer)
-{ // Check for and clear any NaNs in :
-  int nChans = buffer.getNumChannels();
-  int nSamps = buffer.getNumSamples();
-  int nNaNs = 0; // NaNs usually indicate parameters not getting set (no init, etc.)
-  for (int c=0; c<nChans; c++) {
-    float* bufP = buffer.getWritePointer(c);
-    for (int n=0; n<nSamps; n++) {
-      if (isnan(bufP[n])) {
-        bufP[n] = 0.0f;
-        nNaNs++;
-      }
-    }
-  }
-  if (nNaNs>0) {
-    std::cerr << "*** MagicOscilloscope.cpp: Have " << nNaNs << " NaNs!\n";
-  }
 }
 
 void MagicOscilloscope::pushSamples (const juce::AudioBuffer<float>& buffer)
 {
-    const int  numChannelsIn = buffer.getNumChannels();
-    int numChannelsOut = numChannelsIn; // until determined otherwise
-  
-    // checkAudioBufferForNaNs(buffer);
-
-    if (channel >= 0) {
-      numChannelsOut = 1;
-    } else {
-      channel = 0; // default
-    }
-
-    bool averageChannels = (numChannelsOut>1) && not overlayPlots;
-
-    if (averageChannels)
-    {
-      averageAllChannelsToSamplesChannel0(buffer);
-      numChannelsOut = 1;
-    }
-
-    jassert(channel >= 0);
-
-    // Copy available samples
-    int w = writePosition.load();
+    auto w = writePosition.load();
+    const auto numSamples = buffer.getNumSamples();
     const auto available  = samples.getNumSamples() - w;
-    int numSamples = buffer.getNumSamples();
-    if (available >= numSamples) // Copy all of the input buffer into our local ring buffer at its current write position w:
+
+    if (channel < 0)
     {
-        samples.copyFrom (0, w, buffer.getReadPointer (channel), numSamples);
-        if (numChannelsOut>1 && overlayPlots) // must also copy higher channels
+        // mono summing all channels and average
+        const auto gain = 1.0f / buffer.getNumChannels();
+        if (available >= numSamples)
         {
-            for (int c=channel+1; c < std::min<int>(samples.getNumChannels(),buffer.getNumChannels()); c++)
+            samples.copyFrom (0, w, buffer.getReadPointer (0), numSamples, gain);
+            for (int c = 1; c < buffer.getNumChannels(); ++c)
+                samples.addFrom (0, w, buffer.getReadPointer (c), numSamples, gain);
+        }
+        else
+        {
+            samples.copyFrom (0, w, buffer.getReadPointer (0),            available, gain);
+            samples.copyFrom (0, 0, buffer.getReadPointer (0, available), numSamples - available, gain);
+            for (int c = 1; c < buffer.getNumChannels(); ++c)
             {
-                  samples.copyFrom (c-channel, w, buffer.getReadPointer (c), numSamples);
+                samples.addFrom (0, w, buffer.getReadPointer (c),            available, gain);
+                samples.addFrom (0, 0, buffer.getReadPointer (c, available), numSamples - available, gain);
             }
         }
     }
-    else // must break up the copy into two pieces due to wraparound in the ring buffer:
+    else
     {
-        samples.copyFrom (0, w, buffer.getReadPointer (channel), available);
-        samples.copyFrom (0, 0, buffer.getReadPointer (channel, available), numSamples - available);
-        if (numChannelsOut>1 && overlayPlots) // must also copy higher channels
+        // plotting individual channel
+        if (available >= numSamples)
         {
-            for (int c=channel+1; c < std::min<int>(samples.getNumChannels(),buffer.getNumChannels()); c++)
-            {
-                samples.copyFrom (c-channel, w, buffer.getReadPointer (c), available);
-                samples.copyFrom (c-channel, 0, buffer.getReadPointer (c, available), numSamples - available);
-            }
+            samples.copyFrom (0, w, buffer.getReadPointer (channel), numSamples);
+        }
+        else
+        {
+            samples.copyFrom (0, w, buffer.getReadPointer (channel),            available);
+            samples.copyFrom (0, 0, buffer.getReadPointer (channel, available), numSamples - available);
         }
     }
-  
-    checkAudioBufferForNaNs(samples);
 
     if (available > numSamples)
         writePosition.store (w + numSamples);
@@ -125,19 +93,37 @@ void MagicOscilloscope::pushSamples (const juce::AudioBuffer<float>& buffer)
     resetLastDataFlag();
 }
 
-void MagicOscilloscope::createPlotPaths (juce::Path& path, juce::Path& filledPath, juce::Rectangle<float> bounds, MagicAudioPlotComponent&)
+void MagicOscilloscope::createPlotPaths (juce::Path& path, juce::Path& filledPath, juce::Rectangle<float> bounds, MagicPlotComponent&)
 {
     if (sampleRate < 20.0f)
         return;
 
-    const auto  numToDisplay = (plotLength > 0 ?
-                                std::min<int>(plotLength,samples.getNumSamples()) :
-                                int (0.01 * sampleRate) - 1);
+    const auto  numToDisplay = int (0.01 * sampleRate) - 1;
+    const auto* data = samples.getReadPointer (0);
 
-    auto* data = samples.getReadPointer (0);
+    auto pos = writePosition.load() - numToDisplay;
+    if (pos < 0)
+        pos += samples.getNumSamples();
 
-    const auto pos0 = writePosition.load() - numToDisplay;
-    auto pos = getReadPosition(data, pos0); // advance to next zero-crossing if in triggered mode
+    // trigger
+    auto sign = data [pos] > 0.0f;
+    auto bail = int (sampleRate / 20.0f);
+
+    while (sign == false && --bail > 0)
+    {
+        if (--pos < 0)
+            pos += samples.getNumSamples();
+
+        sign = data [pos] > 0.0f;
+    }
+
+    while (sign == true && --bail > 0)
+    {
+        if (--pos < 0)
+            pos += samples.getNumSamples();
+
+        sign = data [pos] > 0.0f;
+    }
 
     path.clear();
     path.startNewSubPath (bounds.getX(),
@@ -157,38 +143,16 @@ void MagicOscilloscope::createPlotPaths (juce::Path& path, juce::Path& filledPat
     filledPath.lineTo (bounds.getBottomRight());
     filledPath.lineTo (bounds.getBottomLeft());
     filledPath.closeSubPath();
-
-    int numChannelsOut = samples.getNumChannels();
-    if (numChannelsOut>1 && overlayPlots) // must also draw higher channels
-    {
-        path.closeSubPath(); // interestingly we leave the last subpath open!
-        float currOffsetY = 0.0f;
-        float plotOffsetY = plotOffset * bounds.getHeight();
-        for (int c=1; c<numChannelsOut; c++)
-        {
-            data = samples.getReadPointer (c);
-            pos = pos0;
-            currOffsetY += plotOffsetY;
-            path.startNewSubPath (bounds.getX(),
-                                  juce::jmap (data [pos] + currOffsetY, -1.0f, 1.0f, bounds.getBottom(), bounds.getY()));
-
-            for (int i = 1; i < numToDisplay; ++i)
-            {
-                ++pos;
-                if (pos >= samples.getNumSamples())
-                    pos -= samples.getNumSamples();
-
-                path.lineTo (juce::jmap (float (i),   0.0f, float (numToDisplay), bounds.getX(), bounds.getRight()),
-                             juce::jmap (data [pos] + currOffsetY, -1.0f, 1.0f,   bounds.getBottom(), bounds.getY()));
-            }
-        }
-    }
 }
 
-void MagicOscilloscope::prepareToPlay (double sampleRateToUse, int samplesPerBlockExpected)
+void MagicOscilloscope::prepareToPlay (double sampleRateToUse, int)
 {
-    MagicAudioPlotSource::prepareToPlay(sampleRateToUse, samplesPerBlockExpected);
-    // Anything else needed goes here:
+    sampleRate = sampleRateToUse;
+
+    samples.setSize (1, static_cast<int> (sampleRate));
+    samples.clear();
+
+    writePosition.store (0);
 }
 
 

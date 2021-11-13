@@ -39,13 +39,11 @@
 namespace foleys
 {
 
-class MagicAudioPlotComponent;
-
 /**
  This class collects your samples in a circular buffer and allows the GUI to
  draw it in the style of an oscilloscope
  */
-class MagicOscilloscope : public MagicAudioPlotSource
+class MagicOscilloscope : public MagicPlotSource
 {
 public:
 
@@ -54,9 +52,7 @@ public:
 
      @param channel lets you select the channel to analyse. -1 means summing all together (the default)
      */
-    MagicOscilloscope (int channelToDisplay=-1);
-
-    void checkAudioBufferForNaNs (juce::AudioBuffer<float>& buffer);
+    MagicOscilloscope (int channel=-1);
 
     /**
      Push samples to a buffer to be visualised.
@@ -66,14 +62,21 @@ public:
     /**
      This is the callback that creates the frequency plot for drawing.
 
-      @param path is the path instance that is constructed by the MagicAudioPlotSource
-      @param filledPath is the path instance that is constructed by the MagicAudioPlotSource to be filled
+      @param path is the path instance that is constructed by the MagicPlotSource
+      @param filledPath is the path instance that is constructed by the MagicPlotSource to be filled
       @param bounds the bounds of the plot
       @param component grants access to the plot component, e.g. to find the colours from it
       */
-    void createPlotPaths (juce::Path& path, juce::Path& filledPath, juce::Rectangle<float> bounds, MagicAudioPlotComponent& component) override;
+    void createPlotPaths (juce::Path& path, juce::Path& filledPath, juce::Rectangle<float> bounds, MagicPlotComponent& component) override;
 
     void prepareToPlay (double sampleRate, int samplesPerBlockExpected) override;
+
+private:
+    int                      channel = -1;
+    double                   sampleRate = 0.0;
+
+    juce::AudioBuffer<float> samples;
+    std::atomic<int>         writePosition;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MagicOscilloscope)
 };
