@@ -39,12 +39,12 @@ namespace foleys
 {
 
 
-MagicOscilloscope::MagicOscilloscope (int channelToDisplay)
+MagicOscilloscopeAudio::MagicOscilloscopeAudio (int channelToDisplay)
   : MagicAudioPlotSource(channelToDisplay)
 {
 }
 
-void MagicOscilloscope::checkAudioBufferForNaNs (juce::AudioBuffer<float>& buffer)
+void MagicOscilloscopeAudio::checkAudioBufferForNaNs (juce::AudioBuffer<float>& buffer)
 { // Check for and clear any NaNs in :
   int nChans = buffer.getNumChannels();
   int nSamps = buffer.getNumSamples();
@@ -59,11 +59,11 @@ void MagicOscilloscope::checkAudioBufferForNaNs (juce::AudioBuffer<float>& buffe
     }
   }
   if (nNaNs>0) {
-    std::cerr << "*** MagicOscilloscope.cpp: Have " << nNaNs << " NaNs!\n";
+    std::cerr << "*** MagicOscilloscopeAudio.cpp: Have " << nNaNs << " NaNs!\n";
   }
 }
 
-void MagicOscilloscope::pushSamples (const juce::AudioBuffer<float>& buffer)
+void MagicOscilloscopeAudio::pushSamples (const juce::AudioBuffer<float>& buffer)
 {
     const int  numChannelsIn = buffer.getNumChannels();
     int numChannelsOut = numChannelsIn; // until determined otherwise
@@ -125,7 +125,7 @@ void MagicOscilloscope::pushSamples (const juce::AudioBuffer<float>& buffer)
     resetLastDataFlag();
 }
 
-void MagicOscilloscope::createPlotPaths (juce::Path& path, juce::Path& filledPath, juce::Rectangle<float> bounds, MagicAudioPlotComponent&)
+void MagicOscilloscopeAudio::createPlotPaths (juce::Path& path, juce::Path& filledPath, juce::Rectangle<float> bounds, MagicAudioPlotComponent&)
 {
     if (sampleRate < 20.0f)
         return;
@@ -185,7 +185,7 @@ void MagicOscilloscope::createPlotPaths (juce::Path& path, juce::Path& filledPat
     }
 }
 
-void MagicOscilloscope::prepareToPlay (double sampleRateToUse, int samplesPerBlockExpected)
+void MagicOscilloscopeAudio::prepareToPlay (double sampleRateToUse, int samplesPerBlockExpected)
 {
     MagicAudioPlotSource::prepareToPlay(sampleRateToUse, samplesPerBlockExpected);
     // Anything else needed goes here:

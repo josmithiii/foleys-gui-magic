@@ -68,6 +68,7 @@
 #include "Visualisers/foleys_MagicFilterPlot.cpp"
 #include "Visualisers/foleys_MagicAnalyser.cpp"
 #include "Visualisers/foleys_MagicOscilloscope.cpp"
+#include "Visualisers/foleys_MagicOscilloscopeAudio.cpp"
 #include "Visualisers/foleys_MagicScatterPlot.cpp"
 
 #include "Widgets/foleys_MagicLevelMeter.cpp"

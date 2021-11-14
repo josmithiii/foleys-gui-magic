@@ -45,7 +45,7 @@ class MagicAudioPlotComponent;
  This class collects your samples in a circular buffer and allows the GUI to
  draw it in the style of an oscilloscope
  */
-class MagicOscilloscope : public MagicAudioPlotSource
+class MagicOscilloscopeAudio : public MagicAudioPlotSource
 {
 public:
 
@@ -54,7 +54,7 @@ public:
 
      @param channel lets you select the channel to analyse. -1 means summing all together (the default)
      */
-    MagicOscilloscope (int channelToDisplay=-1);
+    MagicOscilloscopeAudio (int channelToDisplay=-1);
 
     void checkAudioBufferForNaNs (juce::AudioBuffer<float>& buffer);
 
@@ -75,7 +75,7 @@ public:
 
     void prepareToPlay (double sampleRate, int samplesPerBlockExpected) override;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MagicOscilloscope)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MagicOscilloscopeAudio)
 };
 
 } // namespace foleys
