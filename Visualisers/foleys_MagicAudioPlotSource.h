@@ -53,7 +53,7 @@ public:
     MagicAudioPlotSource()=default;
 
     /** Constructor allowing specification of a channel to display, or -1 to indicate all channels. */
-    MagicAudioPlotSource(int channelToDisplay) : channel(channelToDisplay) {}
+    MagicAudioPlotSource(int channelToDisplay) : plotChannel(channelToDisplay) {}
 
     /** Destructor. */
     virtual ~MagicAudioPlotSource()=default;
@@ -71,9 +71,9 @@ public:
     virtual void setOverlay (bool overlay) { overlayPlots = overlay; }
 
     /**
-     Set audio channel to plot (numbering from 0) or -1 to plot all channels (overlay or sum). Default is -1.
+     Set first audio channel to plot (numbering from 0) or -1 to plot all channels (overlay or sum). Default is -1.
      */
-    virtual void setChannel (int channelCode) { channel = channelCode; }
+    virtual void setChannel (int channelCode) { plotChannel = channelCode; }
 
     /**
      Set number of audio channels to plot in overlay mode, or to average if not overlaid, with 0 meaning all channels.
@@ -175,7 +175,9 @@ protected:
     std::atomic<int>         writePosition;
     bool triggered = true;
     bool overlayPlots = false; // When false, plot either a single channel or the sum of all channels
-    int channel = -1;          // -1 denotes the sum of all channels (note that we could use -2 in place of bool overlayPlots)
+    int plotChannel = -1;      // -1 denotes the sum of all channels
+                               //    (note that we could use -2 in place of bool overlayPlots)
+    int numPlotChannels = 0;   // 0 denotes all channels, set by pushSamples, read by drawPlot
     int maxPlotLength = 0;     // when this is right, samples array never needs to resize itself while plotting
     int plotLength = 0;
     float plotOffset = 0;
@@ -186,22 +188,23 @@ protected:
         const auto available  = samples.getNumSamples() - w;
 
         const auto numSamples = buffer.getNumSamples();
-        const auto numChannelsIn = buffer.getNumChannels();
+        const auto numChannelsIn = std::min<int>(numPlotChannels,buffer.getNumChannels()-plotChannel);
         const auto gain = 1.0f /  numChannelsIn;
         if (available >= numSamples)
         {
-            samples.copyFrom (0, w, buffer.getReadPointer (0), numSamples, gain);
+            samples.copyFrom (0, w, buffer.getReadPointer (plotChannel), numSamples, gain);
             for (int c = 1; c <  numChannelsIn; ++c)
-                samples.addFrom (0, w, buffer.getReadPointer (c), numSamples, gain);
+                samples.addFrom (0, w, buffer.getReadPointer (plotChannel+c-1), numSamples, gain);
         }
         else
         {
-            samples.copyFrom (0, w, buffer.getReadPointer (0),            available, gain);
-            samples.copyFrom (0, 0, buffer.getReadPointer (0, available), numSamples - available, gain);
+            samples.copyFrom (0, w, buffer.getReadPointer (plotChannel), available, gain);
+            samples.copyFrom (0, 0, buffer.getReadPointer (plotChannel), numSamples - available, gain);
             for (int c = 1; c <  numChannelsIn; ++c)
             {
-                samples.addFrom (0, w, buffer.getReadPointer (c),            available, gain);
-                samples.addFrom (0, 0, buffer.getReadPointer (c, available), numSamples - available, gain);
+                samples.addFrom (0, w, buffer.getReadPointer (plotChannel+c-1), available, gain);
+                samples.addFrom (0, 0, buffer.getReadPointer (plotChannel+c-1, available),
+                                 numSamples - available, gain);
             }
         }
     }

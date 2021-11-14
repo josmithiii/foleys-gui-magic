@@ -43,9 +43,9 @@ void MagicScatterPlot::pushSamples (const juce::AudioBuffer<float>& buffer)
   int numChannels = buffer.getNumChannels();
   int chanX = 0;
   int chanY = 1;
-  if (channel >= 0) { // from parent MagicPlotSource and set by Editor
-    chanX = channel;
-    chanY = channel+1;
+  if (plotChannel >= 0) { // from parent MagicPlotSource and set by Editor
+    chanX = plotChannel;
+    chanY = plotChannel+1;
   }
   chanX = std::min<int>(chanX,numChannels-1);
   chanY = std::min<int>(chanY,numChannels-1);
@@ -54,9 +54,12 @@ void MagicScatterPlot::pushSamples (const juce::AudioBuffer<float>& buffer)
 
 void MagicScatterPlot::pushSamples (const juce::AudioBuffer<float>& bufferX, int channelX,
                                     const juce::AudioBuffer<float>& bufferY, int channelY,
-                                    int plotLength)
+                                    int plotLengthOverride)
 {
     auto w = writePosition.load();
+
+    if (plotLengthOverride > 0)
+        plotLength = plotLengthOverride; // Consider keeping plotLength around to use if override returns to 0
 
     const auto numSamples = bufferX.getNumSamples();
     jassert(numSamples == bufferY.getNumSamples());

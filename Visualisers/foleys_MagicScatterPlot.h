@@ -71,7 +71,7 @@ public:
      */
     void pushSamples (const juce::AudioBuffer<float>& bufferX, int channelX,
                       const juce::AudioBuffer<float>& bufferY, int channelY,
-                      const int plotLength) override;
+                      const int plotLengthOverride=0) override;
 
     /**
      This is the callback that creates the frequency plot for drawing.
