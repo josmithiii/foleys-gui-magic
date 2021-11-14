@@ -57,7 +57,7 @@ namespace IDs
     static juce::Identifier comboBox     { "ComboBox" };
     static juce::Identifier meter        { "Meter" };
     static juce::Identifier plot         { "Plot" };
-    static juce::Identifier plotAudio    { "PlotAudio" };
+    static juce::Identifier audioPlot    { "AudioPlot" };
     static juce::Identifier xyDragComponent   { "XYDragComponent" };
     static juce::Identifier keyboardComponent { "KeyboardComponent" };
     static juce::Identifier drumpadComponent  { "DrumpadComponent" };
