@@ -672,7 +672,7 @@ public:
         auto plotLength = int (getProperty (pPlotLength));
         plot.setPlotLength (plotLength);
 
-        auto plotOffset = int (getProperty (pPlotOffset));
+        auto plotOffset = float (getProperty (pPlotOffset));
         plot.setPlotOffset (plotOffset);
     }
 
