@@ -57,7 +57,7 @@ void ApplicationSettings::setFileName (juce::File file)
     startTimerHz (1);
 }
 
-void ApplicationSettings::load()
+void ApplicationSettings::load() // load settingsFile if it has changed, merging it with current settings, and save that out
 {
     juce::InterProcessLock lock (settingsFile.getFileName() + ".lock");
 
