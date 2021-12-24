@@ -73,7 +73,9 @@ public:
     /**
      Set first audio channel to plot (numbering from 0) or -1 to plot all channels (overlay or sum). Default is -1.
      */
-    virtual void setChannel (int channelCode) { plotChannel = channelCode; }
+    virtual void setChannel (int channelCode) {
+      plotChannel = channelCode;
+    }
 
     /**
      Set number of audio channels to plot in overlay mode, or to average if not overlaid, with 0 meaning all channels.

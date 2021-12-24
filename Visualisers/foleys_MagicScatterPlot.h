@@ -86,12 +86,10 @@ public:
     virtual void prepareToPlay (double sampleRate, int samplesPerBlockExpected) override;
 
 private:
-    double                   sampleRate = 0.0;
     int                      currentPlotLength = 0;
 
     juce::AudioBuffer<float> samplesX;
     juce::AudioBuffer<float> samplesY;
-    std::atomic<int>         writePosition;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MagicScatterPlot)
 };
