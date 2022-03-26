@@ -52,6 +52,17 @@ enum class LayoutType
 };
 
 /**
+ The scroll mode
+ */
+enum class ScrollMode
+{
+    NoScroll,
+    ScrollHorizontal,
+    ScrollVertical,
+    ScrollBoth
+};
+
+/**
  The Container is a GuiItem, that can hold multiple Components.
  In the editor it is seen as "View". With the setting "display"
  the layout strategy can be chosen.
@@ -126,10 +137,10 @@ public:
 #endif
 
 private:
-    class ContainerBox : public juce::Component
+    class Scroller : public juce::Viewport
     {
     public:
-        ContainerBox (Container& owner);
+        Scroller (Container& owner);
 
         void paint (juce::Graphics& g) override;
         void setBackgroundColour (juce::Colour colour);
@@ -137,7 +148,7 @@ private:
     private:
         Container& owner;
         juce::Colour backgroundColour;
-        JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ContainerBox)
+        JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Scroller)
     };
 
     void changeListenerCallback (juce::ChangeBroadcaster*) override;
@@ -149,12 +160,15 @@ private:
     int  currentTab = 0;
     int  refreshRateHz = 30;
 
-    LayoutType layout = LayoutType::FlexBox;
+    LayoutType    layout = LayoutType::FlexBox;
     juce::FlexBox flexBox;
 
-    ContainerBox containerBox { *this };
+    ScrollMode    scrollMode = ScrollMode::NoScroll;
+
+    juce::Component                         containerBox;
+    Scroller                                viewport { *this };
     std::unique_ptr<juce::TabbedButtonBar>  tabbedButtons;
-    std::vector<std::unique_ptr<GuiItem>> children;
+    std::vector<std::unique_ptr<GuiItem>>   children;
 
     std::vector<juce::Component::SafePointer<MagicPlotComponent>> plotComponents;
 

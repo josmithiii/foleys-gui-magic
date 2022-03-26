@@ -47,6 +47,14 @@ ToolBox::ToolBox (juce::Component* parentToUse, MagicGUIBuilder& builderToContro
     builder (builderToControl),
     undo (builder.getUndoManager())
 {
+    appProperties.setStorageParameters (getApplicationPropertyStorage());
+
+    if (auto* properties = appProperties.getUserSettings())
+    {
+        positionOption = ToolBox::positionOptionFromString (properties->getValue ("position"));
+        setAlwaysOnTop (properties->getValue ("alwaysOnTop") == "true");
+    }
+
     EditorColours::background = findColour (juce::ResizableWindow::backgroundColourId);
     EditorColours::outline = juce::Colours::silver;
     EditorColours::text = juce::Colours::white;
@@ -88,7 +96,11 @@ ToolBox::ToolBox (juce::Component* parentToUse, MagicGUIBuilder& builderToContro
         view.addItem ("Right", true, positionOption == right, [&]() { setToolboxPosition (right); });
         view.addItem ("Detached", true, positionOption == detached, [&]() { setToolboxPosition (detached); });
         view.addSeparator();
-        view.addItem ("AlwaysOnTop", true, isAlwaysOnTop(), [&]() { setAlwaysOnTop ( ! isAlwaysOnTop() ); });
+        view.addItem ("AlwaysOnTop", true, isAlwaysOnTop(), [&]() {
+            setAlwaysOnTop ( ! isAlwaysOnTop() );
+            if (auto* properties = appProperties.getUserSettings())
+                properties->setValue ("alwaysOnTop", isAlwaysOnTop() ? "true" : "false");
+        });
 
         view.showMenuAsync (juce::PopupMenu::Options());
     };
@@ -355,6 +367,9 @@ void ToolBox::setToolboxPosition (PositionOption position)
     positionOption = position;
     const auto isDetached = (positionOption == PositionOption::detached);
 
+    auto* userSettings = appProperties.getUserSettings();
+    userSettings->setValue ("position", ToolBox::positionOptionToString (positionOption));
+
     resizeCorner.setVisible (isDetached);
 
     if (isDetached)
@@ -398,6 +413,29 @@ void ToolBox::setLastLocation(juce::File file)
 std::unique_ptr<juce::FileFilter> ToolBox::getFileFilter() const
 {
     return std::make_unique<juce::WildcardFileFilter>("*.xml", "*", "XML files");
+}
+
+juce::String ToolBox::positionOptionToString (PositionOption option)
+{
+    switch (option)
+    {
+        case PositionOption::left:
+            return "left";
+        case PositionOption::right:
+            return "right";
+        case PositionOption::detached:
+            return "detached";
+    }
+}
+
+ToolBox::PositionOption ToolBox::positionOptionFromString (juce::String text)
+{
+    if (text == ToolBox::positionOptionToString (PositionOption::detached))
+        return PositionOption::detached;
+    if (text == ToolBox::positionOptionToString (PositionOption::right))
+        return PositionOption::right;
+
+    return PositionOption::left;
 }
 
 juce::PropertiesFile::Options ToolBox::getApplicationPropertyStorage()
