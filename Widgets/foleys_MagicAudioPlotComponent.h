@@ -59,6 +59,7 @@ public:
 
     void setPlotSource (MagicAudioPlotSource* source);
     void setDecayFactor (float decayFactor);
+    void setGradientFromString (const juce::String& cssString, Stylesheet& stylesheet);
 
     void paint (juce::Graphics& g) override;
     void resized() override;
@@ -80,8 +81,9 @@ public:
     void updateGlowBufferSize();
 
     juce::WeakReference<MagicAudioPlotSource> plotSource;
-    juce::Path  path;
-    juce::Path  filledPath;
+    juce::Path                                path;
+    juce::Path                                filledPath;
+    std::unique_ptr<GradientBackground>       gradient;
 
     juce::int64 lastDataTimestamp = 0;
     juce::Image glowBuffer;

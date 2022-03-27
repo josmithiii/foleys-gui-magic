@@ -61,6 +61,19 @@ void MagicAudioPlotComponent::setDecayFactor (float decayFactor)
     updateGlowBufferSize();
 }
 
+void MagicAudioPlotComponent::setGradientFromString (const juce::String& cssString, Stylesheet& stylesheet)
+{
+    if (cssString.isNotEmpty())
+    {
+        gradient = std::make_unique<GradientBackground>();
+        gradient->setup(cssString, stylesheet);
+    }
+    else
+    {
+        gradient.reset();
+    }
+}
+
 void MagicAudioPlotComponent::setTriggered (bool t)
 {
     triggered = t;
@@ -123,6 +136,9 @@ void MagicAudioPlotComponent::paint (juce::Graphics& g)
         lastDataTimestamp = lastUpdate;
     }
 
+    if (gradient)
+        gradient->setupGradientFill (g, getLocalBounds().toFloat());
+
     if (! glowBuffer.isNull())
         drawPlotGlowing (g);
     else
@@ -135,11 +151,12 @@ void MagicAudioPlotComponent::drawPlot (juce::Graphics& g)
 {
     const auto active = plotSource->isActive();
     auto colour = findColour (active ? plotFillColourId : plotInactiveFillColourId);
-    if (colour.isTransparent() == false)
-    {
+
+    if (!gradient && colour.isTransparent() == false)
         g.setColour (colour);
+
+    if (gradient || colour.isTransparent())
         g.fillPath (filledPath);
-    }
 
     colour = findColour (active ? plotColourId : plotInactiveColourId);
     if (colour.isTransparent() == false)

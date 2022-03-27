@@ -623,8 +623,8 @@ private:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PlotItem)
 };
-const juce::Identifier  PlotItem::pDecay    {"plot-decay"};
-const juce::Identifier  PlotItem::pGradient {"plot-gradient"};
+const juce::Identifier  PlotItem::pDecay         {"plot-decay"};
+const juce::Identifier  PlotItem::pGradient      {"plot-gradient"};
 
 //==============================================================================
 
@@ -634,6 +634,8 @@ public:
     FOLEYS_DECLARE_GUI_FACTORY (AudioPlotItem)
 
     static const juce::Identifier  pDecay;
+    static const juce::Identifier  pGradient;
+
     static const juce::Identifier  pTriggered;
     static const juce::Identifier  pOverlay;
     static const juce::Identifier  pChannel1Based;
@@ -663,6 +665,9 @@ public:
         auto decay = float (getProperty (pDecay));
         plot.setDecayFactor (decay);
 
+        auto gradient = configNode.getProperty (pGradient, juce::String()).toString();
+        plot.setGradientFromString (gradient, magicBuilder.getStylesheet());
+
         auto triggered = bool (getProperty (pTriggered));
         plot.setTriggered (triggered);
 
@@ -687,6 +692,7 @@ public:
         std::vector<SettableProperty> props; //? { AudioPlotItem::getSettableProperties() };
         props.push_back ({ configNode, IDs::source, SettableProperty::Choice, {}, magicBuilder.createObjectsMenuLambda<MagicAudioPlotSource>() });
         props.push_back ({ configNode, pDecay,         SettableProperty::Number, {}, {} });
+        props.push_back ({ configNode, pGradient,      SettableProperty::Gradient, {}, {} });
         props.push_back ({ configNode, pTriggered,     SettableProperty::Toggle, {}, {} });
         props.push_back ({ configNode, pOverlay,       SettableProperty::Toggle, {}, {} });
         props.push_back ({ configNode, pChannel1Based, SettableProperty::Number, {}, {} });
@@ -707,6 +713,7 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioPlotItem)
 };
 const juce::Identifier  AudioPlotItem::pDecay {"plot-decay"};
+const juce::Identifier  AudioPlotItem::pGradient {"plot-gradient"};
 const juce::Identifier  AudioPlotItem::pTriggered {"plot-triggered"};
 const juce::Identifier  AudioPlotItem::pOverlay {"plot-overlay"};
 const juce::Identifier  AudioPlotItem::pChannel1Based {"plot-channel"};
