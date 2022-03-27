@@ -170,6 +170,12 @@ void MagicOscilloscopeAudio::createPlotPaths (juce::Path& path, juce::Path& fill
         if (pos >= numPlotSamplesAvailable)
             pos -= numPlotSamplesAvailable;
 
+        static bool sawNonzero = false;
+        if (not sawNonzero && data[pos] != 0.0f)
+        {
+            sawNonzero = true;
+            DBG("MagicOscilloscopeAudio::createPlotPaths: First nonzero sample to plot is " << data[pos]);
+        }
         // FIXME: MAKE DOT-DASHED with 1 dot/channel, i.e., numPlotChannels dots per dash
         path.lineTo (juce::jmap (float (i),   0.0f, float (numToDisplay-1), plotMinX, plotMaxX),
                      juce::jmap (data [pos], -1.0f,          1.0f,          plotMinY, plotMaxY));

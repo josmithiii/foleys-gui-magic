@@ -59,16 +59,16 @@ public:
     virtual ~MagicAudioPlotSource()=default;
 
     /**
-     Set whether a multichannel plot is an overlay or sum of all channels. Default is sum.
-     @param isTriggered, if true, means each plot begins at a zero-crossing (default = true).
+     Set whether plot is triggered by a zero-crossing or free runs.
+     @param isTriggered, if true, means each plot begins at a zero-crossing.
             Otherwise, the latest samples received are plotted for each audio buffer.
      */
     virtual void setTriggered (bool isTriggered) { triggered = isTriggered; }
 
     /**
-     Set whether plot is triggered by a zero-crossing or free runs. Default is triggered.
+     Set whether a multichannel plot is an overlay or sum of all channels.
      */
-    virtual void setOverlay (bool overlay) { overlayPlots = overlay; }
+   virtual void setOverlay (bool overlay) { overlayPlots = overlay; }
 
     /**
      Set first audio channel to plot (numbering from 0) or -1 to plot all channels (overlay or sum). Default is -1.
