@@ -40,6 +40,7 @@ namespace foleys
 {
 
 class MagicPlotComponent;
+class MagicAudioPlotComponent;
 
 /**
  The LayoutType defines after which method
@@ -171,6 +172,7 @@ private:
     std::vector<std::unique_ptr<GuiItem>>   children;
 
     std::vector<juce::Component::SafePointer<MagicPlotComponent>> plotComponents;
+    std::vector<juce::Component::SafePointer<MagicAudioPlotComponent>> audioPlotComponents;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Container)
 };

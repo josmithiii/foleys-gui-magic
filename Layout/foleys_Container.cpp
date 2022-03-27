@@ -234,12 +234,17 @@ void Container::updateContinuousRedraw()
 {
     stopTimer();
     plotComponents.clear();
+    audioPlotComponents.clear();
 
     for (auto& child : children)
+    {
         if (auto* p = dynamic_cast<MagicPlotComponent*>(child->getWrappedComponent()))
             plotComponents.push_back (p);
+        if (auto* p = dynamic_cast<MagicAudioPlotComponent*>(child->getWrappedComponent()))
+            audioPlotComponents.push_back (p);
+    }
 
-    if (! plotComponents.empty())
+    if (! plotComponents.empty() || ! audioPlotComponents.empty())
         startTimerHz (refreshRateHz);
 }
 
@@ -321,7 +326,11 @@ void Container::configureFlexBox (const juce::ValueTree& node)
 void Container::timerCallback()
 {
     auto needsRepaint = false;
+
     for (auto p : plotComponents)
+        if (p) needsRepaint |= p->needsUpdate();
+
+    for (auto p : audioPlotComponents)
         if (p) needsRepaint |= p->needsUpdate();
 
     if (needsRepaint)
