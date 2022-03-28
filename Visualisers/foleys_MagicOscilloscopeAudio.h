@@ -59,7 +59,7 @@ public:
     void checkAudioBufferForNaNs (juce::AudioBuffer<float>& buffer);
 
     /**
-     Push samples to a buffer to be visualised.
+     Push samples of an AudioBuffer to be visualised.
      */
     void pushSamples (const juce::AudioBuffer<float>& buffer) override;
 

@@ -152,8 +152,8 @@ void MagicOscilloscopeAudio::createPlotPaths (juce::Path& path, juce::Path& fill
 
     float plotMinX = bounds.getX();
     float plotMaxX = bounds.getRight();
-    float plotMinY = bounds.getBottom();
-    float plotMaxY = bounds.getY();
+    float plotMaxY = bounds.getBottom();
+    float plotMinY = bounds.getY();
 
     float currOffsetY = 0.0f;
     float plotOffsetY = plotOffset * bounds.getHeight();

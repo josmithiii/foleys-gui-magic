@@ -123,6 +123,7 @@ public:
      responsibility to put that into a FIFO and return as quickly as possible.
      */
     virtual void pushSamples (const juce::AudioBuffer<float>& buffer)=0;
+    virtual void pushSamples (const std::shared_ptr<juce::AudioBuffer<float>> bufSP) { pushSamples(*bufSP.get()); }
 
     /**
      This form of the pushSamples() callback provides two channels of
