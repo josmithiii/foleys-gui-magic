@@ -86,9 +86,6 @@ void MagicPlotComponent::paint (juce::Graphics& g)
         lastDataTimestamp = lastUpdate;
     }
 
-    if (gradient)
-        gradient->setupGradientFill (g, getLocalBounds().toFloat());
-
     if (! glowBuffer.isNull())
         drawPlotGlowing (g);
     else
@@ -105,7 +102,10 @@ void MagicPlotComponent::drawPlot (juce::Graphics& g)
     if (!gradient && colour.isTransparent() == false)
         g.setColour (colour);
 
-    if (gradient || colour.isTransparent())
+    if (gradient)
+        gradient->setupGradientFill (g, getLocalBounds().toFloat());
+
+    if (gradient || !colour.isTransparent())
         g.fillPath (filledPath);
 
     colour = findColour (active ? plotColourId : plotInactiveColourId);
