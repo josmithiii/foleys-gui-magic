@@ -67,13 +67,14 @@ void MagicOscilloscopeAudio::pushSamples (const juce::AudioBuffer<float>& buffer
 {
     const int  numChannelsIn = buffer.getNumChannels();
     int numChannelsOut = numChannelsIn; // until determined otherwise
+    int channelToPlot = plotChannel; // until determined otherwise
 
     // checkAudioBufferForNaNs(buffer);
 
-    if (plotChannel >= 0) {
+    if (plotChannel >= 0) { // Use -1 to get all channels averaged
       numChannelsOut = 1;
     } else {
-      plotChannel = 0; // default
+      channelToPlot = 0; // default
     }
 
     bool averageChannels = (numChannelsOut>1) && not overlayPlots;
@@ -84,7 +85,7 @@ void MagicOscilloscopeAudio::pushSamples (const juce::AudioBuffer<float>& buffer
       numChannelsOut = 1;
     }
 
-    jassert(plotChannel >= 0);
+    jassert(channelToPlot >= 0);
 
     // Copy available samples
     int w = writePosition.load();
@@ -93,25 +94,25 @@ void MagicOscilloscopeAudio::pushSamples (const juce::AudioBuffer<float>& buffer
     int numSamples = buffer.getNumSamples();
     if (available >= numSamples) // Copy all of the input buffer into our local ring buffer at its current write position w:
     {
-        samples.copyFrom (0, w, buffer.getReadPointer (plotChannel), numSamples);
+        samples.copyFrom (0, w, buffer.getReadPointer (channelToPlot), numSamples);
         if (numChannelsOut>1 && overlayPlots) // must also copy higher channels
         {
-            for (int c=plotChannel+1; c < std::min<int>(plotChannel+numPlotChannels-1,buffer.getNumChannels()); c++)
+            for (int c=channelToPlot+1; c < std::min<int>(channelToPlot+numPlotChannels-1,buffer.getNumChannels()); c++)
             {
-                  samples.copyFrom (c-plotChannel, w, buffer.getReadPointer (c), numSamples);
+                  samples.copyFrom (c-channelToPlot, w, buffer.getReadPointer (c), numSamples);
             }
         }
     }
     else // must break up the copy into two pieces due to wraparound in the ring buffer:
     {
-        samples.copyFrom (0, w, buffer.getReadPointer (plotChannel), available);
-        samples.copyFrom (0, 0, buffer.getReadPointer (plotChannel, available), numSamples - available);
+        samples.copyFrom (0, w, buffer.getReadPointer (channelToPlot), available);
+        samples.copyFrom (0, 0, buffer.getReadPointer (channelToPlot, available), numSamples - available);
         if (numChannelsOut>1 && overlayPlots) // must also copy higher channels
         {
-            for (int c=plotChannel+1; c < std::min<int>(plotChannel+numPlotChannels-1,buffer.getNumChannels()); c++)
+            for (int c=channelToPlot+1; c < std::min<int>(channelToPlot+numPlotChannels-1,buffer.getNumChannels()); c++)
             {
-                samples.copyFrom (c-plotChannel, w, buffer.getReadPointer (c), available);
-                samples.copyFrom (c-plotChannel, 0, buffer.getReadPointer (c, available), numSamples - available);
+                samples.copyFrom (c-channelToPlot, w, buffer.getReadPointer (c), available);
+                samples.copyFrom (c-channelToPlot, 0, buffer.getReadPointer (c, available), numSamples - available);
             }
         }
     }
@@ -152,17 +153,17 @@ void MagicOscilloscopeAudio::createPlotPaths (juce::Path& path, juce::Path& fill
 
     float plotMinX = bounds.getX();
     float plotMaxX = bounds.getRight();
-    float plotMaxY = bounds.getBottom();
-    float plotMinY = bounds.getY();
+    float plotMinY = bounds.getBottom();
+    float plotMaxY = bounds.getY(); // (0,0) = upper-left corner => Min > Max in order to FLIP Y UPRIGHT
 
-    float currOffsetY = 0.0f;
-    float plotOffsetY = plotOffset * bounds.getHeight();
+    float aPlotHeight = plotMaxY - plotMinY; // "algebraic" plot height - NEGATIVE since (0,0) is UPPER-left corner
+    float plotOffsetY = plotOffset * aPlotHeight;
     jassert(numPlotChannels>0);
     float plotScaleY = 1.0f / float(numPlotChannels);
-    float plotHeightY = plotScaleY * (plotMaxY - plotMinY); // add overlapFactor?
+    float plotHeightY = plotScaleY * aPlotHeight; // NEGATIVE - add overlapFactor?
 
     path.clear();
-    path.startNewSubPath (plotMinX, juce::jmap (data [pos], -1.0f, 1.0f, plotMinY, plotHeightY));
+    path.startNewSubPath (plotMinX, juce::jmap (data [pos], -1.0f, 1.0f, plotMinY, plotMaxY));  // FLIPS Y
 
     for (int i = 1; i < numToDisplay; ++i)
     {
@@ -179,7 +180,7 @@ void MagicOscilloscopeAudio::createPlotPaths (juce::Path& path, juce::Path& fill
         // FIXME: MAKE DOT-DASHED with 1 dot/channel, i.e., numPlotChannels dots per dash
         path.lineTo (juce::jmap (float (i),   0.0f, float (numToDisplay-1), plotMinX, plotMaxX),
                      juce::jmap (data [pos], -1.0f,          1.0f,          plotMinY, plotMaxY));
-    }
+    } // 1st channel plot completed
 
     // Fill below first-channel plot (consider filling under all):
     filledPath = path;
@@ -191,20 +192,14 @@ void MagicOscilloscopeAudio::createPlotPaths (juce::Path& path, juce::Path& fill
 
     // Plot higher channels, if any:
 
-    int numChannelsOut = numPlotChannels;
-    if (numChannelsOut>1 && overlayPlots) // must also draw higher channels
+    if (numPlotChannels>1 && overlayPlots) // must also draw higher channels
     {
-        plotMinY += plotHeightY;
-        plotMaxY += plotHeightY;
-        for (int c=1; c<numChannelsOut; c++)
+        for (int c=1; c<numPlotChannels; c++)
         {
             data = samples.getReadPointer (c);
             pos = pos0;
-            currOffsetY += plotOffsetY; // * overlapFactor?
-            plotMinY    += plotOffsetY; // * overlapFactor?
-            plotMaxY    += plotOffsetY; // * overlapFactor?
             path.startNewSubPath (bounds.getX(),
-                                  juce::jmap (data [pos] + currOffsetY, -1.0f, 1.0f, plotMinY, plotMaxY));
+                                  juce::jmap (data [pos], -1.0f, 1.0f, plotMinY+c*plotOffsetY, plotMaxY+c*plotOffsetY));
             for (int i = 1; i < numToDisplay; ++i)
             {
                 ++pos;
@@ -212,8 +207,8 @@ void MagicOscilloscopeAudio::createPlotPaths (juce::Path& path, juce::Path& fill
                     pos -= numPlotSamplesAvailable;
 
                 // FIXME: MAKE DOT-DASHED with 1 dot/channel, i.e., numPlotChannels dots per dash
-                path.lineTo (juce::jmap (float (i),                 0.0f, float (numToDisplay-1), plotMinX, plotMaxX),
-                             juce::jmap (data [pos] + currOffsetY, -1.0f,          1.0f,          plotMinY, plotMaxY));
+                path.lineTo (juce::jmap (float (i),   0.0f,  float (numToDisplay-1), plotMinX, plotMaxX),
+                             juce::jmap (data [pos], -1.0f,  1.0f,   plotMinY+c*plotOffsetY, plotMaxY+c*plotOffsetY));
             }
             // FIXME: Consider fill here
             path.closeSubPath(); // includes path.lineTo (<startingPoint>)

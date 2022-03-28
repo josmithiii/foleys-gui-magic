@@ -109,7 +109,7 @@ void MagicAudioPlotComponent::setPlotLength (int pl)
       plotSource->setPlotLength (plotLength);
 }
 
-void MagicAudioPlotComponent::setPlotOffset (int pl)
+void MagicAudioPlotComponent::setPlotOffset (float pl)
 {
     plotOffset = pl;
     if (plotSource)

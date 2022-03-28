@@ -73,7 +73,7 @@ public:
     void setChannel (int channel);
     void setNumChannels (int numChannels);
     void setPlotLength (int plotLength);
-    void setPlotOffset (int plotOffset);
+    void setPlotOffset (float plotOffset);
 
   private:
     void drawPlot (juce::Graphics& g);
@@ -94,7 +94,7 @@ public:
     int         channel = 0;
     int         numChannels = 0;
     int         plotLength = 0;
-    int         plotOffset = 0;
+    float       plotOffset = 0;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MagicAudioPlotComponent)
 };

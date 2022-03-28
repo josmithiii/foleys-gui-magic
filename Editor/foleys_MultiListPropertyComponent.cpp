@@ -60,6 +60,12 @@ MultiListPropertyComponent::MultiListPropertyComponent (const juce::Value& value
         auto strings = juce::StringArray::fromTokens (text.getText(), separator, "");
         juce::Component::SafePointer<juce::Label> textEdit (&text);
 
+        if (strings.size()<1 || strings[0] == "")
+        {
+            DBG("*** MultiListPropertyComponent: Empty strings array");
+            return;
+        }
+
         juce::PopupMenu popup;
         for (const auto& name : choices)
             if (! strings.contains (name))

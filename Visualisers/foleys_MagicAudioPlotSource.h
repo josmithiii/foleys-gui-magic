@@ -191,24 +191,24 @@ protected:
         const auto available  = samples.getNumSamples() - w;
 
         const auto numSamples = buffer.getNumSamples();
-        const auto numChannelsIn = std::min<int>(numPlotChannels,buffer.getNumChannels()-plotChannel);
-        const auto gain = 1.0f /  numChannelsIn;
+        const auto numChannels = buffer.getNumChannels();
+        jassert(numChannels > 0);
+        const auto gain = 1.0f /  numChannels;
         if (available >= numSamples)
         {
-            samples.copyFrom (0, w, buffer.getReadPointer (plotChannel), numSamples, gain);
-            for (int c = 1; c <  numChannelsIn; ++c)
-                samples.addFrom (0, w, buffer.getReadPointer (plotChannel+c-1), numSamples, gain);
+          samples.copyFrom (0, w, buffer.getReadPointer (0), numSamples, gain);
+          for (int c = 1; c <  numChannels; ++c)
+            samples.addFrom (0, w, buffer.getReadPointer (c), numSamples, gain);
         }
         else
         {
-            samples.copyFrom (0, w, buffer.getReadPointer (plotChannel), available, gain);
-            samples.copyFrom (0, 0, buffer.getReadPointer (plotChannel), numSamples - available, gain);
-            for (int c = 1; c <  numChannelsIn; ++c)
-            {
-                samples.addFrom (0, w, buffer.getReadPointer (plotChannel+c-1), available, gain);
-                samples.addFrom (0, 0, buffer.getReadPointer (plotChannel+c-1, available),
-                                 numSamples - available, gain);
-            }
+          samples.copyFrom (0, w, buffer.getReadPointer (0), available, gain);
+          samples.copyFrom (0, 0, buffer.getReadPointer (0), numSamples - available, gain);
+          for (int c = 1; c <  numChannels; ++c)
+          {
+            samples.addFrom (0, w, buffer.getReadPointer (c), available, gain);
+            samples.addFrom (0, 0, buffer.getReadPointer (c), numSamples - available, gain);
+          }
         }
     }
 
