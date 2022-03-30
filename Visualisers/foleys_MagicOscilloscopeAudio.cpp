@@ -97,7 +97,7 @@ void MagicOscilloscopeAudio::pushSamples (const juce::AudioBuffer<float>& buffer
         samples.copyFrom (0, w, buffer.getReadPointer (channelToPlot), numSamples);
         if (numChannelsOut>1 && overlayPlots) // must also copy higher channels
         {
-            for (int c=channelToPlot+1; c < std::min<int>(channelToPlot+numPlotChannels-1,buffer.getNumChannels()); c++)
+            for (int c=channelToPlot+1; c < std::min<int>(channelToPlot+numPlotChannels,buffer.getNumChannels()); c++)
             {
                   samples.copyFrom (c-channelToPlot, w, buffer.getReadPointer (c), numSamples);
             }
@@ -159,8 +159,8 @@ void MagicOscilloscopeAudio::createPlotPaths (juce::Path& path, juce::Path& fill
     float aPlotHeight = plotMaxY - plotMinY; // "algebraic" plot height - NEGATIVE since (0,0) is UPPER-left corner
     float plotOffsetY = plotOffset * aPlotHeight;
     jassert(numPlotChannels>0);
-    float plotScaleY = 1.0f / float(numPlotChannels);
-    float plotHeightY = plotScaleY * aPlotHeight; // NEGATIVE - add overlapFactor?
+    // float plotScaleY = 1.0f / float(numPlotChannels);
+    // float plotHeightY = plotScaleY * aPlotHeight; // NEGATIVE - add overlapFactor?
 
     path.clear();
     path.startNewSubPath (plotMinX, juce::jmap (data [pos], -1.0f, 1.0f, plotMinY, plotMaxY));  // FLIPS Y
@@ -178,17 +178,18 @@ void MagicOscilloscopeAudio::createPlotPaths (juce::Path& path, juce::Path& fill
             DBG("MagicOscilloscopeAudio::createPlotPaths: First nonzero sample to plot is " << data[pos]);
         }
         // FIXME: MAKE DOT-DASHED with 1 dot/channel, i.e., numPlotChannels dots per dash
+        // Draw next point of bottom plotted channel:
         path.lineTo (juce::jmap (float (i),   0.0f, float (numToDisplay-1), plotMinX, plotMaxX),
                      juce::jmap (data [pos], -1.0f,          1.0f,          plotMinY, plotMaxY));
     } // 1st channel plot completed
 
-    // Fill below first-channel plot (consider filling under all):
+    // Fill below first-channel plot only:
     filledPath = path;
     filledPath.lineTo (plotMaxX,plotMinY);
     filledPath.lineTo (plotMinX,plotMinY);
     filledPath.closeSubPath(); // includes path.lineTo (plotMinX,data[pos])
 
-    path.closeSubPath(); // includes path.lineTo (bounds.getX(),bounds.getBottom());
+    // path.closeSubPath(); // draw from end of plot back to beginning (ok if both at minY or maxY)
 
     // Plot higher channels, if any:
 
@@ -211,7 +212,7 @@ void MagicOscilloscopeAudio::createPlotPaths (juce::Path& path, juce::Path& fill
                              juce::jmap (data [pos], -1.0f,  1.0f,   plotMinY+c*plotOffsetY, plotMaxY+c*plotOffsetY));
             }
             // FIXME: Consider fill here
-            path.closeSubPath(); // includes path.lineTo (<startingPoint>)
+            // path.closeSubPath(); // draw from end of plot back to beginning (ok if both at minY or maxY)
         }
     }
 }
