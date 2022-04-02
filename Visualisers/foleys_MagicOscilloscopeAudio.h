@@ -76,6 +76,7 @@ public:
     void prepareToPlay (double sampleRate, int samplesPerBlockExpected) override;
 
 private:
+    int numChannelsOut = 0; // == numChannelsIn or 1 when channels are averaged
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MagicOscilloscopeAudio)
 };

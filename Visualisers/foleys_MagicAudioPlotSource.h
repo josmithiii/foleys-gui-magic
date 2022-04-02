@@ -53,7 +53,7 @@ public:
     MagicAudioPlotSource()=default;
 
     /** Constructor allowing specification of a channel to display, or -1 to indicate all channels. */
-    MagicAudioPlotSource(int channelToDisplay) : plotChannel(channelToDisplay) {}
+    MagicAudioPlotSource(int channelToDisplay) : plotChannel(std::max<int>(0,channelToDisplay)) {}
 
     /** Destructor. */
     virtual ~MagicAudioPlotSource()=default;
@@ -75,12 +75,13 @@ public:
     virtual void setTriggeredNeg (bool isTriggeredNeg) { triggeredNeg = isTriggeredNeg; }
 
     /**
-     Set whether a multichannel plot is an overlay or sum of all channels.
+     Set whether a multichannel plot is an overlay, with incrementing plot offset, or a sum of all channels.
+     Normalization, if any, is applied to the final sum, not the individual channels.
      */
     virtual void setOverlay (bool overlay) { overlayPlots = overlay; }
 
     /**
-     Set whether plot is renormalized to full range.
+     Set whether each channel, or the average of all channels, is renormalized to full range.
      @param isNormalizing, if true, means to normalize each plot such that it reaches
             the maximum value on either the positive or negative side.
      */
@@ -93,17 +94,18 @@ public:
     virtual void setLatch (bool isLatching) { latch = isLatching; }
 
     /**
-     Set first audio channel to plot (numbering from 0) or -1 to plot all channels (overlay or sum). Default is -1.
+     Set first audio channel to plot (numbering from 0).
      */
-    virtual void setChannel (int channelCode) {
-      plotChannel = channelCode;
+    virtual void setChannel (int channel) {
+      plotChannel = std::max<int>(0,channel);
     }
 
     /**
-     Set number of audio channels to plot in overlay mode, or to average if not overlaid, with 0 meaning all channels.
+     Set number of audio channels to plot in overlay mode, or to average if not overlaid.
      */
     virtual void setNumChannels (int nChans)
     {
+        numPlotChannels = std::max<int>(0,nChans);
         if (nChans > samples.getNumChannels())
         {
             samples.setSize (nChans, static_cast<int> (sampleRate));
@@ -116,17 +118,17 @@ public:
      */
     virtual void setPlotLength (int pl)
     {
-        plotLength = pl;
+        plotLength = std::max<int>(0,pl);
         if (plotLength > samples.getNumSamples())
             samples.setSize(samples.getNumChannels(), plotLength);
     }
 
     /**
-     Set offset between plots as a fractional value between 0 and 1.
+     Set offset between plots as a fractional value between 0 and 1 or higher, with 1 meaning adjacent nonoverlapping lanes.
      */
     virtual void setPlotOffset (float po)
     {
-        plotOffset = po;
+        plotOffset = std::max<float>(0.0f,po);
     }
 
     /**
@@ -200,15 +202,14 @@ protected:
     std::atomic<int>         writePosition;
     bool triggeredPos = false;
     bool triggeredNeg = false;
-    bool overlayPlots = false; // When false, plot either a single channel or the sum of all channels
-    bool normalize = false;
+    bool overlayPlots = false; // true => plot channels individually (optionally offset); false => plot one sum of specified channels
+    float plotOffset = 0;      // for overlays only, offset used from plot to plot
+    bool normalize = false;    // normalize each plot in overlay, or final sum when not overlaying
     bool latch = false;
-    int plotChannel = -1;      // -1 denotes the sum of all channels
-                               //    (note that we could use -2 in place of bool overlayPlots)
-    int numPlotChannels = 0;   // 0 denotes all channels, set by pushSamples, read by drawPlot
-    int maxPlotLength = 0;     // when this is right, samples array never needs to resize itself while plotting
-    int plotLength = 0;
-    float plotOffset = 0;
+    int plotChannel = 0;       // first channel to plot
+    int numPlotChannels = 0;   // number of channels to plot
+    int plotLength = 0;        // fixed plot length for every plot
+    int maxPlotLength = 0;     // for future use with pitch-synchronous plotting and the like (e.g., "plot one period")
 
     inline void averageAllChannelsToSamplesChannel0(const juce::AudioBuffer<float>& buffer)
     {
@@ -219,17 +220,19 @@ protected:
         const auto numChannels = buffer.getNumChannels();
         jassert(numChannels > 0);
         const auto gain = 1.0f /  numChannels;
+        int topPlotChannel = std::min<int>(numChannels, plotChannel + numPlotChannels) - 1;
         if (available >= numSamples)
         {
-          samples.copyFrom (0, w, buffer.getReadPointer (0), numSamples, gain);
-          for (int c = 1; c <  numChannels; ++c)
+          // samples.copyFrom (destChannel, destStartSample, ...)
+          samples.copyFrom (0, w, buffer.getReadPointer (plotChannel), numSamples, gain);
+          for (int c = plotChannel+1; c <= topPlotChannel; ++c)
             samples.addFrom (0, w, buffer.getReadPointer (c), numSamples, gain);
         }
         else
         {
-          samples.copyFrom (0, w, buffer.getReadPointer (0), available, gain);
-          samples.copyFrom (0, 0, buffer.getReadPointer (0), numSamples - available, gain);
-          for (int c = 1; c <  numChannels; ++c)
+          samples.copyFrom (0, w, buffer.getReadPointer (plotChannel), available, gain);
+          samples.copyFrom (0, 0, buffer.getReadPointer (plotChannel), numSamples - available, gain);
+          for (int c = plotChannel + 1; c <= topPlotChannel; ++c)
           {
             samples.addFrom (0, w, buffer.getReadPointer (c), available, gain);
             samples.addFrom (0, 0, buffer.getReadPointer (c), numSamples - available, gain);
