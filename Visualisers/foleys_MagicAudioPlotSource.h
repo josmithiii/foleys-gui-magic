@@ -82,8 +82,8 @@ public:
 
     /**
      Set whether each channel, or the average of all channels, is renormalized to full range.
-     @param isNormalizing, if true, means to normalize each plot such that it reaches
-            the maximum value on either the positive or negative side.
+     @param isNormalizing, if true, means each audio channel, or sum of channels, is divided by
+            its maximum magnitude each plot, unless the maximum falls below -80 dBFS.
      */
     virtual void setNormalize (bool isNormalizing) { normalize = isNormalizing; }
 
