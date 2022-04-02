@@ -106,7 +106,7 @@ void MagicScatterPlot::createPlotPaths (juce::Path& path, juce::Path& filledPath
     if (position < 0)
         position += samplesX.getNumSamples();
 
-    if (triggered) // find first zero-crossing in circular plot-buffer samplesX, giving up after 50 ms <-> 20 Hz fundamental:
+    if (triggeredPos || triggeredNeg) // find first zero-crossing in circular plot-buffer samplesX, giving up after 50 ms <-> 20 Hz fundamental:
     {
         auto positive = dataX [position] > 0.0f;
         auto bail = int (sampleRate / 20.0f);

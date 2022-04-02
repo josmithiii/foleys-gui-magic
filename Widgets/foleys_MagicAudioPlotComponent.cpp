@@ -74,11 +74,18 @@ void MagicAudioPlotComponent::setGradientFromString (const juce::String& cssStri
     }
 }
 
-void MagicAudioPlotComponent::setTriggered (bool t)
+void MagicAudioPlotComponent::setTriggeredPos (bool t)
 {
-    triggered = t;
+    triggeredPos = t;
     if (plotSource)
-      plotSource->setTriggered (triggered);
+      plotSource->setTriggeredPos (triggeredPos);
+}
+
+void MagicAudioPlotComponent::setTriggeredNeg (bool t)
+{
+    triggeredNeg = t;
+    if (plotSource)
+      plotSource->setTriggeredNeg (triggeredNeg);
 }
 
 void MagicAudioPlotComponent::setOverlay (bool o)
@@ -139,7 +146,8 @@ void MagicAudioPlotComponent::paint (juce::Graphics& g)
     if (lastUpdate > lastDataTimestamp)
     {
         if (plotSource) { // these may be have been set before plotSource existed:
-            plotSource->setTriggered (triggered);
+            plotSource->setTriggeredPos (triggeredPos);
+            plotSource->setTriggeredNeg (triggeredNeg);
             plotSource->setOverlay (overlay);
             plotSource->setNormalize (normalize);
             plotSource->setLatch (latch);

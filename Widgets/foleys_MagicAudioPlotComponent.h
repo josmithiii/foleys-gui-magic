@@ -68,7 +68,8 @@ public:
 
     bool needsUpdate() const;
 
-    void setTriggered (bool triggered);
+    void setTriggeredPos (bool triggeredPos);
+    void setTriggeredNeg (bool triggeredNeg);
     void setOverlay (bool overlay);
     void setNormalize (bool triggered);
     void setLatch (bool latch);
@@ -91,7 +92,8 @@ public:
     juce::Image glowBuffer;
     float       decay = 0.0f;
 
-    bool        triggered = true;
+    bool        triggeredPos = false;
+    bool        triggeredNeg = false;
     bool        overlay = false;
     bool        normalize = false;
     bool        latch = false;

@@ -636,7 +636,8 @@ public:
     static const juce::Identifier  pDecay;
     static const juce::Identifier  pGradient;
 
-    static const juce::Identifier  pTriggered;
+    static const juce::Identifier  pTriggeredPos;
+    static const juce::Identifier  pTriggeredNeg;
     static const juce::Identifier  pOverlay;
     static const juce::Identifier  pNormalize;
     static const juce::Identifier  pLatch;
@@ -670,8 +671,11 @@ public:
         auto gradient = configNode.getProperty (pGradient, juce::String()).toString();
         plot.setGradientFromString (gradient, magicBuilder.getStylesheet());
 
-        auto triggered = bool (getProperty (pTriggered));
-        plot.setTriggered (triggered);
+        auto triggeredPos = bool (getProperty (pTriggeredPos));
+        plot.setTriggeredPos (triggeredPos);
+
+        auto triggeredNeg = bool (getProperty (pTriggeredNeg));
+        plot.setTriggeredNeg (triggeredNeg);
 
         auto overlay = bool (getProperty (pOverlay));
         plot.setOverlay (overlay);
@@ -701,7 +705,8 @@ public:
         props.push_back ({ configNode, IDs::source, SettableProperty::Choice, {}, magicBuilder.createObjectsMenuLambda<MagicAudioPlotSource>() });
         props.push_back ({ configNode, pDecay,         SettableProperty::Number, {}, {} });
         props.push_back ({ configNode, pGradient,      SettableProperty::Gradient, {}, {} });
-        props.push_back ({ configNode, pTriggered,     SettableProperty::Toggle, {}, {} });
+        props.push_back ({ configNode, pTriggeredPos,     SettableProperty::Toggle, {}, {} });
+        props.push_back ({ configNode, pTriggeredNeg,     SettableProperty::Toggle, {}, {} });
         props.push_back ({ configNode, pOverlay,       SettableProperty::Toggle, {}, {} });
         props.push_back ({ configNode, pNormalize,     SettableProperty::Toggle, {}, {} });
         props.push_back ({ configNode, pLatch,         SettableProperty::Toggle, {}, {} });
@@ -724,7 +729,8 @@ private:
 };
 const juce::Identifier  AudioPlotItem::pDecay {"plot-decay"};
 const juce::Identifier  AudioPlotItem::pGradient {"plot-gradient"};
-const juce::Identifier  AudioPlotItem::pTriggered {"plot-triggered"};
+const juce::Identifier  AudioPlotItem::pTriggeredPos {"plot-triggered-pos"};
+const juce::Identifier  AudioPlotItem::pTriggeredNeg {"plot-triggered-neg"};
 const juce::Identifier  AudioPlotItem::pOverlay {"plot-overlay"};
 const juce::Identifier  AudioPlotItem::pNormalize {"plot-normalize"};
 const juce::Identifier  AudioPlotItem::pLatch {"plot-latch"};

@@ -59,11 +59,20 @@ public:
     virtual ~MagicAudioPlotSource()=default;
 
     /**
-     Set whether plot is triggered by a zero-crossing or free runs.
-     @param isTriggered, if true, means each plot begins at a zero-crossing.
+     Set whether plot is triggered by a positive-going zero-crossing.
+     @param isTriggeredPos, if true, means each plot begins at an upward zero-crossing.
             Otherwise, the latest samples received are plotted for each audio buffer.
      */
-    virtual void setTriggered (bool isTriggered) { triggered = isTriggered; }
+    virtual void setTriggeredPos (bool isTriggeredPos) { triggeredPos = isTriggeredPos; }
+
+    /**
+     Set whether plot is triggered by a negative-going zero-crossing.
+     @param isTriggeredNeg, if true, means each plot begins at an downward zero-crossing.
+            Otherwise, the latest samples received are plotted for each audio buffer.
+            if both isTriggeredPos and isTriggeredNeg are true, than any zero-crossing
+            will trigger the plot.
+     */
+    virtual void setTriggeredNeg (bool isTriggeredNeg) { triggeredNeg = isTriggeredNeg; }
 
     /**
      Set whether a multichannel plot is an overlay or sum of all channels.
@@ -189,7 +198,8 @@ protected:
     double                   sampleRate = 0.0;
     juce::AudioBuffer<float> samples;
     std::atomic<int>         writePosition;
-    bool triggered = true;
+    bool triggeredPos = false;
+    bool triggeredNeg = false;
     bool overlayPlots = false; // When false, plot either a single channel or the sum of all channels
     bool normalize = false;
     bool latch = false;
@@ -229,30 +239,48 @@ protected:
 
     int getReadPosition(const float* data, const int pos0)
     {
-        int pos = pos0;
-        if (pos < 0)
-            pos += samples.getNumSamples();
+        if (not triggeredPos and not triggeredNeg)
+          return pos0;
 
-        if (triggered) // find first zero-transition in circular plot-buffer samplesX, giving up after 50 ms <-> 20 Hz fundamental:
-        {
-            auto nonNeg = data [pos] >= 0.0f;
+        int posW = pos0;
+        if (posW < 0)
+            posW += samples.getNumSamples();
+        int posP = posW;
+        int posN = posW;
+        int distP = 0;
+        int distN = 0;
+
+        if (triggeredNeg) // search backward for negative-going zero-crossing
+        { // in circular plot-buffer samples, giving up after 50 ms <-> 20 Hz fundamental:
+            auto nonNeg = data [posN] >= 0.0f;
             auto bail = int (sampleRate / 20.0f);
 
             while (nonNeg == false && --bail > 0) // search back to the last negative-going zero-crossing
             {
-                if (--pos < 0)
-                    pos += samples.getNumSamples();
-
-                nonNeg = data [pos] >= 0.0f;
+                if (--posN < 0)
+                    posN += samples.getNumSamples();
+                distP++;
+                nonNeg = data [posN] >= 0.0f;
             }
+        }
 
-            while (nonNeg == true && --bail > 0) // search back to the first positive-going zero-crossing
+        if (triggeredPos)
+        {
+            auto nonPos = data [posP] <= 0.0f;
+            auto bail = int (sampleRate / 20.0f);
+            while (nonPos == true && --bail > 0) // search back to the first positive-going zero-crossing
             {
-                if (--pos < 0)
-                    pos += samples.getNumSamples();
-
-                nonNeg = data [pos] >= 0.0f;
+                if (--posP < 0)
+                    posP += samples.getNumSamples();
+                distN++;
+                nonPos = data [posP] >= 0.0f;
             }
+        }
+        int pos;
+        if (triggeredPos && triggeredNeg) {
+          pos = (distN > distP ? posP : posN);
+        } else {
+          pos = (triggeredPos ? posP : posN);
         }
         return pos;
     }
