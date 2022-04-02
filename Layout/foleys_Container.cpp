@@ -335,6 +335,7 @@ void Container::timerCallback()
 
     if (needsRepaint)
         containerBox.repaint();
+
 }
 
 void Container::changeListenerCallback (juce::ChangeBroadcaster*)

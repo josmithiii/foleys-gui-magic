@@ -70,6 +70,8 @@ public:
 
     void setTriggered (bool triggered);
     void setOverlay (bool overlay);
+    void setNormalize (bool triggered);
+    void setLatch (bool latch);
     void setChannel (int channel);
     void setNumChannels (int numChannels);
     void setPlotLength (int plotLength);
@@ -91,6 +93,8 @@ public:
 
     bool        triggered = true;
     bool        overlay = false;
+    bool        normalize = false;
+    bool        latch = false;
     int         channel = 0;
     int         numChannels = 0;
     int         plotLength = 0;

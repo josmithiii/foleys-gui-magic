@@ -87,7 +87,7 @@ void MagicOscilloscopeAudio::pushSamples (const juce::AudioBuffer<float>& buffer
 
     jassert(channelToPlot >= 0);
 
-    // Copy available samples
+    // Copy available samples:
     int w = writePosition.load();
     const auto available  = samples.getNumSamples() - w;
     numPlotChannels  = samples.getNumChannels();
@@ -147,7 +147,31 @@ void MagicOscilloscopeAudio::createPlotPaths (juce::Path& path, juce::Path& fill
     auto* data = samples.getReadPointer (0); // samples holds channels "plotChannel" to "plotChannel + numPlotChannels-1"
 
     const auto pos0 = writePosition.load() - numToDisplay;
-    auto pos = getReadPosition(data, pos0); // advance to next zero-crossing if in triggered mode
+    auto pos = getReadPosition(data, pos0); // go back to previous zero-transition if in triggered mode
+
+    // Normalize all plotted channels if requested:
+    if (normalize) {
+      for (int c=0; c<numPlotChannels; c++) {
+        float maxAmp;
+        if (pos+numToDisplay <= numPlotSamplesAvailable) {
+          maxAmp = samples.getMagnitude(c,pos,numToDisplay);
+        } else {
+          int numToEnd = numPlotSamplesAvailable-pos;
+          maxAmp = samples.getMagnitude(c,pos,numToEnd);
+          maxAmp = std::max<float>(maxAmp, samples.getMagnitude(c,0,numToDisplay-numToEnd));
+        }
+        if (maxAmp > 1.0e-4) { // let go at -80 dB
+          float ampScale = 1.0f / maxAmp;
+          if (pos+numToDisplay <= numPlotSamplesAvailable) {
+            samples.applyGain(c,pos,numToDisplay,ampScale); // assuming plotted sections do not overlap
+          } else {
+            int numToEnd = numPlotSamplesAvailable-pos;
+            samples.applyGain(c,pos,numToEnd,ampScale);
+            samples.applyGain(c,0,numToDisplay-numToEnd,ampScale);
+          }
+        }
+      }
+    }
 
     // Plot first channel:
 

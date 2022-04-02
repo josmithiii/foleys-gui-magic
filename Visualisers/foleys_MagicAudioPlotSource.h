@@ -68,7 +68,20 @@ public:
     /**
      Set whether a multichannel plot is an overlay or sum of all channels.
      */
-   virtual void setOverlay (bool overlay) { overlayPlots = overlay; }
+    virtual void setOverlay (bool overlay) { overlayPlots = overlay; }
+
+    /**
+     Set whether plot is renormalized to full range.
+     @param isNormalizing, if true, means to normalize each plot such that it reaches
+            the maximum value on either the positive or negative side.
+     */
+    virtual void setNormalize (bool isNormalizing) { normalize = isNormalizing; }
+
+    /**
+     Set whether plot is latch when it would otherwise become zero.
+     @param isLatching, if true, means repeat the current plot if the next plot would be zero.
+     */
+    virtual void setLatch (bool isLatching) { latch = isLatching; }
 
     /**
      Set first audio channel to plot (numbering from 0) or -1 to plot all channels (overlay or sum). Default is -1.
@@ -178,6 +191,8 @@ protected:
     std::atomic<int>         writePosition;
     bool triggered = true;
     bool overlayPlots = false; // When false, plot either a single channel or the sum of all channels
+    bool normalize = false;
+    bool latch = false;
     int plotChannel = -1;      // -1 denotes the sum of all channels
                                //    (note that we could use -2 in place of bool overlayPlots)
     int numPlotChannels = 0;   // 0 denotes all channels, set by pushSamples, read by drawPlot
@@ -218,25 +233,25 @@ protected:
         if (pos < 0)
             pos += samples.getNumSamples();
 
-        if (triggered) // find first zero-crossing in circular plot-buffer samplesX, giving up after 50 ms <-> 20 Hz fundamental:
+        if (triggered) // find first zero-transition in circular plot-buffer samplesX, giving up after 50 ms <-> 20 Hz fundamental:
         {
-            auto positive = data [pos] > 0.0f;
+            auto nonNeg = data [pos] >= 0.0f;
             auto bail = int (sampleRate / 20.0f);
 
-            while (positive == false && --bail > 0)
+            while (nonNeg == false && --bail > 0) // search back to the last negative-going zero-crossing
             {
                 if (--pos < 0)
                     pos += samples.getNumSamples();
 
-                positive = data [pos] > 0.0f;
+                nonNeg = data [pos] >= 0.0f;
             }
 
-            while (positive == true && --bail > 0)
+            while (nonNeg == true && --bail > 0) // search back to the first positive-going zero-crossing
             {
                 if (--pos < 0)
                     pos += samples.getNumSamples();
 
-                positive = data [pos] > 0.0f;
+                nonNeg = data [pos] >= 0.0f;
             }
         }
         return pos;

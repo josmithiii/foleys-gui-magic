@@ -638,7 +638,9 @@ public:
 
     static const juce::Identifier  pTriggered;
     static const juce::Identifier  pOverlay;
-    static const juce::Identifier  pChannel1Based;
+    static const juce::Identifier  pNormalize;
+    static const juce::Identifier  pLatch;
+    static const juce::Identifier  pChannel;
     static const juce::Identifier  pNumChannels;
     static const juce::Identifier  pPlotLength;
     static const juce::Identifier  pPlotOffset;
@@ -674,8 +676,14 @@ public:
         auto overlay = bool (getProperty (pOverlay));
         plot.setOverlay (overlay);
 
-        auto channel1Based = int (getProperty (pChannel1Based));
-        plot.setChannel (channel1Based-1);
+        auto normalize = bool (getProperty (pNormalize));
+        plot.setNormalize (normalize);
+
+        auto latch = bool (getProperty (pLatch));
+        plot.setLatch (latch);
+
+        auto channel = int (getProperty (pChannel));
+        plot.setChannel (channel);
 
         auto numChannels = int (getProperty (pNumChannels));
         plot.setNumChannels (numChannels);
@@ -695,7 +703,9 @@ public:
         props.push_back ({ configNode, pGradient,      SettableProperty::Gradient, {}, {} });
         props.push_back ({ configNode, pTriggered,     SettableProperty::Toggle, {}, {} });
         props.push_back ({ configNode, pOverlay,       SettableProperty::Toggle, {}, {} });
-        props.push_back ({ configNode, pChannel1Based, SettableProperty::Number, {}, {} });
+        props.push_back ({ configNode, pNormalize,     SettableProperty::Toggle, {}, {} });
+        props.push_back ({ configNode, pLatch,         SettableProperty::Toggle, {}, {} });
+        props.push_back ({ configNode, pChannel,       SettableProperty::Number, {}, {} });
         props.push_back ({ configNode, pNumChannels,   SettableProperty::Number, {}, {} });
         props.push_back ({ configNode, pPlotLength,    SettableProperty::Number, {}, {} });
         props.push_back ({ configNode, pPlotOffset,    SettableProperty::Number, {}, {} });
@@ -716,7 +726,9 @@ const juce::Identifier  AudioPlotItem::pDecay {"plot-decay"};
 const juce::Identifier  AudioPlotItem::pGradient {"plot-gradient"};
 const juce::Identifier  AudioPlotItem::pTriggered {"plot-triggered"};
 const juce::Identifier  AudioPlotItem::pOverlay {"plot-overlay"};
-const juce::Identifier  AudioPlotItem::pChannel1Based {"plot-channel"};
+const juce::Identifier  AudioPlotItem::pNormalize {"plot-normalize"};
+const juce::Identifier  AudioPlotItem::pLatch {"plot-latch"};
+const juce::Identifier  AudioPlotItem::pChannel {"plot-channel"};
 const juce::Identifier  AudioPlotItem::pNumChannels {"plot-num-channels"};
 const juce::Identifier  AudioPlotItem::pPlotLength {"plot-length"};
 const juce::Identifier  AudioPlotItem::pPlotOffset {"plot-offset"};

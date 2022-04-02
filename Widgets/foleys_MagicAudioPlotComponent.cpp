@@ -88,6 +88,20 @@ void MagicAudioPlotComponent::setOverlay (bool o)
       plotSource->setOverlay (overlay);
 }
 
+void MagicAudioPlotComponent::setNormalize (bool t)
+{
+    normalize = t;
+    if (plotSource)
+      plotSource->setNormalize (normalize);
+}
+
+void MagicAudioPlotComponent::setLatch (bool t)
+{
+    latch = t;
+    if (plotSource)
+      plotSource->setLatch (latch);
+}
+
 void MagicAudioPlotComponent::setChannel (int c)
 {
     channel = c;
@@ -127,6 +141,8 @@ void MagicAudioPlotComponent::paint (juce::Graphics& g)
         if (plotSource) { // these may be have been set before plotSource existed:
             plotSource->setTriggered (triggered);
             plotSource->setOverlay (overlay);
+            plotSource->setNormalize (normalize);
+            plotSource->setLatch (latch);
             plotSource->setChannel (channel);
             plotSource->setNumChannels (numChannels);
             plotSource->setPlotLength (plotLength);
