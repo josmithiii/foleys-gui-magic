@@ -41,10 +41,8 @@ namespace foleys
 void MagicScatterPlot::pushSamples (const juce::AudioBuffer<float>& buffer)
 {
   int numChannels = buffer.getNumChannels();
-  int chanX = 0;
-  int chanY = 1;
-  chanX = std::min<int>(plotChannel,  numChannels-1);
-  chanY = std::min<int>(plotChannel+1,numChannels-1);
+  int chanX = std::min<int>(0,numChannels-1);
+  int chanY = std::min<int>(1,numChannels-1);
   pushSamples(/* bufferX */ buffer, chanX, /* bufferY */ buffer, chanY, maxPlotLength);
 }
 
