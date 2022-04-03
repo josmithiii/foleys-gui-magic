@@ -148,6 +148,9 @@ public:
      */
     virtual void pushSamples (const juce::AudioBuffer<float>& buffer)=0;
     virtual void pushSamples (const std::shared_ptr<juce::AudioBuffer<float>> bufSP) { pushSamples(*bufSP.get()); }
+    virtual void pushSamples (const std::shared_ptr<juce::AudioBuffer<float>> bufSP, int channelToPlot=0, int numChannelsToPlot=1) {
+      pushSamples(*bufSP.get());
+    }
 
     /**
      This form of the pushSamples() callback provides two channels of
@@ -163,6 +166,9 @@ public:
     virtual void pushSamples (const juce::AudioBuffer<float>& bufferX, int channelX,
                                const juce::AudioBuffer<float>& bufferY, int channelY,
                                const int plotLengthPreferred=0) { }
+    virtual void pushSamples (const std::shared_ptr<juce::AudioBuffer<float>> bufSPX, int channelX,
+                              const std::shared_ptr<juce::AudioBuffer<float>> bufSPY, int channelY,
+                              const int plotLengthPreferred=0) { }
 
     /**
      This is the callback that creates the plot for drawing.

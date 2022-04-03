@@ -63,6 +63,18 @@ void MagicOscilloscopeAudio::checkAudioBufferForNaNs (juce::AudioBuffer<float>& 
   }
 }
 
+void MagicOscilloscopeAudio::pushSamples (const std::shared_ptr<juce::AudioBuffer<float>> bufSP,
+                                          int channelToPlotIn, int numChannelsToPlotIn)
+{
+  float* const* readPointers = (float*const*)(bufSP->getArrayOfReadPointers());
+  int numChannelsIn = bufSP->getNumChannels();
+  int firstChan = std::min<int>(channelToPlotIn, numChannelsIn-1);
+  int numChans = std::min<int>(numChannelsToPlotIn,numChannelsIn-firstChan);
+  // AudioBuffer (Type *const *dataToReferTo, int numChannelsToUse, int numSamples)
+  juce::AudioBuffer<float> buffer(readPointers+firstChan, numChans, bufSP->getNumSamples() );
+  pushSamples (buffer);
+}
+
 void MagicOscilloscopeAudio::pushSamples (const juce::AudioBuffer<float>& buffer)
 {
     const int numSamples = buffer.getNumSamples();

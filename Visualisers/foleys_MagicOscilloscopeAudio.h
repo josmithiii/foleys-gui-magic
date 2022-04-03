@@ -62,6 +62,7 @@ public:
      Push samples of an AudioBuffer to be visualised.
      */
     void pushSamples (const juce::AudioBuffer<float>& buffer) override;
+    void pushSamples (const std::shared_ptr<juce::AudioBuffer<float>> bufSP, int channelToPlot=0, int numChannelsToPlot=1) override;
 
     /**
      This is the callback that creates the frequency plot for drawing.
