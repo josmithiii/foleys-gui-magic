@@ -87,6 +87,22 @@ void MagicOscilloscopeAudio::pushSamples (const juce::AudioBuffer<float>& buffer
         numChannelsOut = 1;
     }
 
+    // juce::AudioBuffer<float>* bufferP = &buffer;
+    if (latch) {
+      // bufferP = std::unique_ptr<juce::AudioBuffer<float>>(numChannelsIn,numSamples);
+      bool nonZero = false;
+      for (int c=0; c<numChannelsIn; c++) {
+        for (int s=0; s<numSamples; s++) {
+          if (fabsf(buffer.getReadPointer(c)[s]) > 1.0E-4) { // -80 dB threshold
+            nonZero = true;
+            break;
+          }
+        }
+      }
+      if (not nonZero)
+        return;
+    }
+
     // Copy available samples:
     int w = writePosition.load();
     const auto available  = samples.getNumSamples() - w;
