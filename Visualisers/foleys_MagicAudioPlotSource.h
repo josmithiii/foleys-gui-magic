@@ -147,9 +147,12 @@ public:
      responsibility to put that into a FIFO and return as quickly as possible.
      */
     virtual void pushSamples (const juce::AudioBuffer<float>& buffer)=0;
-    virtual void pushSamples (const std::shared_ptr<juce::AudioBuffer<float>> bufSP) { pushSamples(*bufSP.get()); }
-    virtual void pushSamples (const std::shared_ptr<juce::AudioBuffer<float>> bufSP, int channelToPlot=0, int numChannelsToPlot=1) {
-      pushSamples(*bufSP.get());
+    virtual void pushSamples (const juce::AudioBuffer<float>& buffer, int currentPlotLength)=0;
+    virtual void pushSamples (const std::shared_ptr<juce::AudioBuffer<float>> bufSP) { pushSamples(*bufSP.get(),0); }
+    virtual void pushSamples (const std::shared_ptr<juce::AudioBuffer<float>> bufSP, int channelToPlot=0,
+                              int numChannelsToPlot=1, int currentPlotLength=0)
+    {
+      pushSamples(*bufSP.get(),0);
     }
 
     /**
@@ -160,15 +163,16 @@ public:
      @param channelX is the audio channel number (from 0) to use for the X axis of the scatterplot.
      @param bufferY is the audio buffer to serve as the Y axis of the scatterplot.
      @param channelY is the audio channel number (from 0) to use for the Y axis of the scatterplot.
-     @param plotLength specifies the desired length of plots involving this audio buffer.
+     @param currentPlotLength specifies the desired length of plots involving this audio buffer.
             Default is 0 meaning take system default (10 ms of audio data).
+            A good setting for this is one period in samples, if you know what that is.
      */
     virtual void pushSamples (const juce::AudioBuffer<float>& bufferX, int channelX,
                                const juce::AudioBuffer<float>& bufferY, int channelY,
-                               const int plotLengthPreferred=0) { }
+                               const int currentPlotLength=0) { }
     virtual void pushSamples (const std::shared_ptr<juce::AudioBuffer<float>> bufSPX, int channelX,
                               const std::shared_ptr<juce::AudioBuffer<float>> bufSPY, int channelY,
-                              const int plotLengthPreferred=0) { }
+                              const int currentPlotLength=0) { }
 
     /**
      This is the callback that creates the plot for drawing.

@@ -40,10 +40,15 @@ namespace foleys
 
 void MagicScatterPlot::pushSamples (const juce::AudioBuffer<float>& buffer)
 {
+  pushSamples(buffer, maxPlotLength);
+}
+
+void MagicScatterPlot::pushSamples (const juce::AudioBuffer<float>& buffer, int currentPlotLength) 
+{
   int numChannels = buffer.getNumChannels();
   int chanX = std::min<int>(0,numChannels-1);
   int chanY = std::min<int>(1,numChannels-1);
-  pushSamples(/* bufferX */ buffer, chanX, /* bufferY */ buffer, chanY, maxPlotLength);
+  pushSamples(/* bufferX */ buffer, chanX, /* bufferY */ buffer, chanY, currentPlotLength);
 }
 
 void MagicScatterPlot::pushSamples (const juce::AudioBuffer<float>& bufferX, int channelX,

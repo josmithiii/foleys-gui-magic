@@ -64,7 +64,7 @@ void MagicOscilloscopeAudio::checkAudioBufferForNaNs (juce::AudioBuffer<float>& 
 }
 
 void MagicOscilloscopeAudio::pushSamples (const std::shared_ptr<juce::AudioBuffer<float>> bufSP,
-                                          int channelToPlotIn, int numChannelsToPlotIn)
+                                          int channelToPlotIn, int numChannelsToPlotIn, int plotLength)
 {
   float* const* readPointers = (float*const*)(bufSP->getArrayOfReadPointers());
   int numChannelsIn = bufSP->getNumChannels();
@@ -72,12 +72,21 @@ void MagicOscilloscopeAudio::pushSamples (const std::shared_ptr<juce::AudioBuffe
   int numChans = std::min<int>(numChannelsToPlotIn,numChannelsIn-firstChan);
   // AudioBuffer (Type *const *dataToReferTo, int numChannelsToUse, int numSamples)
   juce::AudioBuffer<float> buffer(readPointers+firstChan, numChans, bufSP->getNumSamples() );
-  pushSamples (buffer);
+  pushSamples (buffer, plotLength);
 }
 
 void MagicOscilloscopeAudio::pushSamples (const juce::AudioBuffer<float>& buffer)
 {
+  pushSamples (buffer, buffer.getNumSamples());
+}
+
+void MagicOscilloscopeAudio::pushSamples (const juce::AudioBuffer<float>& buffer, int plotLength)
+{
     const int numSamples = buffer.getNumSamples();
+    if (plotLength <= 0)
+      plotLength = numSamples;
+    else
+      plotLength = std::min<int>(plotLength, numSamples);
     const int numChannelsIn = buffer.getNumChannels();
     int channelToPlot = juce::jlimit(0,numChannelsIn-1,plotChannel);
     if (overlayPlots) {
@@ -90,16 +99,20 @@ void MagicOscilloscopeAudio::pushSamples (const juce::AudioBuffer<float>& buffer
     // juce::AudioBuffer<float>* bufferP = &buffer;
     if (latch) {
       // bufferP = std::unique_ptr<juce::AudioBuffer<float>>(numChannelsIn,numSamples);
-      bool nonZero = false;
+      if (buffer.hasBeenCleared())
+        return; // else find out if anything is audible:
+      // float magnitude = buffer.getMagnitude(/* startSample */ 0, numSamples);
+      // bool audible = (magnitude > 1.0E-4); // -80 dB threshold
+      bool audible = false;
       for (int c=0; c<numChannelsIn; c++) {
         for (int s=0; s<numSamples; s++) {
           if (fabsf(buffer.getReadPointer(c)[s]) > 1.0E-4) { // -80 dB threshold
-            nonZero = true;
-            break;
+            audible = true;
+            break; // This is faster than calling getMagnitude()
           }
         }
       }
-      if (not nonZero)
+      if (not audible)
         return;
     }
 
