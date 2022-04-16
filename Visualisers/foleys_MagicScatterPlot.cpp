@@ -43,12 +43,13 @@ void MagicScatterPlot::pushSamples (const juce::AudioBuffer<float>& buffer)
   pushSamples(buffer, maxPlotLength);
 }
 
-void MagicScatterPlot::pushSamples (const juce::AudioBuffer<float>& buffer, int currentPlotLength) 
+void MagicScatterPlot::pushSamples (const juce::AudioBuffer<float>& bufferIn, int currentPlotLengthIn)
 {
-  int numChannels = buffer.getNumChannels();
+  currentPlotLength = currentPlotLengthIn;
+  int numChannels = bufferIn.getNumChannels();
   int chanX = std::min<int>(0,numChannels-1);
   int chanY = std::min<int>(1,numChannels-1);
-  pushSamples(/* bufferX */ buffer, chanX, /* bufferY */ buffer, chanY, currentPlotLength);
+    pushSamples(/* bufferX */ bufferIn, chanX, /* bufferY */ bufferIn, chanY, currentPlotLength);
 }
 
 void MagicScatterPlot::pushSamples (const juce::AudioBuffer<float>& bufferX, int channelX,

@@ -64,15 +64,16 @@ void MagicOscilloscopeAudio::checkAudioBufferForNaNs (juce::AudioBuffer<float>& 
 }
 
 void MagicOscilloscopeAudio::pushSamples (const std::shared_ptr<juce::AudioBuffer<float>> bufSP,
-                                          int channelToPlotIn, int numChannelsToPlotIn, int plotLength)
+                                          int channelToPlotIn, int numChannelsToPlotIn, int plotLengthIn)
 {
+  plotLength = plotLengthIn;
   float* const* readPointers = (float*const*)(bufSP->getArrayOfReadPointers());
   int numChannelsIn = bufSP->getNumChannels();
   int firstChan = std::min<int>(channelToPlotIn, numChannelsIn-1);
   int numChans = std::min<int>(numChannelsToPlotIn,numChannelsIn-firstChan);
   // AudioBuffer (Type *const *dataToReferTo, int numChannelsToUse, int numSamples)
   juce::AudioBuffer<float> buffer(readPointers+firstChan, numChans, bufSP->getNumSamples() );
-  pushSamples (buffer, plotLength);
+  pushSamples (buffer, plotLengthIn);
 }
 
 void MagicOscilloscopeAudio::pushSamples (const juce::AudioBuffer<float>& buffer)
@@ -80,9 +81,10 @@ void MagicOscilloscopeAudio::pushSamples (const juce::AudioBuffer<float>& buffer
   pushSamples (buffer, buffer.getNumSamples());
 }
 
-void MagicOscilloscopeAudio::pushSamples (const juce::AudioBuffer<float>& buffer, int plotLength)
+void MagicOscilloscopeAudio::pushSamples (const juce::AudioBuffer<float>& buffer, int plotLengthIn)
 {
     const int numSamples = buffer.getNumSamples();
+    plotLength = plotLengthIn;
     if (plotLength <= 0)
       plotLength = numSamples;
     else
@@ -163,7 +165,7 @@ void MagicOscilloscopeAudio::createPlotPaths (juce::Path& path, juce::Path& fill
     int numPlotSamplesAvailable = samples.getNumSamples();
 
     if (plotLength <= 0)
-        plotLength = int(0.01 * sampleRate); // 10 ms default plot duration
+        plotLength = std::min<int>(samples.getNumSamples(), int(0.01 * sampleRate)); // 10 ms default plot duration
 
     while (numPlotSamplesAvailable < plotLength)
         plotLength <<= 1; // cut in half until within range (better preserves desired phase)
