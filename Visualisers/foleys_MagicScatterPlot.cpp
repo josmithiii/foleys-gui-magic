@@ -91,7 +91,7 @@ void MagicScatterPlot::createPlotPaths (juce::Path& path, juce::Path& filledPath
     if (sampleRate < 20.0f)
         return;
 
-    const auto numToDisplay = getNumToDisplay();
+    const auto numToDisplay = getNumToDisplay(); // nominally plotLengthNow - defined in ./foleys_MagicAudioPlotSource.h
     const auto* dataX = samplesX.getReadPointer (0);
     const auto* dataY = samplesY.getReadPointer (0);
 

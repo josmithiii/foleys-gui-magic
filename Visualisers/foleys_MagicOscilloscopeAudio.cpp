@@ -181,12 +181,9 @@ void MagicOscilloscopeAudio::createPlotPaths (juce::Path& path, juce::Path& fill
     if (sampleRate < 20.0f || numPlotChannels < 1)
         return;
 
-    const auto numToDisplay = getNumToDisplay();
-
     int numPlotSamplesAvailable = samples.getNumSamples();
-
-    while (numPlotSamplesAvailable < plotLength)
-        plotLength <<= 1; // cut in half until within range (better preserves desired phase)
+    int numToDisplay = getNumToDisplay(); // nominally plotLengthNow - defined in ./foleys_MagicAudioPlotSource.h
+    numToDisplay = std::min<int> ( numToDisplay , numPlotSamplesAvailable);
 
     auto* data = samples.getReadPointer (0); // samples holds channels "plotChannel" to "plotChannel + numPlotChannels-1"
 
