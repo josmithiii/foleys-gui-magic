@@ -61,7 +61,6 @@ public:
     /**
      Push samples of an AudioBuffer to be visualised.
      */
-    void pushSamples (const juce::AudioBuffer<float>& buffer) override;
     void pushSamples (const juce::AudioBuffer<float>& buffer, int plotLength=0) override;
     void pushSamples (const std::shared_ptr<juce::AudioBuffer<float>> bufSP, int channelToPlot=0,
                       int numChannelsToPlot=1, int plotLength=0) override;

@@ -38,18 +38,12 @@
 namespace foleys
 {
 
-void MagicScatterPlot::pushSamples (const juce::AudioBuffer<float>& buffer)
-{
-  pushSamples(buffer, maxPlotLength);
-}
-
 void MagicScatterPlot::pushSamples (const juce::AudioBuffer<float>& bufferIn, int currentPlotLengthIn)
 {
-  currentPlotLength = currentPlotLengthIn;
   int numChannels = bufferIn.getNumChannels();
   int chanX = std::min<int>(0,numChannels-1);
   int chanY = std::min<int>(1,numChannels-1);
-    pushSamples(/* bufferX */ bufferIn, chanX, /* bufferY */ bufferIn, chanY, currentPlotLength);
+  pushSamples(/* bufferX */ bufferIn, chanX, /* bufferY */ bufferIn, chanY, currentPlotLengthIn);
 }
 
 void MagicScatterPlot::pushSamples (const juce::AudioBuffer<float>& bufferX, int channelX,
@@ -58,8 +52,7 @@ void MagicScatterPlot::pushSamples (const juce::AudioBuffer<float>& bufferX, int
 {
     auto w = writePosition.load();
 
-    if (plotLengthOverride > 0)
-        plotLength = plotLengthOverride; // Consider keeping plotLength around to use if override returns to 0
+    plotLengthNow = std::max<int>(0,plotLengthOverride);
 
     const auto numSamples = bufferX.getNumSamples();
     jassert(numSamples == bufferY.getNumSamples());
@@ -91,14 +84,14 @@ void MagicScatterPlot::pushSamples (const juce::AudioBuffer<float>& bufferX, int
     resetLastDataFlag();
 }
 
+// ====================================================================================================
+
 void MagicScatterPlot::createPlotPaths (juce::Path& path, juce::Path& filledPath, juce::Rectangle<float> bounds, MagicAudioPlotComponent&)
 {
     if (sampleRate < 20.0f)
         return;
 
-    const auto  numToDisplay = (currentPlotLength > 0 ?
-                                std::min<int>(currentPlotLength,samplesX.getNumSamples()) :
-                                int (0.01 * sampleRate) - 1); // 10 ms default
+    const auto numToDisplay = getNumToDisplay();
     const auto* dataX = samplesX.getReadPointer (0);
     const auto* dataY = samplesY.getReadPointer (0);
 

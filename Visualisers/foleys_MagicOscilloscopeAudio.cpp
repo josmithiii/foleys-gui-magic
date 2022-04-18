@@ -64,97 +64,116 @@ void MagicOscilloscopeAudio::checkAudioBufferForNaNs (juce::AudioBuffer<float>& 
 }
 
 void MagicOscilloscopeAudio::pushSamples (const std::shared_ptr<juce::AudioBuffer<float>> bufSP,
-                                          int channelToPlotIn, int numChannelsToPlotIn, int plotLengthIn)
+                                          int firstChannelToPlotIn, int numChannelsToPlotIn, int plotLengthIn)
 {
-  plotLength = plotLengthIn;
   float* const* readPointers = (float*const*)(bufSP->getArrayOfReadPointers());
   int numChannelsIn = bufSP->getNumChannels();
-  int firstChan = std::min<int>(channelToPlotIn, numChannelsIn-1);
-  int numChans = std::min<int>(numChannelsToPlotIn,numChannelsIn-firstChan);
+  int firstChannelToPlot = std::min<int>(firstChannelToPlotIn, numChannelsIn-1);
+  int numChansClipped = std::min<int>(numChannelsToPlotIn,numChannelsIn-firstChannelToPlot);
   // AudioBuffer (Type *const *dataToReferTo, int numChannelsToUse, int numSamples)
-  juce::AudioBuffer<float> buffer(readPointers+firstChan, numChans, bufSP->getNumSamples() );
+  juce::AudioBuffer<float> buffer(readPointers+firstChannelToPlot, numChansClipped, bufSP->getNumSamples() );
   pushSamples (buffer, plotLengthIn);
-}
-
-void MagicOscilloscopeAudio::pushSamples (const juce::AudioBuffer<float>& buffer)
-{
-  pushSamples (buffer, buffer.getNumSamples());
 }
 
 void MagicOscilloscopeAudio::pushSamples (const juce::AudioBuffer<float>& buffer, int plotLengthIn)
 {
-    const int numSamples = buffer.getNumSamples();
-    plotLength = plotLengthIn;
-    if (plotLength <= 0)
-      plotLength = numSamples;
-    else
-      plotLength = std::min<int>(plotLength, numSamples);
-    const int numChannelsIn = buffer.getNumChannels();
-    int channelToPlot = juce::jlimit(0,numChannelsIn-1,plotChannel);
-    if (overlayPlots) {
-        numChannelsOut = std::min<int>( numPlotChannels, numChannelsIn-plotChannel );
-    } else {
-        averageAllChannelsToSamplesChannel0(buffer);
-        numChannelsOut = 1;
-    }
+  const int numSamples = buffer.getNumSamples();
 
-    // juce::AudioBuffer<float>* bufferP = &buffer;
-    if (latch) {
-      // bufferP = std::unique_ptr<juce::AudioBuffer<float>>(numChannelsIn,numSamples);
-      if (buffer.hasBeenCleared())
-        return; // else find out if anything is audible:
-      // float magnitude = buffer.getMagnitude(/* startSample */ 0, numSamples);
-      // bool audible = (magnitude > 1.0E-4); // -80 dB threshold
-      bool audible = false;
-      for (int c=0; c<numChannelsIn; c++) {
-        for (int s=0; s<numSamples; s++) {
-          if (fabsf(buffer.getReadPointer(c)[s]) > 1.0E-4) { // -80 dB threshold
-            audible = true;
-            break; // This is faster than calling getMagnitude()
-          }
+#if DEBUG
+  float maxAmp = buffer.getMagnitude(0,numSamples);
+  if (maxAmp > 0.0f) {
+    DBG("MagicOscilloscopeAudio::pushSamples: Buffer Nonzero");
+  }
+#endif
+
+  plotLengthNow = std::max<int>(0,plotLengthIn);
+  const int numChannelsIn = buffer.getNumChannels();
+  int firstChannelToPlot = juce::jlimit(0,numChannelsIn-1,plotChannel);
+  int lastChannelToPlot = std::min<int> ( numChannelsIn-1, firstChannelToPlot + numPlotChannels );
+  if (overlayPlots) {
+    numChannelsOut = lastChannelToPlot - firstChannelToPlot + 1;
+  } else {
+    averageAllChannelsToSamplesChannel0(buffer);
+    numChannelsOut = 1;
+  }
+
+  // juce::AudioBuffer<float>* bufferP = &buffer;
+  int firstAudibleSample[numChannelsIn];
+  int lastAudibleSample[numChannelsIn];
+  int startSample = 0;
+  int numSamplesTrimmed = numSamples;
+  if (latch) { // When latching, we don't push samples when they are inaudible (least-work method)
+    // bufferP = std::unique_ptr<juce::AudioBuffer<float>>(numChannelsIn,numSamples);
+    if (buffer.hasBeenCleared())
+      return; // else find out if anything is audible:
+    // float magnitude = buffer.getMagnitude(/* startSample */ 0, numSamples);
+    // bool audible = (magnitude > 1.0E-4); // -80 dB threshold
+    bool audible = false;
+    for (int c=firstChannelToPlot; c<lastChannelToPlot; c++) {
+      for (int s=0; s<numSamples; s++) {
+        if (fabsf(buffer.getReadPointer(c)[s]) > 1.0E-4) { // -80 dB threshold
+          firstAudibleSample[c] = s;
+          audible = true;
+          break; // This is faster than calling getMagnitude()
         }
       }
-      if (not audible)
-        return;
     }
-
-    // Copy available samples:
-    int w = writePosition.load();
-    const auto available  = samples.getNumSamples() - w;
-    numPlotChannels = std::min<int>(channelToPlot+samples.getNumChannels(),buffer.getNumChannels());
-    if (available >= numSamples) // Copy all of the input buffer into our local ring buffer at its current write position w:
-    {
-        samples.copyFrom (0, w, buffer.getReadPointer (channelToPlot), numSamples);
-        if (numChannelsOut>1) // must also copy higher channels
-        {
-            for (int c=channelToPlot+1; c < channelToPlot+numChannelsOut; c++)
-            {
-                samples.copyFrom (c-channelToPlot, w, buffer.getReadPointer (c), numSamples);
-            }
+    if (not audible)
+      return;
+    for (int c=0; c<numChannelsIn; c++) {
+      for (int s=numSamples-1; s>=firstAudibleSample[c]; s--) {
+        if (fabsf(buffer.getReadPointer(c)[s]) > 1.0E-4) { // -80 dB threshold
+          lastAudibleSample[c] = s;
+          break;
         }
+      }
     }
-    else // must break up the copy into two pieces due to wraparound in the ring buffer:
-    {
-        samples.copyFrom (0, w, buffer.getReadPointer (channelToPlot), available);
-        samples.copyFrom (0, 0, buffer.getReadPointer (channelToPlot, available), numSamples - available);
-        if (numChannelsOut>1) // must also copy higher channels
-        {
-            for (int c=channelToPlot+1; c < channelToPlot+numChannelsOut; c++)
-            {
-                samples.copyFrom (c-channelToPlot, w, buffer.getReadPointer (c), available);
-                samples.copyFrom (c-channelToPlot, 0, buffer.getReadPointer (c, available), numSamples - available);
-            }
-        }
+    int firstAudibleSampleAllChannels = firstAudibleSample[0];
+    int lastAudibleSampleAllChannels = lastAudibleSample[0];
+    for (int c=1; c<numChannelsIn; c++) {
+      firstAudibleSampleAllChannels = std::min<int> ( firstAudibleSampleAllChannels, firstAudibleSample[c] );
+      lastAudibleSampleAllChannels = std::max<int> ( lastAudibleSampleAllChannels, lastAudibleSample[c] );
     }
+    startSample = firstAudibleSampleAllChannels;
+    numSamplesTrimmed = lastAudibleSampleAllChannels - firstAudibleSampleAllChannels - 1;
+  }
 
-    checkAudioBufferForNaNs(samples);
+  // Copy buffer samples to circular plot buffer:
+  int w = writePosition.load();
+  const auto available  = samples.getNumSamples() - w;
+  if (available >= numSamplesTrimmed) // Copy all of the input buffer into our local ring buffer at its current write position w:
+  {
+    samples.copyFrom (0, w, buffer, firstChannelToPlot, startSample, numSamplesTrimmed);
+    if (numChannelsOut>1) // must also copy higher channels
+      {
+        for (int c=firstChannelToPlot+1; c <= lastChannelToPlot; c++)
+          {
+            samples.copyFrom (c-firstChannelToPlot, w, buffer, c, startSample, numSamplesTrimmed);
+          }
+      }
+  }
+  else // must break up the copy into two pieces due to wraparound in the ring buffer:
+  {
+    samples.copyFrom (0, w, buffer, firstChannelToPlot, startSample, available);
+    samples.copyFrom (0, 0, buffer, firstChannelToPlot, startSample + available, numSamplesTrimmed - available);
+    if (numChannelsOut>1) // must also copy higher channels
+      {
+        for (int c=firstChannelToPlot+1; c < firstChannelToPlot+numChannelsOut; c++)
+          {
+            samples.copyFrom (c-firstChannelToPlot, w, buffer, c, startSample, available);
+            samples.copyFrom (c-firstChannelToPlot, 0, buffer, c, startSample + available, numSamplesTrimmed - available);
+          }
+      }
+  }
 
-    if (available > numSamples)
-        writePosition.store (w + numSamples);
-    else
-        writePosition.store (numSamples - available);
+  checkAudioBufferForNaNs(samples);
 
-    resetLastDataFlag();
+  w += numSamplesTrimmed;
+  if (available <= numSamplesTrimmed)
+    w -= samples.getNumSamples();
+  writePosition.store (w);
+
+  resetLastDataFlag(); // store current time (ms) in lastData flag
 }
 
 void MagicOscilloscopeAudio::createPlotPaths (juce::Path& path, juce::Path& filledPath, juce::Rectangle<float> bounds, MagicAudioPlotComponent&)
@@ -162,17 +181,12 @@ void MagicOscilloscopeAudio::createPlotPaths (juce::Path& path, juce::Path& fill
     if (sampleRate < 20.0f || numPlotChannels < 1)
         return;
 
-    int numPlotSamplesAvailable = samples.getNumSamples();
+    const auto numToDisplay = getNumToDisplay();
 
-    if (plotLength <= 0)
-        plotLength = std::min<int>(samples.getNumSamples(), int(0.01 * sampleRate)); // 10 ms default plot duration
+    int numPlotSamplesAvailable = samples.getNumSamples();
 
     while (numPlotSamplesAvailable < plotLength)
         plotLength <<= 1; // cut in half until within range (better preserves desired phase)
-
-    const auto  numToDisplay = (plotLength > 0 ?
-                                std::min<int>(plotLength,samples.getNumSamples()) :
-                                int (0.01 * sampleRate) - 1);
 
     auto* data = samples.getReadPointer (0); // samples holds channels "plotChannel" to "plotChannel + numPlotChannels-1"
 
@@ -199,6 +213,8 @@ void MagicOscilloscopeAudio::createPlotPaths (juce::Path& path, juce::Path& fill
             samples.applyGain(c,pos,numToEnd,ampScale);
             samples.applyGain(c,0,numToDisplay-numToEnd,ampScale);
           }
+        } else {
+            DBG("MagicOscilloscopeAudio::createPlotPaths: Signal is silent");
         }
       }
     }

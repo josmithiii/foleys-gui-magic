@@ -58,7 +58,6 @@ public:
     /**
      Push samples to a buffer to be visualised as a scatterplot (XY plot) of channels 0 (X) and 1 (Y).
      */
-    void pushSamples (const juce::AudioBuffer<float>& buffer) override;
     void pushSamples (const juce::AudioBuffer<float>& buffer, int currentPlotLength) override;
 
     /**
@@ -87,7 +86,6 @@ public:
     virtual void prepareToPlay (double sampleRate, int samplesPerBlockExpected) override;
 
 private:
-    int                      currentPlotLength = 0;
 
     juce::AudioBuffer<float> samplesX;
     juce::AudioBuffer<float> samplesY;

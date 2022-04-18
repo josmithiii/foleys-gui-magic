@@ -114,14 +114,38 @@ public:
     }
 
     /**
-     Set audio plot length in samples.
+     Set default audio plot length in samples.
      */
     virtual void setPlotLength (int pl)
     {
         plotLength = std::max<int>(0,pl);
         if (plotLength > samples.getNumSamples())
-            samples.setSize(samples.getNumChannels(), plotLength);
+            samples.setSize(samples.getNumChannels(), plotLength); // circular buffer used for plotting
     }
+
+    /**
+     Set dynamic audio plot length in samples.  This is normally set in pushSamples() for each audio buffer,
+     but this function is useful for setting it back to zero to return to the default plot length.
+     */
+    virtual void setPlotLengthNow (int pln)
+    {
+        plotLengthNow = std::max<int>(0,pln);
+        if (plotLengthNow > samples.getNumSamples())
+            samples.setSize(samples.getNumChannels(), plotLengthNow);
+    }
+
+ protected:
+
+    /* internal utility for uniformly determining current plot length */
+    int getNumToDisplay() {
+      if (plotLength <= 0)
+          setPlotLength(int (0.01 * sampleRate));
+      jassert(samples.getNumSamples()>0);
+      int numToDisplay = (plotLengthNow > 0 ? std::min<int>(plotLengthNow,samples.getNumSamples()) : plotLength);
+      return numToDisplay;
+    }
+
+ public:
 
     /**
      Set offset between plots as a fractional value between 0 and 1 or higher, with 1 meaning adjacent nonoverlapping lanes.
@@ -146,8 +170,7 @@ public:
      This is the callback whenever new sample data arrives. It is the subclasses
      responsibility to put that into a FIFO and return as quickly as possible.
      */
-    virtual void pushSamples (const juce::AudioBuffer<float>& buffer)=0;
-    virtual void pushSamples (const juce::AudioBuffer<float>& buffer, int currentPlotLength)=0;
+    virtual void pushSamples (const juce::AudioBuffer<float>& buffer, int currentPlotLength=0)=0;
     virtual void pushSamples (const std::shared_ptr<juce::AudioBuffer<float>> bufSP) { pushSamples(*bufSP.get(),0); }
     virtual void pushSamples (const std::shared_ptr<juce::AudioBuffer<float>> bufSP, int channelToPlot=0,
                               int numChannelsToPlot=1, int currentPlotLength=0)
@@ -164,7 +187,7 @@ public:
      @param bufferY is the audio buffer to serve as the Y axis of the scatterplot.
      @param channelY is the audio channel number (from 0) to use for the Y axis of the scatterplot.
      @param currentPlotLength specifies the desired length of plots involving this audio buffer.
-            Default is 0 meaning take system default (10 ms of audio data).
+            Default is 0 meaning take the default (which itself defaults to 10 ms of audio data).
             A good setting for this is one period in samples, if you know what that is.
      */
     virtual void pushSamples (const juce::AudioBuffer<float>& bufferX, int channelX,
@@ -191,12 +214,13 @@ public:
     virtual void setActive (bool shouldBeActive) { active = shouldBeActive; }
 
     /**
-     Use this information to invalidate your plot drawing
+     Time in ms of last plot buffering.
+     You can use this information to invalidate your plot drawing after some number of ms.
      */
     juce::int64 getLastDataUpdate() const { return lastData.load(); }
 
     /**
-     Call this to invalidate the lastData flag
+     Call this to reset to the current time in ms.
      */
     void resetLastDataFlag() { lastData.store (juce::Time::currentTimeMillis()); }
 
@@ -218,8 +242,8 @@ protected:
     bool latch = false;
     int plotChannel = 0;       // first channel to plot
     int numPlotChannels = 0;   // number of channels to plot
-    int plotLength = 0;        // fixed plot length for every plot
-    int maxPlotLength = 0;     // for future use with pitch-synchronous plotting and the like (e.g., "plot one period")
+    int plotLength = 0;        // fixed default plot length for every plot
+    int plotLengthNow = 0;     // overrides plotLength when nonzero (limited to circular buffer size)
 
     inline void averageAllChannelsToSamplesChannel0(const juce::AudioBuffer<float>& buffer)
     {
@@ -276,11 +300,10 @@ protected:
                 nonNeg = data [posN] >= 0.0f;
             }
         }
-
         if (triggeredPos)
         {
             auto nonPos = data [posP] <= 0.0f;
-            auto bail = int (sampleRate / 20.0f);
+            auto bail = samples.getNumSamples();
             while (nonPos == true && --bail > 0) // search back to the first positive-going zero-crossing
             {
                 if (--posP < 0)
@@ -288,6 +311,8 @@ protected:
                 distN++;
                 nonPos = data [posP] >= 0.0f;
             }
+            if (bail==0)
+                DBG("Set samples-zero flag here and clear it in pushSamples");
         }
         int pos;
         if (triggeredPos && triggeredNeg) {
