@@ -134,17 +134,6 @@ public:
             samples.setSize(samples.getNumChannels(), plotLengthNow);
     }
 
- protected:
-
-    /* internal utility for uniformly determining current plot length */
-    int getNumToDisplay() {
-      if (plotLength <= 0)
-          setPlotLength(int (0.01 * sampleRate));
-      jassert(samples.getNumSamples()>0);
-      int numToDisplay = (plotLengthNow > 0 ? std::min<int>(plotLengthNow,samples.getNumSamples()) : plotLength);
-      return numToDisplay;
-    }
-
  public:
 
     /**
@@ -323,6 +312,15 @@ protected:
         if (pos < 0)
             pos += samples.getNumSamples();
         return pos;
+    }
+
+    /* internal utility for uniformly determining current plot length */
+    int getNumToDisplay() {
+      if (plotLength <= 0)
+          setPlotLength(int (0.01 * sampleRate));
+      jassert(samples.getNumSamples()>0);
+      int numToDisplay = (plotLengthNow > 0 ? std::min<int>(plotLengthNow,samples.getNumSamples()) : plotLength);
+      return numToDisplay;
     }
 
 private:

@@ -82,7 +82,7 @@ void MagicOscilloscopeAudio::pushSamples (const juce::AudioBuffer<float>& buffer
 #if DEBUG
   float maxAmp = buffer.getMagnitude(0,numSamples);
   if (maxAmp > 0.0f) {
-    // DBG("MagicOscilloscopeAudio::pushSamples: Buffer Nonzero");
+    DBG("MagicOscilloscopeAudio::pushSamples: Buffer Nonzero");
   }
 #endif
 
@@ -187,8 +187,13 @@ void MagicOscilloscopeAudio::createPlotPaths (juce::Path& path, juce::Path& fill
 
     auto* data = samples.getReadPointer (0); // samples holds channels "plotChannel" to "plotChannel + numPlotChannels-1"
 
-    const auto pos0 = writePosition.load() - numToDisplay;
-    auto pos = getReadPosition(data, pos0); // go back to previous zero-transition if in triggered mode
+    int pos0 = writePosition.load() - numToDisplay; // nominally display the last buffer
+#if 1
+    int nBufs = int(pos0 / numToDisplay); // number of full buffers in samples ringbuffer
+    int pos = nBufs * numToDisplay; // start at the last one and stay synchronous
+#else
+    int pos = getReadPosition(data, pos0); // go back to previous zero-transition if in triggered mode
+#endif
 
     // Normalize all plotted channels if requested:
     if (normalize) {
