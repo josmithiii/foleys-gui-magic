@@ -82,7 +82,7 @@ void MagicOscilloscopeAudio::pushSamples (const juce::AudioBuffer<float>& buffer
 #if DEBUG
   float maxAmp = buffer.getMagnitude(0,numSamples);
   if (maxAmp > 0.0f) {
-    DBG("MagicOscilloscopeAudio::pushSamples: Buffer Nonzero");
+    // DBG("MagicOscilloscopeAudio::pushSamples: Buffer Nonzero");
   }
 #endif
 
@@ -135,7 +135,7 @@ void MagicOscilloscopeAudio::pushSamples (const juce::AudioBuffer<float>& buffer
       lastAudibleSampleAllChannels = std::max<int> ( lastAudibleSampleAllChannels, lastAudibleSample[c] );
     }
     startSample = firstAudibleSampleAllChannels;
-    numSamplesTrimmed = lastAudibleSampleAllChannels - firstAudibleSampleAllChannels - 1;
+    numSamplesTrimmed = lastAudibleSampleAllChannels - firstAudibleSampleAllChannels + 1;
   }
 
   // Copy buffer samples to circular plot buffer:
@@ -211,7 +211,7 @@ void MagicOscilloscopeAudio::createPlotPaths (juce::Path& path, juce::Path& fill
             samples.applyGain(c,0,numToDisplay-numToEnd,ampScale);
           }
         } else {
-            DBG("MagicOscilloscopeAudio::createPlotPaths: Signal is silent");
+            // DBG("MagicOscilloscopeAudio::createPlotPaths: Signal is silent");
         }
       }
     }
