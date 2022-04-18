@@ -82,7 +82,7 @@ void MagicOscilloscopeAudio::pushSamples (const juce::AudioBuffer<float>& buffer
 #if DEBUG
   float maxAmp = buffer.getMagnitude(0,numSamples);
   if (maxAmp > 0.0f) {
-    DBG("MagicOscilloscopeAudio::pushSamples: Buffer Nonzero");
+    // DBG("MagicOscilloscopeAudio::pushSamples: Buffer Nonzero");
   }
 #endif
 
