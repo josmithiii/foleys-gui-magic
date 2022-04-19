@@ -87,6 +87,8 @@ void MagicOscilloscopeAudio::pushSamples (const juce::AudioBuffer<float>& buffer
 #endif
 
   plotLengthNow = std::max<int>(0,plotLengthIn);
+  if ( plotLengthNow > 0 && writePosition.load() >= plotLengthNow ) // already have a plot waiting to go
+      return;
   const int numChannelsIn = buffer.getNumChannels();
   int firstChannelToPlot = juce::jlimit(0,numChannelsIn-1,plotChannel);
   int lastChannelToPlot = std::min<int> ( numChannelsIn-1, firstChannelToPlot + numPlotChannels );
@@ -139,10 +141,12 @@ void MagicOscilloscopeAudio::pushSamples (const juce::AudioBuffer<float>& buffer
   }
 
   // Copy buffer samples to circular plot buffer:
-  int w = writePosition.load();
-  const auto available  = samples.getNumSamples() - w;
-  if (available >= numSamplesTrimmed) // Copy all of the input buffer into our local ring buffer at its current write position w:
+  int w = writePosition.load(); // index of next write to samples ringbuffer
+
+  const auto samplesBeforeWrap = samples.getNumSamples() - w; // Number of samples we can write without ringbuffer index wrap-around
+  if (plotLengthNow > 0  ||  samplesBeforeWrap >= numSamplesTrimmed) // We can copy without index-wrapping
   {
+    // Copy all of the input buffer into our local ring buffer at its current write position w:
     samples.copyFrom (0, w, buffer, firstChannelToPlot, startSample, numSamplesTrimmed);
     if (numChannelsOut>1) // must also copy higher channels
       {
@@ -154,14 +158,14 @@ void MagicOscilloscopeAudio::pushSamples (const juce::AudioBuffer<float>& buffer
   }
   else // must break up the copy into two pieces due to wraparound in the ring buffer:
   {
-    samples.copyFrom (0, w, buffer, firstChannelToPlot, startSample, available);
-    samples.copyFrom (0, 0, buffer, firstChannelToPlot, startSample + available, numSamplesTrimmed - available);
+    samples.copyFrom (0, w, buffer, firstChannelToPlot, startSample, samplesBeforeWrap);
+    samples.copyFrom (0, 0, buffer, firstChannelToPlot, startSample + samplesBeforeWrap, numSamplesTrimmed - samplesBeforeWrap);
     if (numChannelsOut>1) // must also copy higher channels
       {
         for (int c=firstChannelToPlot+1; c < firstChannelToPlot+numChannelsOut; c++)
           {
-            samples.copyFrom (c-firstChannelToPlot, w, buffer, c, startSample, available);
-            samples.copyFrom (c-firstChannelToPlot, 0, buffer, c, startSample + available, numSamplesTrimmed - available);
+            samples.copyFrom (c-firstChannelToPlot, w, buffer, c, startSample, samplesBeforeWrap);
+            samples.copyFrom (c-firstChannelToPlot, 0, buffer, c, startSample + samplesBeforeWrap, numSamplesTrimmed - samplesBeforeWrap);
           }
       }
   }
@@ -169,10 +173,9 @@ void MagicOscilloscopeAudio::pushSamples (const juce::AudioBuffer<float>& buffer
   checkAudioBufferForNaNs(samples);
 
   w += numSamplesTrimmed;
-  if (available <= numSamplesTrimmed)
+  if (plotLengthNow == 0 && samplesBeforeWrap <= numSamplesTrimmed)
     w -= samples.getNumSamples();
   writePosition.store (w);
-
   resetLastDataFlag(); // store current time (ms) in lastData flag
 }
 
@@ -181,19 +184,26 @@ void MagicOscilloscopeAudio::createPlotPaths (juce::Path& path, juce::Path& fill
     if (sampleRate < 20.0f || numPlotChannels < 1)
         return;
 
+    if (plotLengthNow>0 && writePosition.load() < plotLengthNow)
+        return; // Waiting for a complete plot to be available in plotLengthNow mode - use last plot in the meantime
+
     int numPlotSamplesAvailable = samples.getNumSamples();
-    int numToDisplay = getNumToDisplay(); // nominally plotLengthNow - defined in ./foleys_MagicAudioPlotSource.h
-    numToDisplay = std::min<int> ( numToDisplay , numPlotSamplesAvailable);
+    int numToDisplay = getNumToDisplay(); // either plotLength or plotLengthNow - defined in ./foleys_MagicAudioPlotSource.h
 
     auto* data = samples.getReadPointer (0); // samples holds channels "plotChannel" to "plotChannel + numPlotChannels-1"
 
-    int pos0 = writePosition.load() - numToDisplay; // nominally display the last buffer
-#if 1
-    int nBufs = int(pos0 / numToDisplay); // number of full buffers in samples ringbuffer
-    int pos = nBufs * numToDisplay; // start at the last one and stay synchronous
+    int pos0 = 0;
+    int pos = pos0;
+    if (plotLengthNow == 0) // no ringbuffer operation in this mode:
+    {
+      pos0 = writePosition.load() - numToDisplay; // plot most recent numToDisplay samples in ringbuffer
+#if 0
+      int nBufs = int(pos0 / numToDisplay); // number of full buffers in samples ringbuffer
+      pos = nBufs * numToDisplay; // start at the last one and stay synchronous
 #else
-    int pos = getReadPosition(data, pos0); // go back to previous zero-transition if in triggered mode
+      pos = getReadPosition(data, pos0); // go back to previous zero-transition if in triggered mode
 #endif
+    }
 
     // Normalize all plotted channels if requested:
     if (normalize) {
@@ -283,6 +293,9 @@ void MagicOscilloscopeAudio::createPlotPaths (juce::Path& path, juce::Path& fill
         // FIXME: Consider fill here
         // path.closeSubPath(); // draw from end of plot back to beginning (ok if both at minY or maxY)
     }
+
+    if (plotLengthNow > 0)
+      writePosition.store(0); // reset for next plot
 }
 
 void MagicOscilloscopeAudio::prepareToPlay (double sampleRateToUse, int samplesPerBlockExpected)

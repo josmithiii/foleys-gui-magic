@@ -132,6 +132,7 @@ public:
         plotLengthNow = std::max<int>(0,pln);
         if (plotLengthNow > samples.getNumSamples())
             samples.setSize(samples.getNumChannels(), plotLengthNow);
+        writePosition.store (0); // when plotLengthNow>0, we only write each plot from 0
     }
 
  public:
