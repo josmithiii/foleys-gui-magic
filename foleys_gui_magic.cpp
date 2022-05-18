@@ -1,6 +1,6 @@
 /*
  ==============================================================================
-    Copyright (c) 2019-2021 Foleys Finest Audio - Daniel Walz
+    Copyright (c) 2019-2022 Foleys Finest Audio - Daniel Walz
     All rights reserved.
 
     License for non-commercial projects:
@@ -33,8 +33,6 @@
     OF THE POSSIBILITY OF SUCH DAMAGE.
  ==============================================================================
  */
-
-#include "foleys_gui_magic.h"
 
 #include <stack>
 #include <numeric>
@@ -84,6 +82,16 @@
 #include "LookAndFeels/foleys_Skeuomorphic.cpp"
 
 #if FOLEYS_SHOW_GUI_EDITOR_PALLETTE
+
+namespace EditorColours
+{
+    static juce::Colour background;
+    static juce::Colour outline;
+    static juce::Colour text;
+    static juce::Colour disabledText;
+    static juce::Colour removeButton;
+    static juce::Colour selectedBackground;
+}
 
 #include "Editor/foleys_ToolBox.cpp"
 #include "Editor/foleys_GUITreeEditor.cpp"

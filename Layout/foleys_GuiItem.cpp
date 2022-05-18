@@ -1,6 +1,6 @@
 /*
  ==============================================================================
-    Copyright (c) 2019-2021 Foleys Finest Audio - Daniel Walz
+    Copyright (c) 2019-2022 Foleys Finest Audio - Daniel Walz
     All rights reserved.
 
     License for non-commercial projects:
@@ -33,6 +33,8 @@
     OF THE POSSIBILITY OF SUCH DAMAGE.
  ==============================================================================
  */
+
+#include "foleys_GuiItem.h"
 
 namespace foleys
 {
@@ -140,6 +142,12 @@ void GuiItem::configureComponent()
         if (tooltip.isNotEmpty())
             tooltipClient->setTooltip (tooltip);
     }
+
+    component->setAccessible (magicBuilder.getStyleProperty (IDs::accessibility, configNode));
+    component->setTitle (magicBuilder.getStyleProperty (IDs::accessibilityTitle, configNode));
+    component->setDescription (magicBuilder.getStyleProperty (IDs::accessibilityDescription, configNode).toString());
+    component->setHelpText (magicBuilder.getStyleProperty (IDs::accessibilityHelpText, configNode).toString());
+    component->setExplicitFocusOrder (magicBuilder.getStyleProperty (IDs::accessibilityFocusOrder, configNode));
 
     auto  visibilityNode = magicBuilder.getStyleProperty (IDs::visibility, configNode);
     if (! visibilityNode.isVoid())

@@ -1,6 +1,6 @@
 /*
  ==============================================================================
-    Copyright (c) 2019-2021 Foleys Finest Audio - Daniel Walz
+    Copyright (c) 2019-2022 Foleys Finest Audio - Daniel Walz
     All rights reserved.
 
     License for non-commercial projects:
@@ -34,6 +34,7 @@
  ==============================================================================
  */
 
+#include "foleys_MagicPlotComponent.h"
 
 namespace foleys
 {
@@ -85,6 +86,9 @@ void MagicPlotComponent::paint (juce::Graphics& g)
         plotSource->createPlotPaths (path, filledPath, getLocalBounds().toFloat(), *this);
         lastDataTimestamp = lastUpdate;
     }
+
+    if (gradient)
+        gradient->setupGradientFill (g, getLocalBounds().toFloat());
 
     if (! glowBuffer.isNull())
         drawPlotGlowing (g);

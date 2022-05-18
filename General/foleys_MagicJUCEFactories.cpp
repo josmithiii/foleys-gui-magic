@@ -1,6 +1,6 @@
 /*
  ==============================================================================
-    Copyright (c) 2019-2021 Foleys Finest Audio - Daniel Walz
+    Copyright (c) 2019-2022 Foleys Finest Audio - Daniel Walz
     All rights reserved.
 
     License for non-commercial projects:
@@ -34,8 +34,19 @@
  ==============================================================================
  */
 
-#pragma once
+#include <juce_audio_utils/juce_audio_utils.h>
 
+#include "foleys_MagicGUIBuilder.h"
+#include "foleys_StringDefinitions.h"
+#include "../Widgets/foleys_AutoOrientationSlider.h"
+#include "../Widgets/foleys_XYDragComponent.h"
+#include "../Widgets/foleys_MagicLevelMeter.h"
+#include "../Widgets/foleys_MagicPlotComponent.h"
+#include "../Widgets/foleys_MidiLearnComponent.h"
+#include "../Widgets/foleys_MidiDrumpadComponent.h"
+#include "../Helpers/foleys_PopupMenuHelper.h"
+
+#pragma once
 
 namespace foleys
 {

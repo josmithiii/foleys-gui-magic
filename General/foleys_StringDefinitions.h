@@ -1,6 +1,6 @@
 /*
  ==============================================================================
-    Copyright (c) 2019-2021 Foleys Finest Audio - Daniel Walz
+    Copyright (c) 2019-2022 Foleys Finest Audio - Daniel Walz
     All rights reserved.
 
     License for non-commercial projects:
@@ -73,6 +73,13 @@ namespace IDs
     static juce::Identifier tooltipText       { "tooltip-text" };
     static juce::Identifier tooltipBackground { "tooltip-background" };
     static juce::Identifier tooltipOutline    { "tooltip-outline" };
+
+    static juce::Identifier accessibility            { "accessibility" };
+    static juce::Identifier accessibilityTitle       { "title" };
+    static juce::Identifier accessibilityDescription { "description" };
+    static juce::Identifier accessibilityHelpText    { "help-text" };
+    static juce::Identifier accessibilityFocusOrder  { "focus-order" };
+
     static juce::Identifier parameter    { "parameter" };
     static juce::Identifier parameterX   { "parameter-x" };
     static juce::Identifier parameterY   { "parameter-y" };
@@ -99,6 +106,11 @@ namespace IDs
     static juce::String     contents     { "contents" };
     static juce::String     tabbed       { "tabbed" };
     static juce::String     flexbox      { "flexbox" };
+
+    static juce::Identifier focusContainerType { "focus-container" };
+    static juce::String     focusNone          { "focus-none" };
+    static juce::String     focusContainer     { "focus-container" };
+    static juce::String     focusKeyContainer  { "focus-keyboard-container" };
 
     static juce::Identifier scrollMode   { "scroll-mode" };
     static juce::String     noScroll         { "no-scroll" };
