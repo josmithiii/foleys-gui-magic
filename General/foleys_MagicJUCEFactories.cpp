@@ -864,7 +864,10 @@ public:
 
     static const juce::Identifier  pCrosshair;
     static const juce::StringArray pCrosshairTypes;
+    static const juce::Identifier  pDotType;
+    static const juce::StringArray pDotTypes;
     static const juce::Identifier  pRadius;
+    static const juce::Identifier  pLineThickness;
     static const juce::Identifier  pSenseFactor;
     static const juce::Identifier  pJumpToClick;
 
@@ -881,49 +884,61 @@ public:
             { "xy-vertical-over",    XYDragComponent::xyVerticalOverColourId }
         });
 
-        addAndMakeVisible (dragger);
+        addAndMakeVisible (draggerJOS);
     }
 
     void update() override
     {
         auto xParamID = configNode.getProperty (IDs::parameterX, juce::String()).toString();
         if (xParamID.isNotEmpty())
-            dragger.setParameterX (dynamic_cast<juce::RangedAudioParameter*>(getMagicState().getParameter (xParamID)));
+            draggerJOS.setParameterX (dynamic_cast<juce::RangedAudioParameter*>(getMagicState().getParameter (xParamID)));
         else
-            dragger.setParameterX (nullptr);
+            draggerJOS.setParameterX (nullptr);
 
         auto yParamID = configNode.getProperty (IDs::parameterY, juce::String()).toString();
         if (yParamID.isNotEmpty())
-            dragger.setParameterY (dynamic_cast<juce::RangedAudioParameter*>(getMagicState().getParameter (yParamID)));
+            draggerJOS.setParameterY (dynamic_cast<juce::RangedAudioParameter*>(getMagicState().getParameter (yParamID)));
         else
-            dragger.setParameterY (nullptr);
+            draggerJOS.setParameterY (nullptr);
 
 
         auto rightParamID = configNode.getProperty ("right-click", juce::String()).toString();
         if (rightParamID.isNotEmpty())
-            dragger.setRightClickParameter (dynamic_cast<juce::RangedAudioParameter*>(getMagicState().getParameter (rightParamID)));
+            draggerJOS.setRightClickParameter (dynamic_cast<juce::RangedAudioParameter*>(getMagicState().getParameter (rightParamID)));
 
         auto crosshair = getProperty (pCrosshair);
         if (crosshair == pCrosshairTypes [0])
-            dragger.setCrossHair (false, false);
+            draggerJOS.setCrossHair (false, false);
         else if (crosshair == pCrosshairTypes [1])
-            dragger.setCrossHair (true, false);
+            draggerJOS.setCrossHair (true, false);
         else if (crosshair == pCrosshairTypes [2])
-            dragger.setCrossHair (false, true);
+            draggerJOS.setCrossHair (false, true);
         else
-            dragger.setCrossHair (true, true);
+            draggerJOS.setCrossHair (true, true);
+
+        auto dotType = getProperty (pDotType);
+        if (dotType == pDotTypes [0])
+            draggerJOS.setDotType (false);
+        else if (dotType == pDotTypes [1])
+            draggerJOS.setDotType (true);
+        else
+            DBG(juce::String("*** Unknown dotType ") << juce::String(dotType.toString()));
 
         auto radius = getProperty (pRadius);
         if (! radius.isVoid())
-            dragger.setRadius (radius);
+            draggerJOS.setRadius (radius);
+
+        auto lineThickness = getProperty (pLineThickness);
+        if (! lineThickness.isVoid())
+            draggerJOS.setLineThickness (lineThickness);
 
         auto factor = getProperty (pSenseFactor);
         if (! factor.isVoid())
-            dragger.setSenseFactor (factor);
+            draggerJOS.setSenseFactor (factor);
 
         auto jumpToClick = getProperty (pJumpToClick);
         if (! jumpToClick.isVoid())
-            dragger.setJumpToClick (jumpToClick);
+            draggerJOS.setJumpToClick (jumpToClick);
     }
 
     std::vector<SettableProperty> getSettableProperties() const override
@@ -934,7 +949,9 @@ public:
         props.push_back ({ configNode, IDs::parameterY, SettableProperty::Choice, {}, magicBuilder.createParameterMenuLambda() });
         props.push_back ({ configNode, "right-click", SettableProperty::Choice, {}, magicBuilder.createParameterMenuLambda() });
         props.push_back ({ configNode, pCrosshair, SettableProperty::Choice, {}, magicBuilder.createChoicesMenuLambda (pCrosshairTypes) });
+        props.push_back ({ configNode, pDotType, SettableProperty::Choice, {}, magicBuilder.createChoicesMenuLambda (pDotTypes) });
         props.push_back ({ configNode, pRadius, SettableProperty::Number, {}, {}});
+        props.push_back ({ configNode, pLineThickness, SettableProperty::Number, {}, {}});
         props.push_back ({ configNode, pSenseFactor, SettableProperty::Number, {}, {}});
         props.push_back ({ configNode, pJumpToClick, SettableProperty::Toggle, {}, {}});
 
@@ -943,17 +960,20 @@ public:
 
     juce::Component* getWrappedComponent() override
     {
-        return &dragger;
+        return &draggerJOS;
     }
 
 private:
-    XYDragComponent dragger;
+    XYDragComponentJOS draggerJOS;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (XYDraggerItemJOS)
 };
 const juce::Identifier  XYDraggerItemJOS::pCrosshair       { "xy-crosshair" };
 const juce::StringArray XYDraggerItemJOS::pCrosshairTypes  { "no-crosshair", "vertical", "horizontal", "crosshair" };
+const juce::Identifier  XYDraggerItemJOS::pDotType         { "xy-zero" };
+const juce::StringArray XYDraggerItemJOS::pDotTypes        { "xy-zero", "xy-pole" };
 const juce::Identifier  XYDraggerItemJOS::pRadius          { "xy-radius" };
+const juce::Identifier  XYDraggerItemJOS::pLineThickness   { "xy-line-thickness" };
 const juce::Identifier  XYDraggerItemJOS::pSenseFactor     { "xy-sense-factor" };
 const juce::Identifier  XYDraggerItemJOS::pJumpToClick     { "xy-jump-to-click" };
 

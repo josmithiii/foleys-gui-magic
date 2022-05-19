@@ -117,6 +117,12 @@ void XYDragComponent::setRadius (float radiusToUse)
     repaint();
 }
 
+void XYDragComponent::setLineThickness (float thickness)
+{
+    lineThickness = thickness;
+    repaint();
+}
+
 void XYDragComponent::setSenseFactor (float factor)
 {
     senseFactor = factor;

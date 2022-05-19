@@ -66,6 +66,17 @@ void XYDragComponentJOS::setCrossHair (bool horizontal, bool vertical)
     wantsHorizontalDrag = vertical;
 }
 
+/**
+ This sets the dot type at the crosshair intersection.
+
+ @param zero plots as O
+ @param pole plots as X
+ */
+void XYDragComponentJOS::setDotType (bool pole)
+{
+    drawPole = pole;
+}
+
 void XYDragComponentJOS::paint (juce::Graphics& g)
 {
     const auto x = getXposition();
@@ -93,7 +104,12 @@ void XYDragComponentJOS::paint (juce::Graphics& g)
     }
 
     g.setColour (findColour (mouseOverDot ? xyDotOverColourId : xyDotColourId));
-    g.fillEllipse (x - radius, y - radius, 2 * radius, 2 * radius);
+    if (drawPole)
+    {
+        g.drawEllipse (x - radius, y - radius, 2 * radius, 2 * radius, 2.0f);
+    } else {
+        g.drawLine (x - radius, y - radius, 2 * radius, 2 * radius, 2.0f);
+    }
 }
 
 void XYDragComponentJOS::setParameterX (juce::RangedAudioParameter* parameter)
@@ -114,6 +130,12 @@ void XYDragComponentJOS::setRightClickParameter (juce::RangedAudioParameter* par
 void XYDragComponentJOS::setRadius (float radiusToUse)
 {
     radius = radiusToUse;
+    repaint();
+}
+
+void XYDragComponentJOS::setLineThickness (float thickness)
+{
+    lineThickness = thickness;
     repaint();
 }
 
