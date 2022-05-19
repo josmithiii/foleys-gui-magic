@@ -34,6 +34,7 @@
  ==============================================================================
  */
 
+#include "foleys_MagicScatterPlot.h"
 
 namespace foleys
 {

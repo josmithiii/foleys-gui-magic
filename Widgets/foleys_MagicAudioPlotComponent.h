@@ -36,6 +36,9 @@
 
 #pragma once
 
+#include <juce_gui_basics/juce_gui_basics.h>
+#include "../Visualisers/foleys_MagicAudioPlotSource.h"
+
 namespace foleys
 {
 

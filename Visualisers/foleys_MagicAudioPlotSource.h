@@ -36,6 +36,9 @@
 
 #pragma once
 
+#include <juce_graphics/juce_graphics.h>
+#include <juce_audio_basics/juce_audio_basics.h>
+
 namespace foleys
 {
 

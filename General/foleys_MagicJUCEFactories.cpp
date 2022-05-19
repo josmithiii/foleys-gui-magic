@@ -42,6 +42,7 @@
 #include "../Widgets/foleys_XYDragComponent.h"
 #include "../Widgets/foleys_MagicLevelMeter.h"
 #include "../Widgets/foleys_MagicPlotComponent.h"
+#include "../Widgets/foleys_MagicAudioPlotComponent.h"
 #include "../Widgets/foleys_MidiLearnComponent.h"
 #include "../Widgets/foleys_MidiDrumpadComponent.h"
 #include "../Helpers/foleys_PopupMenuHelper.h"
@@ -642,6 +643,7 @@ const juce::Identifier  PlotItem::pGradient      {"plot-gradient"};
 class AudioPlotItem : public GuiItem //? : public PlotItem
 {
 public:
+
     FOLEYS_DECLARE_GUI_FACTORY (AudioPlotItem)
 
     static const juce::Identifier  pDecay;

@@ -34,6 +34,7 @@
  ==============================================================================
  */
 
+#include "foleys_MagicOscilloscopeAudio.h"
 
 namespace foleys
 {
