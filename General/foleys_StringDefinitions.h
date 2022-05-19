@@ -59,6 +59,7 @@ namespace IDs
     static juce::Identifier plot         { "Plot" };
     static juce::Identifier audioPlot    { "AudioPlot" };
     static juce::Identifier xyDragComponent   { "XYDragComponent" };
+    static juce::Identifier xyDragComponentJOS   { "PoleZeroDragComponent" };
     static juce::Identifier keyboardComponent { "KeyboardComponent" };
     static juce::Identifier drumpadComponent  { "DrumpadComponent" };
     static juce::Identifier webBrowser   { "WebBrowserComponent" };

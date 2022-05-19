@@ -40,6 +40,7 @@
 #include "foleys_StringDefinitions.h"
 #include "../Widgets/foleys_AutoOrientationSlider.h"
 #include "../Widgets/foleys_XYDragComponent.h"
+#include "../Widgets/foleys_XYDragComponentJOS.h"
 #include "../Widgets/foleys_MagicLevelMeter.h"
 #include "../Widgets/foleys_MagicPlotComponent.h"
 #include "../Widgets/foleys_MagicAudioPlotComponent.h"
@@ -856,6 +857,108 @@ const juce::Identifier  XYDraggerItem::pJumpToClick     { "xy-jump-to-click" };
 
 //==============================================================================
 
+class XYDraggerItemJOS : public GuiItem
+{
+public:
+    FOLEYS_DECLARE_GUI_FACTORY (XYDraggerItemJOS)
+
+    static const juce::Identifier  pCrosshair;
+    static const juce::StringArray pCrosshairTypes;
+    static const juce::Identifier  pRadius;
+    static const juce::Identifier  pSenseFactor;
+    static const juce::Identifier  pJumpToClick;
+
+    XYDraggerItemJOS (MagicGUIBuilder& builder, const juce::ValueTree& node)
+      : GuiItem (builder, node)
+    {
+        setColourTranslation (
+        {
+            { "xy-drag-handle",      XYDragComponent::xyDotColourId },
+            { "xy-drag-handle-over", XYDragComponent::xyDotOverColourId },
+            { "xy-horizontal",       XYDragComponent::xyHorizontalColourId },
+            { "xy-horizontal-over",  XYDragComponent::xyHorizontalOverColourId },
+            { "xy-vertical",         XYDragComponent::xyVerticalColourId },
+            { "xy-vertical-over",    XYDragComponent::xyVerticalOverColourId }
+        });
+
+        addAndMakeVisible (dragger);
+    }
+
+    void update() override
+    {
+        auto xParamID = configNode.getProperty (IDs::parameterX, juce::String()).toString();
+        if (xParamID.isNotEmpty())
+            dragger.setParameterX (dynamic_cast<juce::RangedAudioParameter*>(getMagicState().getParameter (xParamID)));
+        else
+            dragger.setParameterX (nullptr);
+
+        auto yParamID = configNode.getProperty (IDs::parameterY, juce::String()).toString();
+        if (yParamID.isNotEmpty())
+            dragger.setParameterY (dynamic_cast<juce::RangedAudioParameter*>(getMagicState().getParameter (yParamID)));
+        else
+            dragger.setParameterY (nullptr);
+
+
+        auto rightParamID = configNode.getProperty ("right-click", juce::String()).toString();
+        if (rightParamID.isNotEmpty())
+            dragger.setRightClickParameter (dynamic_cast<juce::RangedAudioParameter*>(getMagicState().getParameter (rightParamID)));
+
+        auto crosshair = getProperty (pCrosshair);
+        if (crosshair == pCrosshairTypes [0])
+            dragger.setCrossHair (false, false);
+        else if (crosshair == pCrosshairTypes [1])
+            dragger.setCrossHair (true, false);
+        else if (crosshair == pCrosshairTypes [2])
+            dragger.setCrossHair (false, true);
+        else
+            dragger.setCrossHair (true, true);
+
+        auto radius = getProperty (pRadius);
+        if (! radius.isVoid())
+            dragger.setRadius (radius);
+
+        auto factor = getProperty (pSenseFactor);
+        if (! factor.isVoid())
+            dragger.setSenseFactor (factor);
+
+        auto jumpToClick = getProperty (pJumpToClick);
+        if (! jumpToClick.isVoid())
+            dragger.setJumpToClick (jumpToClick);
+    }
+
+    std::vector<SettableProperty> getSettableProperties() const override
+    {
+        std::vector<SettableProperty> props;
+
+        props.push_back ({ configNode, IDs::parameterX, SettableProperty::Choice, {}, magicBuilder.createParameterMenuLambda() });
+        props.push_back ({ configNode, IDs::parameterY, SettableProperty::Choice, {}, magicBuilder.createParameterMenuLambda() });
+        props.push_back ({ configNode, "right-click", SettableProperty::Choice, {}, magicBuilder.createParameterMenuLambda() });
+        props.push_back ({ configNode, pCrosshair, SettableProperty::Choice, {}, magicBuilder.createChoicesMenuLambda (pCrosshairTypes) });
+        props.push_back ({ configNode, pRadius, SettableProperty::Number, {}, {}});
+        props.push_back ({ configNode, pSenseFactor, SettableProperty::Number, {}, {}});
+        props.push_back ({ configNode, pJumpToClick, SettableProperty::Toggle, {}, {}});
+
+        return props;
+    }
+
+    juce::Component* getWrappedComponent() override
+    {
+        return &dragger;
+    }
+
+private:
+    XYDragComponent dragger;
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (XYDraggerItemJOS)
+};
+const juce::Identifier  XYDraggerItemJOS::pCrosshair       { "xy-crosshair" };
+const juce::StringArray XYDraggerItemJOS::pCrosshairTypes  { "no-crosshair", "vertical", "horizontal", "crosshair" };
+const juce::Identifier  XYDraggerItemJOS::pRadius          { "xy-radius" };
+const juce::Identifier  XYDraggerItemJOS::pSenseFactor     { "xy-sense-factor" };
+const juce::Identifier  XYDraggerItemJOS::pJumpToClick     { "xy-jump-to-click" };
+
+//==============================================================================
+
 class KeyboardItem : public GuiItem
 {
 public:
@@ -1147,6 +1250,7 @@ void MagicGUIBuilder::registerJUCEFactories()
     registerFactory (IDs::plot, &PlotItem::factory);
     registerFactory (IDs::audioPlot, &AudioPlotItem::factory);
     registerFactory (IDs::xyDragComponent, &XYDraggerItem::factory);
+    registerFactory (IDs::xyDragComponentJOS, &XYDraggerItemJOS::factory);
     registerFactory (IDs::keyboardComponent, &KeyboardItem::factory);
     registerFactory (IDs::drumpadComponent, &DrumpadItem::factory);
     registerFactory (IDs::meter, &LevelMeterItem::factory);

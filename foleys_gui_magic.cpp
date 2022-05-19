@@ -73,6 +73,7 @@
 #include "Widgets/foleys_MagicPlotComponent.cpp"
 #include "Widgets/foleys_MagicAudioPlotComponent.cpp"
 #include "Widgets/foleys_XYDragComponent.cpp"
+#include "Widgets/foleys_XYDragComponentJOS.cpp"
 #include "Widgets/foleys_FileBrowserDialog.cpp"
 #include "Widgets/foleys_MidiLearnComponent.cpp"
 #include "Widgets/foleys_MidiDrumpadComponent.cpp"

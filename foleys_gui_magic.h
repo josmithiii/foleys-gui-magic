@@ -134,6 +134,7 @@
 #include "Widgets/foleys_MagicPlotComponent.h"
 #include "Widgets/foleys_MagicAudioPlotComponent.h"
 #include "Widgets/foleys_XYDragComponent.h"
+#include "Widgets/foleys_XYDragComponentJOS.h"
 #include "Widgets/foleys_FileBrowserDialog.h"
 #include "Widgets/foleys_MidiLearnComponent.h"
 #include "Widgets/foleys_MidiDrumpadComponent.h"
