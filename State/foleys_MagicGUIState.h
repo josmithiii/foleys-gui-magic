@@ -221,13 +221,13 @@ public:
      */
     virtual juce::AudioProcessor* getProcessor() { return nullptr; }
 
-#if FOLEYS_SHOW_GUI_EDITOR_PALLETTE
+//!#if FOLEYS_SHOW_GUI_EDITOR_PALLETTE
     void setResourcesFolder (const juce::String& name);
     juce::File getResourcesFolder() const;
 
 private:
     juce::File resourcesFolder;
-#endif
+//!#endif
 
 private:
 
