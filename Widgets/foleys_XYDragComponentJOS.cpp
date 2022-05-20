@@ -72,9 +72,9 @@ void XYDragComponentJOS::setCrossHair (bool horizontal, bool vertical)
  @param zero plots as O
  @param pole plots as X
  */
-void XYDragComponentJOS::setDotType (bool pole)
+void XYDragComponentJOS::setDotType (DOT_TYPE dotTypeToDraw)
 {
-    drawPole = pole;
+    dotType = dotTypeToDraw;
 }
 
 void XYDragComponentJOS::paint (juce::Graphics& g)
@@ -104,11 +104,19 @@ void XYDragComponentJOS::paint (juce::Graphics& g)
     }
 
     g.setColour (findColour (mouseOverDot ? xyDotOverColourId : xyDotColourId));
-    if (drawPole)
-    {
-        g.drawEllipse (x - radius, y - radius, 2 * radius, 2 * radius, 2.0f);
+    if (dotType == DOT_TYPE_DOT) {
+        g.fillEllipse (x - radius, y - radius, 2 * radius, 2 * radius);
+    } else if (dotType == DOT_TYPE_POLE) {
+        g.drawLine (x - radius, y - radius, x + radius, y + radius, lineThickness);
+        g.drawLine (x - radius, y + radius, x + radius, y - radius, lineThickness);
+    } else if (dotType == DOT_TYPE_ZERO) {
+        g.drawEllipse (x - radius, y - radius, 2 * radius, 2 * radius, lineThickness);
+    } else if (dotType == DOT_TYPE_POLE_ZERO) {
+        g.drawEllipse (x - radius, y - radius, 2 * radius, 2 * radius, lineThickness);
+        g.drawLine (x - radius, y - radius, x + radius, y + radius, lineThickness);
+        g.drawLine (x - radius, y + radius, x + radius, y - radius, lineThickness);
     } else {
-        g.drawLine (x - radius, y - radius, 2 * radius, 2 * radius, 2.0f);
+        DBG("*** XYDragComponentJOS: Invalid dotType " << dotType);
     }
 }
 

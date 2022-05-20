@@ -43,6 +43,9 @@
 namespace foleys
 {
 
+  // Keep in synch with XYDraggerItemJOS:
+  enum DOT_TYPE { DOT_TYPE_DOT, DOT_TYPE_POLE, DOT_TYPE_ZERO, DOT_TYPE_POLE_ZERO };
+
 /**
  This is a 2D parameter dragging component.
  */
@@ -64,7 +67,7 @@ public:
     XYDragComponentJOS();
 
     void setCrossHair (bool horizontal, bool vertical);
-    void setDotType (bool pole);
+    void setDotType (DOT_TYPE dotType);
 
     void paint (juce::Graphics& g) override;
 
@@ -100,7 +103,7 @@ private:
     bool wantsHorizontalDrag = true;
     bool wantsVerticalDrag = true;
 
-    bool drawPole = false;
+    DOT_TYPE dotType = DOT_TYPE_POLE;
 
     ParameterAttachment<float> xAttachment;
     ParameterAttachment<float> yAttachment;

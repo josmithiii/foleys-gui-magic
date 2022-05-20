@@ -916,13 +916,21 @@ public:
         else
             draggerJOS.setCrossHair (true, true);
 
-        auto dotType = getProperty (pDotType);
-        if (dotType == pDotTypes [0])
-            draggerJOS.setDotType (false);
-        else if (dotType == pDotTypes [1])
-            draggerJOS.setDotType (true);
-        else
-            DBG(juce::String("*** Unknown dotType ") << juce::String(dotType.toString()));
+        juce::String dotType = getProperty (pDotType);
+        bool matched = false;
+        for (int i=0; i<4; i++)
+        {
+            if (dotType == pDotTypes [i])
+            {
+                draggerJOS.setDotType ((DOT_TYPE)i);
+                matched = true;
+                break;
+            }
+        }
+        if (not matched)
+        {
+            draggerJOS.setDotType (DOT_TYPE_ZERO); // default
+        }
 
         auto radius = getProperty (pRadius);
         if (! radius.isVoid())
@@ -971,7 +979,7 @@ private:
 const juce::Identifier  XYDraggerItemJOS::pCrosshair       { "xy-crosshair" };
 const juce::StringArray XYDraggerItemJOS::pCrosshairTypes  { "no-crosshair", "vertical", "horizontal", "crosshair" };
 const juce::Identifier  XYDraggerItemJOS::pDotType         { "xy-zero" };
-const juce::StringArray XYDraggerItemJOS::pDotTypes        { "xy-zero", "xy-pole" };
+const juce::StringArray XYDraggerItemJOS::pDotTypes        { "xy-dot", "xy-pole", "xy-zero", "xy-pole-zero" }; // see enum DOT_TYPE
 const juce::Identifier  XYDraggerItemJOS::pRadius          { "xy-radius" };
 const juce::Identifier  XYDraggerItemJOS::pLineThickness   { "xy-line-thickness" };
 const juce::Identifier  XYDraggerItemJOS::pSenseFactor     { "xy-sense-factor" };

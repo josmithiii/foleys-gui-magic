@@ -64,7 +64,6 @@ public:
     XYDragComponent();
 
     void setCrossHair (bool horizontal, bool vertical);
-    void setDotType (bool pole);
 
     void paint (juce::Graphics& g) override;
 
