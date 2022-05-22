@@ -296,6 +296,11 @@ public:
         addAndMakeVisible (button);
     }
 
+    ~TextButtonItem() override
+    {
+        magicBuilder.removeFromRadioButtonManager (&button);
+    }
+
     void update() override
     {
         attachment.reset();
@@ -304,12 +309,20 @@ public:
         if (parameter.isNotEmpty())
             attachment = getMagicState().createAttachment (parameter, button);
 
-        button.setClickingTogglesState (parameter.isNotEmpty());
+        auto groupID = static_cast<int>(getProperty (IDs::buttonRadioGroup));
+        if (groupID > 0)
+        {
+            button.setRadioGroupId (groupID);
+            magicBuilder.addToRadioButtonManager (&button);
+        }
+
+        button.setClickingTogglesState (parameter.isNotEmpty() || groupID > 0);
         button.setButtonText (magicBuilder.getStyleProperty (pText, configNode));
 
         auto triggerID = getProperty (pOnClick).toString();
         if (triggerID.isNotEmpty())
             button.onClick = getMagicState().getTrigger (triggerID);
+
     }
 
     std::vector<SettableProperty> getSettableProperties() const override
@@ -319,6 +332,7 @@ public:
         props.push_back ({ configNode, IDs::parameter, SettableProperty::Choice, {}, magicBuilder.createParameterMenuLambda() });
         props.push_back ({ configNode, pText, SettableProperty::Text, {}, {} });
         props.push_back ({ configNode, pOnClick, SettableProperty::Choice, {}, magicBuilder.createTriggerMenuLambda() });
+        props.push_back ({ configNode, IDs::buttonRadioGroup, SettableProperty::Number, {}, {} });
 
         return props;
     }
@@ -360,6 +374,11 @@ public:
         addAndMakeVisible (button);
     }
 
+    ~ToggleButtonItem() override
+    {
+        magicBuilder.removeFromRadioButtonManager (&button);
+    }
+
     void update() override
     {
         attachment.reset();
@@ -372,6 +391,14 @@ public:
         auto propertyID = getProperty (pValue).toString();
         if (propertyID.isNotEmpty())
             button.getToggleStateValue().referTo (getMagicState().getPropertyAsValue (propertyID));
+
+        auto groupID = static_cast<int>(getProperty (IDs::buttonRadioGroup));
+        if (groupID > 0)
+        {
+            button.setRadioGroupId (groupID);
+            button.setClickingTogglesState (true);
+            magicBuilder.addToRadioButtonManager (&button);
+        }
     }
 
     std::vector<SettableProperty> getSettableProperties() const override
@@ -380,6 +407,7 @@ public:
         props.push_back ({ configNode, pText, SettableProperty::Text, {}, {} });
         props.push_back ({ configNode, IDs::parameter, SettableProperty::Choice, {}, magicBuilder.createParameterMenuLambda() });
         props.push_back ({ configNode, pValue, SettableProperty::Choice, {}, magicBuilder.createPropertiesMenuLambda() });
+        props.push_back ({ configNode, IDs::buttonRadioGroup, SettableProperty::Number, {}, {} });
         return props;
     }
 
