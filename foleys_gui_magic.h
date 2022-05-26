@@ -128,6 +128,7 @@
 #include "Visualisers/foleys_MagicOscilloscope.h"
 #include "Visualisers/foleys_MagicOscilloscopeAudio.h"
 #include "Visualisers/foleys_MagicScatterPlot.h"
+#define HAVE_SCATTER_PLOT
 
 #include "Widgets/foleys_AutoOrientationSlider.h"
 #include "Widgets/foleys_MagicLevelMeter.h"
