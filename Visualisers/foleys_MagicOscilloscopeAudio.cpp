@@ -108,11 +108,12 @@ void MagicOscilloscopeAudio::pushSamples (const juce::AudioBuffer<float>& buffer
   if (latch) { // When latching, we don't push samples when they are inaudible (least-work method)
     // bufferP = std::unique_ptr<juce::AudioBuffer<float>>(numChannelsIn,numSamples);
     if (buffer.hasBeenCleared())
-      return; // else find out if anything is audible:
+      return; // push nothing - else find out if anything is audible:
     // float magnitude = buffer.getMagnitude(/* startSample */ 0, numSamples);
     // bool audible = (magnitude > 1.0E-4); // -80 dB threshold
     bool audible = false;
-    for (int c=firstChannelToPlot; c<lastChannelToPlot; c++) {
+    for (int c=firstChannelToPlot; c<=lastChannelToPlot; c++) {
+      firstAudibleSample[c] = 0;
       for (int s=0; s<numSamples; s++) {
         if (fabsf(buffer.getReadPointer(c)[s]) > 1.0E-4) { // -80 dB threshold
           firstAudibleSample[c] = s;
@@ -123,7 +124,8 @@ void MagicOscilloscopeAudio::pushSamples (const juce::AudioBuffer<float>& buffer
     }
     if (not audible)
       return;
-    for (int c=0; c<numChannelsIn; c++) {
+    for (int c=firstChannelToPlot; c<=lastChannelToPlot; c++) {
+      lastAudibleSample[c] = firstAudibleSample[c];
       for (int s=numSamples-1; s>=firstAudibleSample[c]; s--) {
         if (fabsf(buffer.getReadPointer(c)[s]) > 1.0E-4) { // -80 dB threshold
           lastAudibleSample[c] = s;
@@ -131,14 +133,15 @@ void MagicOscilloscopeAudio::pushSamples (const juce::AudioBuffer<float>& buffer
         }
       }
     }
-    int firstAudibleSampleAllChannels = firstAudibleSample[0];
-    int lastAudibleSampleAllChannels = lastAudibleSample[0];
-    for (int c=1; c<numChannelsIn; c++) {
+    int firstAudibleSampleAllChannels = firstAudibleSample[firstChannelToPlot];
+    int lastAudibleSampleAllChannels = lastAudibleSample[firstChannelToPlot];
+    for (int c=firstChannelToPlot+1; c<=lastChannelToPlot; c++) {
       firstAudibleSampleAllChannels = std::min<int> ( firstAudibleSampleAllChannels, firstAudibleSample[c] );
       lastAudibleSampleAllChannels = std::max<int> ( lastAudibleSampleAllChannels, lastAudibleSample[c] );
     }
     startSample = firstAudibleSampleAllChannels;
     numSamplesTrimmed = lastAudibleSampleAllChannels - firstAudibleSampleAllChannels + 1;
+    jassert (numSamplesTrimmed >= 0 && numSamplesTrimmed <= numSamples);
   }
 
   // Copy buffer samples to circular plot buffer:
