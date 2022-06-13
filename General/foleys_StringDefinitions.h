@@ -1,6 +1,6 @@
 /*
  ==============================================================================
-    Copyright (c) 2019-2021 Foleys Finest Audio - Daniel Walz
+    Copyright (c) 2019-2022 Foleys Finest Audio - Daniel Walz
     All rights reserved.
 
     License for non-commercial projects:
@@ -59,6 +59,7 @@ namespace IDs
     static juce::Identifier plot         { "Plot" };
     static juce::Identifier audioPlot    { "AudioPlot" };
     static juce::Identifier xyDragComponent   { "XYDragComponent" };
+    static juce::Identifier xyDragComponentJOS   { "PoleZeroDragComponent" };
     static juce::Identifier keyboardComponent { "KeyboardComponent" };
     static juce::Identifier drumpadComponent  { "DrumpadComponent" };
     static juce::Identifier webBrowser   { "WebBrowserComponent" };
@@ -73,6 +74,13 @@ namespace IDs
     static juce::Identifier tooltipText       { "tooltip-text" };
     static juce::Identifier tooltipBackground { "tooltip-background" };
     static juce::Identifier tooltipOutline    { "tooltip-outline" };
+
+    static juce::Identifier accessibility            { "accessibility" };
+    static juce::Identifier accessibilityTitle       { "title" };
+    static juce::Identifier accessibilityDescription { "description" };
+    static juce::Identifier accessibilityHelpText    { "help-text" };
+    static juce::Identifier accessibilityFocusOrder  { "focus-order" };
+
     static juce::Identifier parameter    { "parameter" };
     static juce::Identifier parameterX   { "parameter-x" };
     static juce::Identifier parameterY   { "parameter-y" };
@@ -99,6 +107,18 @@ namespace IDs
     static juce::String     contents     { "contents" };
     static juce::String     tabbed       { "tabbed" };
     static juce::String     flexbox      { "flexbox" };
+
+    static juce::Identifier focusContainerType { "focus-container" };
+    static juce::String     focusNone          { "focus-none" };
+    static juce::String     focusContainer     { "focus-container" };
+    static juce::String     focusKeyContainer  { "focus-keyboard-container" };
+
+    static juce::Identifier scrollMode   { "scroll-mode" };
+    static juce::String     noScroll         { "no-scroll" };
+    static juce::String     scrollHorizontal { "scroll-horizontal" };
+    static juce::String     scrollVertical   { "scroll-vertical" };
+    static juce::String     scrollBoth       { "scroll" };
+
 
     static juce::String     root         { "root" };
 
@@ -169,6 +189,8 @@ namespace IDs
     static juce::Identifier posY        { "pos-y" };
     static juce::Identifier posWidth    { "pos-width" };
     static juce::Identifier posHeight   { "pos-height" };
+
+    static juce::Identifier buttonRadioGroup { "button-radio-group" };
 
     static juce::Identifier properties  { "Properties" };
     static juce::Identifier lastSize    { "last-size" };

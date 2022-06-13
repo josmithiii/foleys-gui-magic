@@ -1,6 +1,6 @@
 /*
  ==============================================================================
-    Copyright (c) 2019-2021 Foleys Finest Audio - Daniel Walz
+    Copyright (c) 2019-2022 Foleys Finest Audio - Daniel Walz
     All rights reserved.
 
     License for non-commercial projects:
@@ -34,10 +34,15 @@
  ==============================================================================
  */
 
+#include <juce_gui_basics/juce_gui_basics.h>
+#include <juce_audio_processors/juce_audio_processors.h>
+
 #pragma once
 
 namespace foleys
 {
+
+class MagicProcessorState;
 
 /**
  This is a generic AudioProcessorEditor, that is completely

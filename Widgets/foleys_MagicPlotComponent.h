@@ -1,6 +1,6 @@
 /*
  ==============================================================================
-    Copyright (c) 2019-2021 Foleys Finest Audio - Daniel Walz
+    Copyright (c) 2019-2022 Foleys Finest Audio - Daniel Walz
     All rights reserved.
 
     License for non-commercial projects:
@@ -36,6 +36,8 @@
 
 #pragma once
 
+#include <juce_gui_basics/juce_gui_basics.h>
+
 namespace foleys
 {
 
@@ -59,6 +61,7 @@ public:
 
     void setPlotSource (MagicPlotSource* source);
     void setDecayFactor (float decayFactor);
+    void setGradientFromString (const juce::String& cssString, Stylesheet& stylesheet);
 
     void paint (juce::Graphics& g) override;
     void resized() override;
@@ -73,8 +76,9 @@ public:
     void updateGlowBufferSize();
 
     juce::WeakReference<MagicPlotSource> plotSource;
-    juce::Path  path;
-    juce::Path  filledPath;
+    juce::Path                           path;
+    juce::Path                           filledPath;
+    std::unique_ptr<GradientBackground>  gradient;
 
     juce::int64 lastDataTimestamp = 0;
     juce::Image glowBuffer;

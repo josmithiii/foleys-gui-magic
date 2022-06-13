@@ -1,6 +1,6 @@
 /*
  ==============================================================================
-    Copyright (c) 2019-2021 Foleys Finest Audio - Daniel Walz
+    Copyright (c) 2019-2022 Foleys Finest Audio - Daniel Walz
     All rights reserved.
 
     License for non-commercial projects:
@@ -34,6 +34,7 @@
  ==============================================================================
  */
 
+#include "foleys_MultiListPropertyComponent.h"
 
 namespace foleys
 {
@@ -58,24 +59,36 @@ MultiListPropertyComponent::MultiListPropertyComponent (const juce::Value& value
     select.onClick = [&]
     {
         auto strings = juce::StringArray::fromTokens (text.getText(), separator, "");
+        strings.removeEmptyStrings(true);
+
         juce::Component::SafePointer<juce::Label> textEdit (&text);
+
+        if (strings.size()<1 || strings[0] == "")
+        {
+            DBG("*** MultiListPropertyComponent: Empty strings array");
+            return;
+        }
 
         juce::PopupMenu popup;
         for (const auto& name : choices)
-            if (! strings.contains (name))
-                popup.addItem (name, [&, textEdit]
-                {
-                    if (textEdit == nullptr)
-                        return;
+        {
+            auto newArray = strings;
+            auto adding = !newArray.contains(name);
 
-                    if (! strings.contains (name))
-                    {
-                        strings.add (name);
-                        strings.removeEmptyStrings (true);
-                        textEdit->setText (strings.joinIntoString (separator), juce::sendNotificationAsync);
-                    }
-                });
+            if (adding)
+                newArray.add(name);
+            else
+                newArray.removeString(name);
 
+            auto newText = newArray.joinIntoString(separator);
+
+            popup.addItem(name, true, !adding, [textEdit, newText]
+            {
+                if (textEdit)
+                    textEdit->setText(newText, juce::sendNotification);
+            });
+
+        }
         popup.showMenuAsync (juce::PopupMenu::Options());
     };
 }

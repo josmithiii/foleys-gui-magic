@@ -1,6 +1,6 @@
 /*
  ==============================================================================
-    Copyright (c) 2020-2022 Foleys Finest Audio - Daniel Walz
+    Copyright (c) 2019-2021 Foleys Finest Audio - Daniel Walz
     All rights reserved.
 
     License for non-commercial projects:
@@ -32,55 +32,32 @@
     OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
     OF THE POSSIBILITY OF SUCH DAMAGE.
  ==============================================================================
-*/
+ */
 
 #pragma once
-
-#include <juce_core/juce_core.h>
-#include <juce_data_structures/juce_data_structures.h>
 
 namespace foleys
 {
 
-/**
- ApplicationSettings are persistent settings shared by all plugin instances.
- They are hierarchically ordered in a ValueTree and loaded via SharedResourcePointer,
- so they don't exist duplicated in one process.
- */
-class ApplicationSettings : public juce::ChangeBroadcaster,
-                            private juce::Timer,
-                            private juce::ValueTree::Listener
+class ScopedInterProcessLock
 {
 public:
-    ApplicationSettings();
-    ~ApplicationSettings() override;
+    ScopedInterProcessLock (const juce::String& name, int timeout = -1, std::function<void()> onEntered = nullptr)
+      : lock (name)
+    {
+        if (lock.enter (timeout) && onEntered)
+            onEntered();
+    }
 
-    /**
-     The settings tree is used to hang in your settings trees. The whole tree is stored.
-     It is synchronised instead of replaced on load, so it is safe to add yourself as
-     ValueTree::Listener.
-     */
-    juce::ValueTree settings { "Settings" };
-
-    void setFileName (juce::File file);
-
+    ~ScopedInterProcessLock()
+    {
+        lock.exit();
+    }
+    
 private:
-    void timerCallback() override;
-
-    void load();
-    void save();
-
-    void valueTreeChildAdded (juce::ValueTree& parentTree,
-                              juce::ValueTree& childWhichHasBeenAdded) override;
-    void valueTreeChildRemoved (juce::ValueTree& parentTree, juce::ValueTree&, int) override;
-    void valueTreePropertyChanged (juce::ValueTree&, const juce::Identifier&) override;
-
-    juce::File   settingsFile;
-    juce::String checksum;
-
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ApplicationSettings)
+    juce::InterProcessLock lock;
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ScopedInterProcessLock)
 };
 
-using SharedApplicationSettings = juce::SharedResourcePointer<ApplicationSettings>;
 
 }

@@ -1,6 +1,6 @@
 /*
  ==============================================================================
-    Copyright (c) 2019-2021 Foleys Finest Audio - Daniel Walz
+    Copyright (c) 2019-2022 Foleys Finest Audio - Daniel Walz
     All rights reserved.
 
     License for non-commercial projects:
@@ -33,6 +33,18 @@
     OF THE POSSIBILITY OF SUCH DAMAGE.
  ==============================================================================
  */
+
+#include "foleys_MagicGUIBuilder.h"
+#include "../Layout/foleys_RootItem.h"
+#include "../Layout/foleys_Container.h"
+#include "../Helpers/foleys_DefaultGuiTrees.h"
+#include "../LookAndFeels/foleys_JuceLookAndFeels.h"
+#include "../LookAndFeels/foleys_LookAndFeel.h"
+#include "../LookAndFeels/foleys_Skeuomorphic.h"
+
+#if FOLEYS_SHOW_GUI_EDITOR_PALLETTE
+#include "../Editor/foleys_ToolBox.h"
+#endif
 
 namespace foleys
 {
@@ -156,7 +168,7 @@ void MagicGUIBuilder::updateComponents()
 
     root->setBounds (parent->getLocalBounds());
 
-#if FOLEYS_SHOW_GUI_EDITOR_PALLETTE6
+#if FOLEYS_SHOW_GUI_EDITOR_PALLETTE
     if (root.get() != nullptr)
         root->setEditMode (editMode);
 #endif
@@ -339,6 +351,17 @@ juce::var MagicGUIBuilder::getPropertyDefaultValue (juce::Identifier property) c
 
     return {};
 }
+
+void MagicGUIBuilder::addToRadioButtonManager (juce::Button* button)
+{
+    radioButtonManager.addButton (button);
+}
+
+void MagicGUIBuilder::removeFromRadioButtonManager (juce::Button* button)
+{
+    radioButtonManager.removeButton (button);
+}
+
 
 void MagicGUIBuilder::changeListenerCallback (juce::ChangeBroadcaster*)
 {

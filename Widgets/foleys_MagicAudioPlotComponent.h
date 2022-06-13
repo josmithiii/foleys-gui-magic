@@ -36,6 +36,9 @@
 
 #pragma once
 
+#include <juce_gui_basics/juce_gui_basics.h>
+#include "../Visualisers/foleys_MagicAudioPlotSource.h"
+
 namespace foleys
 {
 
@@ -59,6 +62,7 @@ public:
 
     void setPlotSource (MagicAudioPlotSource* source);
     void setDecayFactor (float decayFactor);
+    void setGradientFromString (const juce::String& cssString, Stylesheet& stylesheet);
 
     void paint (juce::Graphics& g) override;
     void resized() override;
@@ -67,12 +71,15 @@ public:
 
     bool needsUpdate() const;
 
-    void setTriggered (bool triggered);
+    void setTriggeredPos (bool triggeredPos);
+    void setTriggeredNeg (bool triggeredNeg);
     void setOverlay (bool overlay);
+    void setNormalize (bool triggered);
+    void setLatch (bool latch);
     void setChannel (int channel);
     void setNumChannels (int numChannels);
     void setPlotLength (int plotLength);
-    void setPlotOffset (int plotOffset);
+    void setPlotOffset (float plotOffset);
 
   private:
     void drawPlot (juce::Graphics& g);
@@ -80,19 +87,23 @@ public:
     void updateGlowBufferSize();
 
     juce::WeakReference<MagicAudioPlotSource> plotSource;
-    juce::Path  path;
-    juce::Path  filledPath;
+    juce::Path                                path;
+    juce::Path                                filledPath;
+    std::unique_ptr<GradientBackground>       gradient;
 
     juce::int64 lastDataTimestamp = 0;
     juce::Image glowBuffer;
     float       decay = 0.0f;
 
-    bool        triggered = true;
+    bool        triggeredPos = false;
+    bool        triggeredNeg = false;
     bool        overlay = false;
+    bool        normalize = false;
+    bool        latch = false;
     int         channel = 0;
     int         numChannels = 0;
     int         plotLength = 0;
-    int         plotOffset = 0;
+    float       plotOffset = 0;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MagicAudioPlotComponent)
 };

@@ -1,6 +1,6 @@
 /*
  ==============================================================================
-    Copyright (c) 2019-2021 Foleys Finest Audio - Daniel Walz
+    Copyright (c) 2019-2022 Foleys Finest Audio - Daniel Walz
     All rights reserved.
 
     License for non-commercial projects:
@@ -34,6 +34,7 @@
  ==============================================================================
  */
 
+#include "foleys_MagicProcessorState.h"
 
 namespace foleys
 {
@@ -114,6 +115,7 @@ std::unique_ptr<juce::ButtonParameterAttachment> MagicProcessorState::createAtta
 
     // You have connected a control to a parameter that doesn't exist. Please fix your GUI.
     // You may safely click continue in your debugger
+    std::cerr << "*** foleys_MagicProcessorState.cpp: createAttachment: nonexistent paramID = " << paramID << "\n";
     jassertfalse;
     return {};
 }

@@ -1,6 +1,6 @@
 /*
  ==============================================================================
-    Copyright (c) 2019-2021 Foleys Finest Audio - Daniel Walz
+    Copyright (c) 2019-2022 Foleys Finest Audio - Daniel Walz
     All rights reserved.
 
     License for non-commercial projects:
@@ -34,6 +34,7 @@
  ==============================================================================
  */
 
+#include "foleys_MagicGUIState.h"
 
 namespace foleys
 {
@@ -237,7 +238,7 @@ juce::MidiKeyboardState& MagicGUIState::getKeyboardState()
     return keyboardState;
 }
 
-#if FOLEYS_SHOW_GUI_EDITOR_PALLETTE
+//!#if FOLEYS_SHOW_GUI_EDITOR_PALLETTE
 void MagicGUIState::setResourcesFolder (const juce::String& source)
 {
     resourcesFolder = juce::File (source).getParentDirectory();
@@ -251,6 +252,6 @@ juce::File MagicGUIState::getResourcesFolder() const
     return resourcesFolder;
 }
 
-#endif // FOLEYS_SHOW_GUI_EDITOR_PALLETTE
+//!#endif // FOLEYS_SHOW_GUI_EDITOR_PALLETTE
 
 } // namespace foleys

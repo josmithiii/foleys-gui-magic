@@ -61,11 +61,31 @@ void MagicAudioPlotComponent::setDecayFactor (float decayFactor)
     updateGlowBufferSize();
 }
 
-void MagicAudioPlotComponent::setTriggered (bool t)
+void MagicAudioPlotComponent::setGradientFromString (const juce::String& cssString, Stylesheet& stylesheet)
 {
-    triggered = t;
+    if (cssString.isNotEmpty())
+    {
+        gradient = std::make_unique<GradientBackground>();
+        gradient->setup(cssString, stylesheet);
+    }
+    else
+    {
+        gradient.reset();
+    }
+}
+
+void MagicAudioPlotComponent::setTriggeredPos (bool t)
+{
+    triggeredPos = t;
     if (plotSource)
-      plotSource->setTriggered (triggered);
+      plotSource->setTriggeredPos (triggeredPos);
+}
+
+void MagicAudioPlotComponent::setTriggeredNeg (bool t)
+{
+    triggeredNeg = t;
+    if (plotSource)
+      plotSource->setTriggeredNeg (triggeredNeg);
 }
 
 void MagicAudioPlotComponent::setOverlay (bool o)
@@ -73,6 +93,20 @@ void MagicAudioPlotComponent::setOverlay (bool o)
     overlay = o;
     if (plotSource)
       plotSource->setOverlay (overlay);
+}
+
+void MagicAudioPlotComponent::setNormalize (bool t)
+{
+    normalize = t;
+    if (plotSource)
+      plotSource->setNormalize (normalize);
+}
+
+void MagicAudioPlotComponent::setLatch (bool t)
+{
+    latch = t;
+    if (plotSource)
+      plotSource->setLatch (latch);
 }
 
 void MagicAudioPlotComponent::setChannel (int c)
@@ -96,7 +130,7 @@ void MagicAudioPlotComponent::setPlotLength (int pl)
       plotSource->setPlotLength (plotLength);
 }
 
-void MagicAudioPlotComponent::setPlotOffset (int pl)
+void MagicAudioPlotComponent::setPlotOffset (float pl)
 {
     plotOffset = pl;
     if (plotSource)
@@ -112,8 +146,11 @@ void MagicAudioPlotComponent::paint (juce::Graphics& g)
     if (lastUpdate > lastDataTimestamp)
     {
         if (plotSource) { // these may be have been set before plotSource existed:
-            plotSource->setTriggered (triggered);
+            plotSource->setTriggeredPos (triggeredPos);
+            plotSource->setTriggeredNeg (triggeredNeg);
             plotSource->setOverlay (overlay);
+            plotSource->setNormalize (normalize);
+            plotSource->setLatch (latch);
             plotSource->setChannel (channel);
             plotSource->setNumChannels (numChannels);
             plotSource->setPlotLength (plotLength);
@@ -122,6 +159,9 @@ void MagicAudioPlotComponent::paint (juce::Graphics& g)
         plotSource->createPlotPaths (path, filledPath, getLocalBounds().toFloat(), *this);
         lastDataTimestamp = lastUpdate;
     }
+
+    if (gradient)
+        gradient->setupGradientFill (g, getLocalBounds().toFloat());
 
     if (! glowBuffer.isNull())
         drawPlotGlowing (g);
@@ -135,11 +175,12 @@ void MagicAudioPlotComponent::drawPlot (juce::Graphics& g)
 {
     const auto active = plotSource->isActive();
     auto colour = findColour (active ? plotFillColourId : plotInactiveFillColourId);
-    if (colour.isTransparent() == false)
-    {
+
+    if (!gradient && colour.isTransparent() == false)
         g.setColour (colour);
+
+    if (gradient || colour.isTransparent())
         g.fillPath (filledPath);
-    }
 
     colour = findColour (active ? plotColourId : plotInactiveColourId);
     if (colour.isTransparent() == false)

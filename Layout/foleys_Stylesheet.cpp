@@ -1,6 +1,6 @@
 /*
  ==============================================================================
-    Copyright (c) 2019-2021 Foleys Finest Audio - Daniel Walz
+    Copyright (c) 2019-2022 Foleys Finest Audio - Daniel Walz
     All rights reserved.
 
     License for non-commercial projects:
@@ -34,6 +34,7 @@
  ==============================================================================
  */
 
+#include "foleys_Stylesheet.h"
 
 namespace foleys
 {
@@ -243,6 +244,9 @@ juce::Colour Stylesheet::getColour (const juce::String& name) const
 
 juce::Colour Stylesheet::parseColour (const juce::String& name)
 {
+    if (name.startsWithIgnoreCase ("transparent"))
+        return juce::Colours::transparentBlack;
+
     return juce::Colours::findColourForName (name, juce::Colour::fromString (name.length() < 8 ? "ff" + name : name));
 }
 

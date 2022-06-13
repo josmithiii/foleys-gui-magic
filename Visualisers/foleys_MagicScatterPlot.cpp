@@ -34,22 +34,17 @@
  ==============================================================================
  */
 
+#include "foleys_MagicScatterPlot.h"
 
 namespace foleys
 {
 
-void MagicScatterPlot::pushSamples (const juce::AudioBuffer<float>& buffer)
+void MagicScatterPlot::pushSamples (const juce::AudioBuffer<float>& bufferIn, int currentPlotLengthIn)
 {
-  int numChannels = buffer.getNumChannels();
-  int chanX = 0;
-  int chanY = 1;
-  if (plotChannel >= 0) { // from parent MagicPlotSource and set by Editor
-    chanX = plotChannel;
-    chanY = plotChannel+1;
-  }
-  chanX = std::min<int>(chanX,numChannels-1);
-  chanY = std::min<int>(chanY,numChannels-1);
-  pushSamples(/* bufferX */ buffer, chanX, /* bufferY */ buffer, chanY, maxPlotLength);
+  int numChannels = bufferIn.getNumChannels();
+  int chanX = std::min<int>(0,numChannels-1);
+  int chanY = std::min<int>(1,numChannels-1);
+  pushSamples(/* bufferX */ bufferIn, chanX, /* bufferY */ bufferIn, chanY, currentPlotLengthIn);
 }
 
 void MagicScatterPlot::pushSamples (const juce::AudioBuffer<float>& bufferX, int channelX,
@@ -58,8 +53,7 @@ void MagicScatterPlot::pushSamples (const juce::AudioBuffer<float>& bufferX, int
 {
     auto w = writePosition.load();
 
-    if (plotLengthOverride > 0)
-        plotLength = plotLengthOverride; // Consider keeping plotLength around to use if override returns to 0
+    plotLengthNow = std::max<int>(0,plotLengthOverride);
 
     const auto numSamples = bufferX.getNumSamples();
     jassert(numSamples == bufferY.getNumSamples());
@@ -91,14 +85,14 @@ void MagicScatterPlot::pushSamples (const juce::AudioBuffer<float>& bufferX, int
     resetLastDataFlag();
 }
 
+// ====================================================================================================
+
 void MagicScatterPlot::createPlotPaths (juce::Path& path, juce::Path& filledPath, juce::Rectangle<float> bounds, MagicAudioPlotComponent&)
 {
     if (sampleRate < 20.0f)
         return;
 
-    const auto  numToDisplay = (currentPlotLength > 0 ?
-                                std::min<int>(currentPlotLength,samplesX.getNumSamples()) :
-                                int (0.01 * sampleRate) - 1); // 10 ms default
+    const auto numToDisplay = getNumToDisplay(); // nominally plotLengthNow - defined in ./foleys_MagicAudioPlotSource.h
     const auto* dataX = samplesX.getReadPointer (0);
     const auto* dataY = samplesY.getReadPointer (0);
 
@@ -106,7 +100,7 @@ void MagicScatterPlot::createPlotPaths (juce::Path& path, juce::Path& filledPath
     if (position < 0)
         position += samplesX.getNumSamples();
 
-    if (triggered) // find first zero-crossing in circular plot-buffer samplesX, giving up after 50 ms <-> 20 Hz fundamental:
+    if (triggeredPos || triggeredNeg) // find first zero-crossing in circular plot-buffer samplesX, giving up after 50 ms <-> 20 Hz fundamental:
     {
         auto positive = dataX [position] > 0.0f;
         auto bail = int (sampleRate / 20.0f);

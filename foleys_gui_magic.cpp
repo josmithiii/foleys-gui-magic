@@ -1,6 +1,6 @@
 /*
  ==============================================================================
-    Copyright (c) 2019-2021 Foleys Finest Audio - Daniel Walz
+    Copyright (c) 2019-2022 Foleys Finest Audio - Daniel Walz
     All rights reserved.
 
     License for non-commercial projects:
@@ -34,8 +34,6 @@
  ==============================================================================
  */
 
-#include "foleys_gui_magic.h"
-
 #include <stack>
 #include <numeric>
 
@@ -54,6 +52,7 @@
 #include "State/foleys_MagicProcessorState.cpp"
 #include "State/foleys_ParameterManager.cpp"
 #include "State/foleys_MidiParameterMapper.cpp"
+#include "State/foleys_RadioButtonManager.cpp"
 
 #include "Layout/foleys_GradientBackground.cpp"
 #include "Layout/foleys_Stylesheet.cpp"
@@ -75,6 +74,7 @@
 #include "Widgets/foleys_MagicPlotComponent.cpp"
 #include "Widgets/foleys_MagicAudioPlotComponent.cpp"
 #include "Widgets/foleys_XYDragComponent.cpp"
+#include "Widgets/foleys_XYDragComponentJOS.cpp"
 #include "Widgets/foleys_FileBrowserDialog.cpp"
 #include "Widgets/foleys_MidiLearnComponent.cpp"
 #include "Widgets/foleys_MidiDrumpadComponent.cpp"
@@ -84,6 +84,16 @@
 #include "LookAndFeels/foleys_Skeuomorphic.cpp"
 
 #if FOLEYS_SHOW_GUI_EDITOR_PALLETTE
+
+namespace EditorColours
+{
+    static juce::Colour background;
+    static juce::Colour outline;
+    static juce::Colour text;
+    static juce::Colour disabledText;
+    static juce::Colour removeButton;
+    static juce::Colour selectedBackground;
+}
 
 #include "Editor/foleys_ToolBox.cpp"
 #include "Editor/foleys_GUITreeEditor.cpp"

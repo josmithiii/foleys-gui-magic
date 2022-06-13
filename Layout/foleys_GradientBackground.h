@@ -1,6 +1,6 @@
 /*
  ==============================================================================
-    Copyright (c) 2019-2021 Foleys Finest Audio - Daniel Walz
+    Copyright (c) 2019-2022 Foleys Finest Audio - Daniel Walz
     All rights reserved.
 
     License for non-commercial projects:
@@ -34,6 +34,9 @@
  ==============================================================================
  */
 
+#pragma once
+
+#include <juce_graphics/juce_graphics.h>
 
 namespace foleys
 {
@@ -55,6 +58,8 @@ public:
     void drawGradient (juce::Graphics& g, juce::Rectangle<float> bounds, const juce::Path& shape);
 
     void setup (juce::String text, const Stylesheet& stylesheet);
+
+    void setupGradientFill (juce::Graphics& g, juce::Rectangle<float> bounds);
 
     juce::String toString() const;
 

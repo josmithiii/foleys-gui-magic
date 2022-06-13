@@ -59,9 +59,11 @@ public:
     void checkAudioBufferForNaNs (juce::AudioBuffer<float>& buffer);
 
     /**
-     Push samples to a buffer to be visualised.
+     Push samples of an AudioBuffer to be visualised.
      */
-    void pushSamples (const juce::AudioBuffer<float>& buffer) override;
+    void pushSamples (const juce::AudioBuffer<float>& buffer, int plotLength=0) override;
+    void pushSamples (const std::shared_ptr<juce::AudioBuffer<float>> bufSP, int channelToPlot=0,
+                      int numChannelsToPlot=1, int plotLength=0) override;
 
     /**
      This is the callback that creates the frequency plot for drawing.
@@ -76,6 +78,7 @@ public:
     void prepareToPlay (double sampleRate, int samplesPerBlockExpected) override;
 
 private:
+    int numChannelsOut = 0; // == numChannelsIn or 1 when channels are averaged
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MagicOscilloscopeAudio)
 };

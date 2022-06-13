@@ -1,6 +1,6 @@
 /*
  ==============================================================================
-    Copyright (c) 2019-2021 Foleys Finest Audio - Daniel Walz
+    Copyright (c) 2019-2022 Foleys Finest Audio - Daniel Walz
     All rights reserved.
 
     License for non-commercial projects:
@@ -36,6 +36,8 @@
 
 #pragma once
 
+#include "foleys_StylePropertyComponent.h"
+
 namespace foleys
 {
 
@@ -54,6 +56,9 @@ StylePropertyComponent* StylePropertyComponent::createComponent (MagicGUIBuilder
 
     if (property.type == SettableProperty::Choice)
         return new StyleChoicePropertyComponent (builder, property.name, node, property.menuCreationLambda);
+
+    if (property.type == SettableProperty::Gradient)
+        return new StyleGradientPropertyComponent (builder, property.name, node);
 
     jassertfalse;
     return nullptr;
@@ -140,6 +145,9 @@ void StylePropertyComponent::mouseDoubleClick (const juce::MouseEvent&)
 
 void StylePropertyComponent::valueTreePropertyChanged (juce::ValueTree& tree, const juce::Identifier& changedProperty)
 {
+    if (builder.getUndoManager().isPerformingUndoRedo())
+        return;
+
     if (tree == node && property == changedProperty)
         refresh();
 }

@@ -1,6 +1,6 @@
 /*
  ==============================================================================
-    Copyright (c) 2019-2021 Foleys Finest Audio - Daniel Walz
+    Copyright (c) 2019-2022 Foleys Finest Audio - Daniel Walz
     All rights reserved.
 
     License for non-commercial projects:
@@ -37,7 +37,7 @@
 
     ID:            foleys_gui_magic
     vendor:        Foleys Finest Audio
-    version:       1.3.6
+    version:       1.3.7
     name:          Foleys GUI magic
     description:   This module allows to create GUI with a drag and drop editor
     dependencies:  juce_core, juce_audio_basics, juce_audio_devices, juce_audio_formats,
@@ -100,6 +100,7 @@
 #include "General/foleys_SettableProperties.h"
 #include "General/foleys_Resources.h"
 
+#include "Helpers/foleys_ScopedInterProcessLock.h"
 #include "Helpers/foleys_PopupMenuHelper.h"
 #include "Helpers/foleys_MouseLambdas.h"
 #include "Helpers/foleys_ParameterAttachment.h"
@@ -127,42 +128,17 @@
 #include "Visualisers/foleys_MagicOscilloscope.h"
 #include "Visualisers/foleys_MagicOscilloscopeAudio.h"
 #include "Visualisers/foleys_MagicScatterPlot.h"
+#define HAVE_SCATTER_PLOT
 
 #include "Widgets/foleys_AutoOrientationSlider.h"
 #include "Widgets/foleys_MagicLevelMeter.h"
 #include "Widgets/foleys_MagicPlotComponent.h"
 #include "Widgets/foleys_MagicAudioPlotComponent.h"
 #include "Widgets/foleys_XYDragComponent.h"
+#include "Widgets/foleys_XYDragComponentJOS.h"
 #include "Widgets/foleys_FileBrowserDialog.h"
 #include "Widgets/foleys_MidiLearnComponent.h"
 #include "Widgets/foleys_MidiDrumpadComponent.h"
-
-#if FOLEYS_SHOW_GUI_EDITOR_PALLETTE
-
-namespace EditorColours
-{
-    static juce::Colour background;
-    static juce::Colour outline;
-    static juce::Colour text;
-    static juce::Colour disabledText;
-    static juce::Colour removeButton;
-    static juce::Colour selectedBackground;
-}
-
-#include "Editor/foleys_MultiListPropertyComponent.h"
-#include "Editor/foleys_StylePropertyComponent.h"
-#include "Editor/foleys_StyleTextPropertyComponent.h"
-#include "Editor/foleys_StyleBoolPropertyComponent.h"
-#include "Editor/foleys_StyleColourPropertyComponent.h"
-#include "Editor/foleys_StyleGradientPropertyComponent.h"
-#include "Editor/foleys_StyleChoicePropertyComponent.h"
-
-#include "Editor/foleys_GUITreeEditor.h"
-#include "Editor/foleys_PropertiesEditor.h"
-#include "Editor/foleys_Palette.h"
-#include "Editor/foleys_ToolBox.h"
-
-#endif // FOLEYS_SHOW_GUI_EDITOR_PALLETTE
 
 #include "State/foleys_ParameterManager.h"
 #include "State/foleys_MidiParameterMapper.h"

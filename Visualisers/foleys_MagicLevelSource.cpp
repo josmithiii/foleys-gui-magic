@@ -1,6 +1,6 @@
 /*
  ==============================================================================
-    Copyright (c) 2019-2021 Foleys Finest Audio - Daniel Walz
+    Copyright (c) 2019-2022 Foleys Finest Audio - Daniel Walz
     All rights reserved.
 
     License for non-commercial projects:
@@ -34,6 +34,7 @@
  ==============================================================================
  */
 
+#include "foleys_MagicLevelSource.h"
 
 namespace foleys
 {
@@ -49,7 +50,7 @@ void MagicLevelSource::pushSamples (const juce::AudioBuffer<float>& buffer)
         data.overall.store (std::max (data.overall.load(), currentMax));
 
         auto lastRMS = data.rms.load();
-        if (currentRMS >= lastRMS)
+        if (currentRMS > lastRMS)
             data.rms.store (currentRMS);
         else
             data.rms.store (lastRMS * 0.9f); // TODO: proper decay depending on block size

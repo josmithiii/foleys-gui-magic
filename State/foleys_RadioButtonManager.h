@@ -1,6 +1,6 @@
 /*
  ==============================================================================
-    Copyright (c) 2020-2022 Foleys Finest Audio - Daniel Walz
+    Copyright (c) 2021-2022 Foleys Finest Audio - Daniel Walz
     All rights reserved.
 
     License for non-commercial projects:
@@ -32,55 +32,27 @@
     OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
     OF THE POSSIBILITY OF SUCH DAMAGE.
  ==============================================================================
-*/
+ */
 
 #pragma once
-
-#include <juce_core/juce_core.h>
-#include <juce_data_structures/juce_data_structures.h>
 
 namespace foleys
 {
 
-/**
- ApplicationSettings are persistent settings shared by all plugin instances.
- They are hierarchically ordered in a ValueTree and loaded via SharedResourcePointer,
- so they don't exist duplicated in one process.
- */
-class ApplicationSettings : public juce::ChangeBroadcaster,
-                            private juce::Timer,
-                            private juce::ValueTree::Listener
+class RadioButtonManager : public juce::Button::Listener
 {
 public:
-    ApplicationSettings();
-    ~ApplicationSettings() override;
+    RadioButtonManager() = default;
 
-    /**
-     The settings tree is used to hang in your settings trees. The whole tree is stored.
-     It is synchronised instead of replaced on load, so it is safe to add yourself as
-     ValueTree::Listener.
-     */
-    juce::ValueTree settings { "Settings" };
+    void addButton (juce::Button* button);
+    void removeButton (juce::Button* button);
 
-    void setFileName (juce::File file);
-
+    void buttonClicked (juce::Button *) override {}
+    void buttonStateChanged (juce::Button *) override;
 private:
-    void timerCallback() override;
+    std::vector<juce::Button*> buttons;
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (RadioButtonManager)
 
-    void load();
-    void save();
-
-    void valueTreeChildAdded (juce::ValueTree& parentTree,
-                              juce::ValueTree& childWhichHasBeenAdded) override;
-    void valueTreeChildRemoved (juce::ValueTree& parentTree, juce::ValueTree&, int) override;
-    void valueTreePropertyChanged (juce::ValueTree&, const juce::Identifier&) override;
-
-    juce::File   settingsFile;
-    juce::String checksum;
-
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ApplicationSettings)
 };
 
-using SharedApplicationSettings = juce::SharedResourcePointer<ApplicationSettings>;
-
-}
+} // namespace foleys

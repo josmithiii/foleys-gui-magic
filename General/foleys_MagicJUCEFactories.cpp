@@ -1,6 +1,6 @@
 /*
  ==============================================================================
-    Copyright (c) 2019-2021 Foleys Finest Audio - Daniel Walz
+    Copyright (c) 2019-2022 Foleys Finest Audio - Daniel Walz
     All rights reserved.
 
     License for non-commercial projects:
@@ -34,8 +34,21 @@
  ==============================================================================
  */
 
-#pragma once
+#include <juce_audio_utils/juce_audio_utils.h>
 
+#include "foleys_MagicGUIBuilder.h"
+#include "foleys_StringDefinitions.h"
+#include "../Widgets/foleys_AutoOrientationSlider.h"
+#include "../Widgets/foleys_XYDragComponent.h"
+#include "../Widgets/foleys_XYDragComponentJOS.h"
+#include "../Widgets/foleys_MagicLevelMeter.h"
+#include "../Widgets/foleys_MagicPlotComponent.h"
+#include "../Widgets/foleys_MagicAudioPlotComponent.h"
+#include "../Widgets/foleys_MidiLearnComponent.h"
+#include "../Widgets/foleys_MidiDrumpadComponent.h"
+#include "../Helpers/foleys_PopupMenuHelper.h"
+
+#pragma once
 
 namespace foleys
 {
@@ -283,6 +296,11 @@ public:
         addAndMakeVisible (button);
     }
 
+    ~TextButtonItem() override
+    {
+        magicBuilder.removeFromRadioButtonManager (&button);
+    }
+
     void update() override
     {
         attachment.reset();
@@ -291,12 +309,20 @@ public:
         if (parameter.isNotEmpty())
             attachment = getMagicState().createAttachment (parameter, button);
 
-        button.setClickingTogglesState (parameter.isNotEmpty());
+        auto groupID = static_cast<int>(getProperty (IDs::buttonRadioGroup));
+        if (groupID > 0)
+        {
+            button.setRadioGroupId (groupID);
+            magicBuilder.addToRadioButtonManager (&button);
+        }
+
+        button.setClickingTogglesState (parameter.isNotEmpty() || groupID > 0);
         button.setButtonText (magicBuilder.getStyleProperty (pText, configNode));
 
         auto triggerID = getProperty (pOnClick).toString();
         if (triggerID.isNotEmpty())
             button.onClick = getMagicState().getTrigger (triggerID);
+
     }
 
     std::vector<SettableProperty> getSettableProperties() const override
@@ -306,6 +332,7 @@ public:
         props.push_back ({ configNode, IDs::parameter, SettableProperty::Choice, {}, magicBuilder.createParameterMenuLambda() });
         props.push_back ({ configNode, pText, SettableProperty::Text, {}, {} });
         props.push_back ({ configNode, pOnClick, SettableProperty::Choice, {}, magicBuilder.createTriggerMenuLambda() });
+        props.push_back ({ configNode, IDs::buttonRadioGroup, SettableProperty::Number, {}, {} });
 
         return props;
     }
@@ -347,6 +374,11 @@ public:
         addAndMakeVisible (button);
     }
 
+    ~ToggleButtonItem() override
+    {
+        magicBuilder.removeFromRadioButtonManager (&button);
+    }
+
     void update() override
     {
         attachment.reset();
@@ -359,6 +391,14 @@ public:
         auto propertyID = getProperty (pValue).toString();
         if (propertyID.isNotEmpty())
             button.getToggleStateValue().referTo (getMagicState().getPropertyAsValue (propertyID));
+
+        auto groupID = static_cast<int>(getProperty (IDs::buttonRadioGroup));
+        if (groupID > 0)
+        {
+            button.setRadioGroupId (groupID);
+            button.setClickingTogglesState (true);
+            magicBuilder.addToRadioButtonManager (&button);
+        }
     }
 
     std::vector<SettableProperty> getSettableProperties() const override
@@ -367,6 +407,7 @@ public:
         props.push_back ({ configNode, pText, SettableProperty::Text, {}, {} });
         props.push_back ({ configNode, IDs::parameter, SettableProperty::Choice, {}, magicBuilder.createParameterMenuLambda() });
         props.push_back ({ configNode, pValue, SettableProperty::Choice, {}, magicBuilder.createPropertiesMenuLambda() });
+        props.push_back ({ configNode, IDs::buttonRadioGroup, SettableProperty::Number, {}, {} });
         return props;
     }
 
@@ -576,6 +617,7 @@ public:
     FOLEYS_DECLARE_GUI_FACTORY (PlotItem)
 
     static const juce::Identifier  pDecay;
+    static const juce::Identifier  pGradient;
 
     PlotItem (MagicGUIBuilder& builder, const juce::ValueTree& node) : GuiItem (builder, node)
     {
@@ -598,6 +640,9 @@ public:
 
         auto decay = float (getProperty (pDecay));
         plot.setDecayFactor (decay);
+
+        auto gradient = configNode.getProperty (pGradient, juce::String()).toString();
+        plot.setGradientFromString (gradient, magicBuilder.getStylesheet());
     }
 
     std::vector<SettableProperty> getSettableProperties() const override
@@ -605,6 +650,7 @@ public:
         std::vector<SettableProperty> props;
         props.push_back ({ configNode, IDs::source, SettableProperty::Choice, {}, magicBuilder.createObjectsMenuLambda<MagicPlotSource>() });
         props.push_back ({ configNode, pDecay,      SettableProperty::Number, {}, {} });
+        props.push_back ({ configNode, pGradient,   SettableProperty::Gradient, {}, {} });
         return props;
     }
 
@@ -618,19 +664,26 @@ private:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PlotItem)
 };
-const juce::Identifier  PlotItem::pDecay {"plot-decay"};
+const juce::Identifier  PlotItem::pDecay         {"plot-decay"};
+const juce::Identifier  PlotItem::pGradient      {"plot-gradient"};
 
 //==============================================================================
 
 class AudioPlotItem : public GuiItem //? : public PlotItem
 {
 public:
+
     FOLEYS_DECLARE_GUI_FACTORY (AudioPlotItem)
 
     static const juce::Identifier  pDecay;
-    static const juce::Identifier  pTriggered;
+    static const juce::Identifier  pGradient;
+
+    static const juce::Identifier  pTriggeredPos;
+    static const juce::Identifier  pTriggeredNeg;
     static const juce::Identifier  pOverlay;
-    static const juce::Identifier  pChannel1Based;
+    static const juce::Identifier  pNormalize;
+    static const juce::Identifier  pLatch;
+    static const juce::Identifier  pChannel;
     static const juce::Identifier  pNumChannels;
     static const juce::Identifier  pPlotLength;
     static const juce::Identifier  pPlotOffset;
@@ -657,14 +710,26 @@ public:
         auto decay = float (getProperty (pDecay));
         plot.setDecayFactor (decay);
 
-        auto triggered = bool (getProperty (pTriggered));
-        plot.setTriggered (triggered);
+        auto gradient = configNode.getProperty (pGradient, juce::String()).toString();
+        plot.setGradientFromString (gradient, magicBuilder.getStylesheet());
+
+        auto triggeredPos = bool (getProperty (pTriggeredPos));
+        plot.setTriggeredPos (triggeredPos);
+
+        auto triggeredNeg = bool (getProperty (pTriggeredNeg));
+        plot.setTriggeredNeg (triggeredNeg);
 
         auto overlay = bool (getProperty (pOverlay));
         plot.setOverlay (overlay);
 
-        auto channel1Based = int (getProperty (pChannel1Based));
-        plot.setChannel (channel1Based-1);
+        auto normalize = bool (getProperty (pNormalize));
+        plot.setNormalize (normalize);
+
+        auto latch = bool (getProperty (pLatch));
+        plot.setLatch (latch);
+
+        auto channel = int (getProperty (pChannel));
+        plot.setChannel (channel);
 
         auto numChannels = int (getProperty (pNumChannels));
         plot.setNumChannels (numChannels);
@@ -681,9 +746,13 @@ public:
         std::vector<SettableProperty> props; //? { AudioPlotItem::getSettableProperties() };
         props.push_back ({ configNode, IDs::source, SettableProperty::Choice, {}, magicBuilder.createObjectsMenuLambda<MagicAudioPlotSource>() });
         props.push_back ({ configNode, pDecay,         SettableProperty::Number, {}, {} });
-        props.push_back ({ configNode, pTriggered,     SettableProperty::Toggle, {}, {} });
+        props.push_back ({ configNode, pGradient,      SettableProperty::Gradient, {}, {} });
+        props.push_back ({ configNode, pTriggeredPos,     SettableProperty::Toggle, {}, {} });
+        props.push_back ({ configNode, pTriggeredNeg,     SettableProperty::Toggle, {}, {} });
         props.push_back ({ configNode, pOverlay,       SettableProperty::Toggle, {}, {} });
-        props.push_back ({ configNode, pChannel1Based, SettableProperty::Number, {}, {} });
+        props.push_back ({ configNode, pNormalize,     SettableProperty::Toggle, {}, {} });
+        props.push_back ({ configNode, pLatch,         SettableProperty::Toggle, {}, {} });
+        props.push_back ({ configNode, pChannel,       SettableProperty::Number, {}, {} });
         props.push_back ({ configNode, pNumChannels,   SettableProperty::Number, {}, {} });
         props.push_back ({ configNode, pPlotLength,    SettableProperty::Number, {}, {} });
         props.push_back ({ configNode, pPlotOffset,    SettableProperty::Number, {}, {} });
@@ -701,9 +770,13 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioPlotItem)
 };
 const juce::Identifier  AudioPlotItem::pDecay {"plot-decay"};
-const juce::Identifier  AudioPlotItem::pTriggered {"plot-triggered"};
+const juce::Identifier  AudioPlotItem::pGradient {"plot-gradient"};
+const juce::Identifier  AudioPlotItem::pTriggeredPos {"plot-triggered-pos"};
+const juce::Identifier  AudioPlotItem::pTriggeredNeg {"plot-triggered-neg"};
 const juce::Identifier  AudioPlotItem::pOverlay {"plot-overlay"};
-const juce::Identifier  AudioPlotItem::pChannel1Based {"plot-channel"};
+const juce::Identifier  AudioPlotItem::pNormalize {"plot-normalize"};
+const juce::Identifier  AudioPlotItem::pLatch {"plot-latch"};
+const juce::Identifier  AudioPlotItem::pChannel {"plot-channel"};
 const juce::Identifier  AudioPlotItem::pNumChannels {"plot-num-channels"};
 const juce::Identifier  AudioPlotItem::pPlotLength {"plot-length"};
 const juce::Identifier  AudioPlotItem::pPlotOffset {"plot-offset"};
@@ -719,6 +792,7 @@ public:
     static const juce::StringArray pCrosshairTypes;
     static const juce::Identifier  pRadius;
     static const juce::Identifier  pSenseFactor;
+    static const juce::Identifier  pJumpToClick;
 
     XYDraggerItem (MagicGUIBuilder& builder, const juce::ValueTree& node)
       : GuiItem (builder, node)
@@ -772,6 +846,10 @@ public:
         auto factor = getProperty (pSenseFactor);
         if (! factor.isVoid())
             dragger.setSenseFactor (factor);
+
+        auto jumpToClick = getProperty (pJumpToClick);
+        if (! jumpToClick.isVoid())
+            dragger.setJumpToClick (jumpToClick);
     }
 
     std::vector<SettableProperty> getSettableProperties() const override
@@ -784,6 +862,7 @@ public:
         props.push_back ({ configNode, pCrosshair, SettableProperty::Choice, {}, magicBuilder.createChoicesMenuLambda (pCrosshairTypes) });
         props.push_back ({ configNode, pRadius, SettableProperty::Number, {}, {}});
         props.push_back ({ configNode, pSenseFactor, SettableProperty::Number, {}, {}});
+        props.push_back ({ configNode, pJumpToClick, SettableProperty::Toggle, {}, {}});
 
         return props;
     }
@@ -802,6 +881,137 @@ const juce::Identifier  XYDraggerItem::pCrosshair       { "xy-crosshair" };
 const juce::StringArray XYDraggerItem::pCrosshairTypes  { "no-crosshair", "vertical", "horizontal", "crosshair" };
 const juce::Identifier  XYDraggerItem::pRadius          { "xy-radius" };
 const juce::Identifier  XYDraggerItem::pSenseFactor     { "xy-sense-factor" };
+const juce::Identifier  XYDraggerItem::pJumpToClick     { "xy-jump-to-click" };
+
+//==============================================================================
+
+class XYDraggerItemJOS : public GuiItem
+{
+public:
+    FOLEYS_DECLARE_GUI_FACTORY (XYDraggerItemJOS)
+
+    static const juce::Identifier  pCrosshair;
+    static const juce::StringArray pCrosshairTypes;
+    static const juce::Identifier  pDotType;
+    static const juce::StringArray pDotTypes;
+    static const juce::Identifier  pRadius;
+    static const juce::Identifier  pLineThickness;
+    static const juce::Identifier  pSenseFactor;
+    static const juce::Identifier  pJumpToClick;
+
+    XYDraggerItemJOS (MagicGUIBuilder& builder, const juce::ValueTree& node)
+      : GuiItem (builder, node)
+    {
+        setColourTranslation (
+        {
+            { "xy-drag-handle",      XYDragComponent::xyDotColourId },
+            { "xy-drag-handle-over", XYDragComponent::xyDotOverColourId },
+            { "xy-horizontal",       XYDragComponent::xyHorizontalColourId },
+            { "xy-horizontal-over",  XYDragComponent::xyHorizontalOverColourId },
+            { "xy-vertical",         XYDragComponent::xyVerticalColourId },
+            { "xy-vertical-over",    XYDragComponent::xyVerticalOverColourId }
+        });
+
+        addAndMakeVisible (draggerJOS);
+    }
+
+    void update() override
+    {
+        auto xParamID = configNode.getProperty (IDs::parameterX, juce::String()).toString();
+        if (xParamID.isNotEmpty())
+            draggerJOS.setParameterX (dynamic_cast<juce::RangedAudioParameter*>(getMagicState().getParameter (xParamID)));
+        else
+            draggerJOS.setParameterX (nullptr);
+
+        auto yParamID = configNode.getProperty (IDs::parameterY, juce::String()).toString();
+        if (yParamID.isNotEmpty())
+            draggerJOS.setParameterY (dynamic_cast<juce::RangedAudioParameter*>(getMagicState().getParameter (yParamID)));
+        else
+            draggerJOS.setParameterY (nullptr);
+
+
+        auto rightParamID = configNode.getProperty ("right-click", juce::String()).toString();
+        if (rightParamID.isNotEmpty())
+            draggerJOS.setRightClickParameter (dynamic_cast<juce::RangedAudioParameter*>(getMagicState().getParameter (rightParamID)));
+
+        auto crosshair = getProperty (pCrosshair);
+        if (crosshair == pCrosshairTypes [0])
+            draggerJOS.setCrossHair (false, false);
+        else if (crosshair == pCrosshairTypes [1])
+            draggerJOS.setCrossHair (true, false);
+        else if (crosshair == pCrosshairTypes [2])
+            draggerJOS.setCrossHair (false, true);
+        else
+            draggerJOS.setCrossHair (true, true);
+
+        juce::String dotType = getProperty (pDotType);
+        bool matched = false;
+        for (int i=0; i<4; i++)
+        {
+            if (dotType == pDotTypes [i])
+            {
+                draggerJOS.setDotType ((DOT_TYPE)i);
+                matched = true;
+                break;
+            }
+        }
+        if (not matched)
+        {
+            draggerJOS.setDotType (DOT_TYPE_ZERO); // default
+        }
+
+        auto radius = getProperty (pRadius);
+        if (! radius.isVoid())
+            draggerJOS.setRadius (radius);
+
+        auto lineThickness = getProperty (pLineThickness);
+        if (! lineThickness.isVoid())
+            draggerJOS.setLineThickness (lineThickness);
+
+        auto factor = getProperty (pSenseFactor);
+        if (! factor.isVoid())
+            draggerJOS.setSenseFactor (factor);
+
+        auto jumpToClick = getProperty (pJumpToClick);
+        if (! jumpToClick.isVoid())
+            draggerJOS.setJumpToClick (jumpToClick);
+    }
+
+    std::vector<SettableProperty> getSettableProperties() const override
+    {
+        std::vector<SettableProperty> props;
+
+        props.push_back ({ configNode, IDs::parameterX, SettableProperty::Choice, {}, magicBuilder.createParameterMenuLambda() });
+        props.push_back ({ configNode, IDs::parameterY, SettableProperty::Choice, {}, magicBuilder.createParameterMenuLambda() });
+        props.push_back ({ configNode, "right-click", SettableProperty::Choice, {}, magicBuilder.createParameterMenuLambda() });
+        props.push_back ({ configNode, pCrosshair, SettableProperty::Choice, {}, magicBuilder.createChoicesMenuLambda (pCrosshairTypes) });
+        props.push_back ({ configNode, pDotType, SettableProperty::Choice, {}, magicBuilder.createChoicesMenuLambda (pDotTypes) });
+        props.push_back ({ configNode, pRadius, SettableProperty::Number, {}, {}});
+        props.push_back ({ configNode, pLineThickness, SettableProperty::Number, {}, {}});
+        props.push_back ({ configNode, pSenseFactor, SettableProperty::Number, {}, {}});
+        props.push_back ({ configNode, pJumpToClick, SettableProperty::Toggle, {}, {}});
+
+        return props;
+    }
+
+    juce::Component* getWrappedComponent() override
+    {
+        return &draggerJOS;
+    }
+
+private:
+    XYDragComponentJOS draggerJOS;
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (XYDraggerItemJOS)
+};
+const juce::Identifier  XYDraggerItemJOS::pCrosshair       { "xy-crosshair" };
+const juce::StringArray XYDraggerItemJOS::pCrosshairTypes  { "no-crosshair", "vertical", "horizontal", "crosshair" };
+const juce::Identifier  XYDraggerItemJOS::pDotType         { "xy-zero" };
+const juce::StringArray XYDraggerItemJOS::pDotTypes        { "xy-dot", "xy-pole", "xy-zero", "xy-pole-zero" }; // see enum DOT_TYPE
+const juce::Identifier  XYDraggerItemJOS::pRadius          { "xy-radius" };
+const juce::Identifier  XYDraggerItemJOS::pLineThickness   { "xy-line-thickness" };
+const juce::Identifier  XYDraggerItemJOS::pSenseFactor     { "xy-sense-factor" };
+const juce::Identifier  XYDraggerItemJOS::pJumpToClick     { "xy-jump-to-click" };
 
 //==============================================================================
 
@@ -1096,6 +1306,7 @@ void MagicGUIBuilder::registerJUCEFactories()
     registerFactory (IDs::plot, &PlotItem::factory);
     registerFactory (IDs::audioPlot, &AudioPlotItem::factory);
     registerFactory (IDs::xyDragComponent, &XYDraggerItem::factory);
+    registerFactory (IDs::xyDragComponentJOS, &XYDraggerItemJOS::factory);
     registerFactory (IDs::keyboardComponent, &KeyboardItem::factory);
     registerFactory (IDs::drumpadComponent, &DrumpadItem::factory);
     registerFactory (IDs::meter, &LevelMeterItem::factory);

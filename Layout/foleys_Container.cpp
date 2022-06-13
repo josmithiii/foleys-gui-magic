@@ -1,6 +1,6 @@
 /*
  ==============================================================================
-    Copyright (c) 2019-2021 Foleys Finest Audio - Daniel Walz
+    Copyright (c) 2019-2022 Foleys Finest Audio - Daniel Walz
     All rights reserved.
 
     License for non-commercial projects:
@@ -34,18 +34,29 @@
  ==============================================================================
  */
 
+#include "foleys_Container.h"
+
 namespace foleys
 {
 
 Container::Container (MagicGUIBuilder& builder, juce::ValueTree node)
   : GuiItem (builder, node)
 {
-    addAndMakeVisible (containerBox);
+    addAndMakeVisible (viewport);
+    viewport.setViewedComponent (&containerBox, false);
 }
 
 void Container::update()
 {
     configureFlexBox (configNode);
+
+    auto focusType = magicBuilder.getStyleProperty (IDs::focusContainerType, configNode).toString();
+    if (focusType == IDs::focusContainer)
+        setFocusContainerType (FocusContainerType::focusContainer);
+    else if (focusType == IDs::focusKeyContainer)
+        setFocusContainerType (FocusContainerType::keyboardFocusContainer);
+    else
+        setFocusContainerType (FocusContainerType::none);
 
     for (auto& child : *this)
         child->updateInternal();
@@ -63,6 +74,21 @@ void Container::update()
     {
         refreshRateHz = repaintHz.getIntValue();
         updateContinuousRedraw();
+    }
+
+    auto scroll = magicBuilder.getStyleProperty (IDs::scrollMode, configNode).toString();
+    if (scroll.isNotEmpty())
+    {
+        if (scroll == IDs::noScroll)
+            scrollMode = ScrollMode::NoScroll;
+        else if (scroll == IDs::scrollHorizontal)
+            scrollMode = ScrollMode::ScrollHorizontal;
+        else if (scroll == IDs::scrollVertical)
+            scrollMode = ScrollMode::ScrollVertical;
+        else if (scroll == IDs::scrollBoth)
+            scrollMode = ScrollMode::ScrollBoth;
+
+        updateLayout();
     }
 }
 
@@ -148,11 +174,15 @@ void Container::updateLayout()
     if (children.empty())
         return;
 
-    containerBox.setBounds (getClientBounds());
-    containerBox.setBackgroundColour (decorator.getBackgroundColour());
+    viewport.setBackgroundColour (decorator.getBackgroundColour());
 
     if (layout != LayoutType::Tabbed)
         tabbedButtons.reset();
+
+    viewport.setBounds (getClientBounds());
+    viewport.setScrollBarsShown (scrollMode == ScrollMode::ScrollVertical || scrollMode == ScrollMode::ScrollBoth,
+                                 scrollMode == ScrollMode::ScrollHorizontal || scrollMode == ScrollMode::ScrollBoth);
+    auto clientBounds = viewport.getLocalBounds();
 
     if (layout == LayoutType::FlexBox)
     {
@@ -160,11 +190,30 @@ void Container::updateLayout()
         for (auto& child : children)
             flexBox.items.add (child->getFlexItem());
 
-        flexBox.performLayout (containerBox.getLocalBounds());
+        auto overall = clientBounds;
+        flexBox.performLayout (overall);
+
+        if (scrollMode != ScrollMode::NoScroll)
+        {
+            // check sizes
+            for (auto& child : children)
+                overall = overall.getUnion (child->getBounds());
+
+            containerBox.setBounds (overall);
+
+            if (scrollMode == ScrollMode::ScrollHorizontal && viewport.isHorizontalScrollBarShown())
+                overall.removeFromBottom (viewport.getScrollBarThickness());
+            else if (scrollMode == ScrollMode::ScrollVertical && viewport.isVerticalScrollBarShown())
+                overall.removeFromRight (viewport.getScrollBarThickness());
+
+            flexBox.performLayout (overall);
+        }
+
+        containerBox.setBounds (overall);
     }
     else if (layout == LayoutType::Tabbed)
     {
-        auto clientBounds = containerBox.getLocalBounds();
+        containerBox.setBounds (clientBounds);
         updateTabbedButtons();
         tabbedButtons->setBounds (clientBounds.removeFromTop (30));
 
@@ -173,8 +222,10 @@ void Container::updateLayout()
     }
     else // layout == Layout::Contents
     {
+        containerBox.setBounds (clientBounds);
+
         for (auto& child : children)
-            child->setBounds (child->resolvePosition (containerBox.getLocalBounds()));
+            child->setBounds (child->resolvePosition (clientBounds));
     }
 
     for (auto& child : children)
@@ -193,12 +244,17 @@ void Container::updateContinuousRedraw()
 {
     stopTimer();
     plotComponents.clear();
+    audioPlotComponents.clear();
 
     for (auto& child : children)
+    {
         if (auto* p = dynamic_cast<MagicPlotComponent*>(child->getWrappedComponent()))
             plotComponents.push_back (p);
+        if (auto* p = dynamic_cast<MagicAudioPlotComponent*>(child->getWrappedComponent()))
+            audioPlotComponents.push_back (p);
+    }
 
-    if (! plotComponents.empty())
+    if (! plotComponents.empty() || ! audioPlotComponents.empty())
         startTimerHz (refreshRateHz);
 }
 
@@ -280,11 +336,16 @@ void Container::configureFlexBox (const juce::ValueTree& node)
 void Container::timerCallback()
 {
     auto needsRepaint = false;
+
     for (auto p : plotComponents)
+        if (p) needsRepaint |= p->needsUpdate();
+
+    for (auto p : audioPlotComponents)
         if (p) needsRepaint |= p->needsUpdate();
 
     if (needsRepaint)
         containerBox.repaint();
+
 }
 
 void Container::changeListenerCallback (juce::ChangeBroadcaster*)
@@ -322,15 +383,16 @@ void Container::setEditMode (bool shouldEdit)
 
 //==============================================================================
 
-Container::ContainerBox::ContainerBox (Container& ownerToUse)
+Container::Scroller::Scroller (Container& ownerToUse)
 : owner (ownerToUse) {}
 
-void Container::ContainerBox::paint (juce::Graphics& g)
+void Container::Scroller::paint (juce::Graphics& g)
 {
-    owner.decorator.drawDecorator (g, {-getX(), -getY(), owner.getWidth(), owner.getHeight()});
+    auto b = owner.getClientBounds();
+    owner.decorator.drawDecorator (g, {-b.getX(), -b.getY(), owner.getWidth(), owner.getHeight()});
 }
 
-void Container::ContainerBox::setBackgroundColour (juce::Colour colour)
+void Container::Scroller::setBackgroundColour (juce::Colour colour)
 {
     backgroundColour = colour;
     setOpaque (backgroundColour.isOpaque());

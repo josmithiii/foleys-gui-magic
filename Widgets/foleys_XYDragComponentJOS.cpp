@@ -34,12 +34,12 @@
  ==============================================================================
  */
 
-#include "foleys_XYDragComponent.h"
+#include "foleys_XYDragComponentJOS.h"
 
 namespace foleys
 {
 
-XYDragComponent::XYDragComponent()
+XYDragComponentJOS::XYDragComponentJOS()
 {
     setOpaque (false);
 
@@ -60,13 +60,24 @@ XYDragComponent::XYDragComponent()
  @param horizontal switches the horizontal line visible and enables vertical drags
  @param vertical   switches the vertical line visible and enables horizontal drags
  */
-void XYDragComponent::setCrossHair (bool horizontal, bool vertical)
+void XYDragComponentJOS::setCrossHair (bool horizontal, bool vertical)
 {
     wantsVerticalDrag = horizontal;
     wantsHorizontalDrag = vertical;
 }
 
-void XYDragComponent::paint (juce::Graphics& g)
+/**
+ This sets the dot type at the crosshair intersection.
+
+ @param zero plots as O
+ @param pole plots as X
+ */
+void XYDragComponentJOS::setDotType (DOT_TYPE dotTypeToDraw)
+{
+    dotType = dotTypeToDraw;
+}
+
+void XYDragComponentJOS::paint (juce::Graphics& g)
 {
     const auto x = getXposition();
     const auto y = getYposition();
@@ -93,47 +104,60 @@ void XYDragComponent::paint (juce::Graphics& g)
     }
 
     g.setColour (findColour (mouseOverDot ? xyDotOverColourId : xyDotColourId));
-    g.fillEllipse (x - radius, y - radius, 2 * radius, 2 * radius);
+    if (dotType == DOT_TYPE_DOT) {
+        g.fillEllipse (x - radius, y - radius, 2 * radius, 2 * radius);
+    } else if (dotType == DOT_TYPE_POLE) {
+        g.drawLine (x - radius, y - radius, x + radius, y + radius, lineThickness);
+        g.drawLine (x - radius, y + radius, x + radius, y - radius, lineThickness);
+    } else if (dotType == DOT_TYPE_ZERO) {
+        g.drawEllipse (x - radius, y - radius, 2 * radius, 2 * radius, lineThickness);
+    } else if (dotType == DOT_TYPE_POLE_ZERO) {
+        g.drawEllipse (x - radius, y - radius, 2 * radius, 2 * radius, lineThickness);
+        g.drawLine (x - radius, y - radius, x + radius, y + radius, lineThickness);
+        g.drawLine (x - radius, y + radius, x + radius, y - radius, lineThickness);
+    } else {
+        DBG("*** XYDragComponentJOS: Invalid dotType " << dotType);
+    }
 }
 
-void XYDragComponent::setParameterX (juce::RangedAudioParameter* parameter)
+void XYDragComponentJOS::setParameterX (juce::RangedAudioParameter* parameter)
 {
     xAttachment.attachToParameter (parameter);
 }
 
-void XYDragComponent::setParameterY (juce::RangedAudioParameter* parameter)
+void XYDragComponentJOS::setParameterY (juce::RangedAudioParameter* parameter)
 {
     yAttachment.attachToParameter (parameter);
 }
 
-void XYDragComponent::setRightClickParameter (juce::RangedAudioParameter* parameter)
+void XYDragComponentJOS::setRightClickParameter (juce::RangedAudioParameter* parameter)
 {
     contextMenuParameter = parameter;
 }
 
-void XYDragComponent::setRadius (float radiusToUse)
+void XYDragComponentJOS::setRadius (float radiusToUse)
 {
     radius = radiusToUse;
     repaint();
 }
 
-void XYDragComponent::setLineThickness (float thickness)
+void XYDragComponentJOS::setLineThickness (float thickness)
 {
     lineThickness = thickness;
     repaint();
 }
 
-void XYDragComponent::setSenseFactor (float factor)
+void XYDragComponentJOS::setSenseFactor (float factor)
 {
     senseFactor = factor;
 }
 
-void XYDragComponent::setJumpToClick (bool shouldJumpToClick)
+void XYDragComponentJOS::setJumpToClick (bool shouldJumpToClick)
 {
     jumpToClick = shouldJumpToClick;
 }
 
-void XYDragComponent::updateWhichToDrag (juce::Point<float> pos)
+void XYDragComponentJOS::updateWhichToDrag (juce::Point<float> pos)
 {
     const auto centre = juce::Point<int> (getXposition(), getYposition()).toFloat();
 
@@ -144,7 +168,7 @@ void XYDragComponent::updateWhichToDrag (juce::Point<float> pos)
     repaint();
 }
 
-bool XYDragComponent::hitTest (int x, int y)
+bool XYDragComponentJOS::hitTest (int x, int y)
 {
     if (jumpToClick)
         return true;
@@ -164,7 +188,7 @@ bool XYDragComponent::hitTest (int x, int y)
     return false;
 }
 
-void XYDragComponent::mouseDown (const juce::MouseEvent& event)
+void XYDragComponentJOS::mouseDown (const juce::MouseEvent& event)
 {
     if (contextMenuParameter && (event.mods.isPopupMenu()))
     {
@@ -218,12 +242,12 @@ void XYDragComponent::mouseDown (const juce::MouseEvent& event)
         yAttachment.beginGesture();
 }
 
-void XYDragComponent::mouseMove (const juce::MouseEvent& event)
+void XYDragComponentJOS::mouseMove (const juce::MouseEvent& event)
 {
     updateWhichToDrag (event.position);
 }
 
-void XYDragComponent::mouseDrag (const juce::MouseEvent& event)
+void XYDragComponentJOS::mouseDrag (const juce::MouseEvent& event)
 {
     if (mouseOverX || mouseOverDot)
         xAttachment.setNormalisedValue (event.position.getX() / float (getWidth()));
@@ -232,7 +256,7 @@ void XYDragComponent::mouseDrag (const juce::MouseEvent& event)
         yAttachment.setNormalisedValue (1.0f - event.position.getY() / float (getHeight()));
 }
 
-void XYDragComponent::mouseUp (const juce::MouseEvent& event)
+void XYDragComponentJOS::mouseUp (const juce::MouseEvent& event)
 {
     if (contextMenuParameter && (event.mods.isPopupMenu()))
         return;
@@ -244,12 +268,12 @@ void XYDragComponent::mouseUp (const juce::MouseEvent& event)
         yAttachment.endGesture();
 }
 
-void XYDragComponent::mouseEnter (const juce::MouseEvent& event)
+void XYDragComponentJOS::mouseEnter (const juce::MouseEvent& event)
 {
     updateWhichToDrag (event.position);
 }
 
-void XYDragComponent::mouseExit (const juce::MouseEvent&)
+void XYDragComponentJOS::mouseExit (const juce::MouseEvent&)
 {
     mouseOverDot = false;
     mouseOverX = false;
@@ -258,12 +282,12 @@ void XYDragComponent::mouseExit (const juce::MouseEvent&)
     repaint();
 }
 
-int XYDragComponent::getXposition() const
+int XYDragComponentJOS::getXposition() const
 {
     return juce::roundToInt (xAttachment.getNormalisedValue() * getWidth());
 }
 
-int XYDragComponent::getYposition() const
+int XYDragComponentJOS::getYposition() const
 {
     return juce::roundToInt ((1.0f - yAttachment.getNormalisedValue()) * getHeight());
 }

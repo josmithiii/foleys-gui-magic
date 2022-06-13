@@ -1,6 +1,6 @@
 /*
  ==============================================================================
-    Copyright (c) 2021 Foleys Finest Audio - Daniel Walz
+    Copyright (c) 2021 - 2022 Foleys Finest Audio - Daniel Walz
     All rights reserved.
 
     License for non-commercial projects:
@@ -33,6 +33,8 @@
     OF THE POSSIBILITY OF SUCH DAMAGE.
  ==============================================================================
  */
+
+#include <juce_audio_processors/juce_audio_processors.h>
 
 #pragma once
 
@@ -75,7 +77,8 @@ public:
 
     /**
      Override that method to initialise the builder, register your own bespoke components or LookAndFeel classes.
-     If you override this and you want to use the bundled components don't forget to call
+     If you override this and you want to use the bundled components don't forget to call those two lines, otherwise you
+     won't have any Components or LookAndFeels to choose from
      \code{.cpp}
      builder.registerJUCEFactories();
      builder.registerJUCELookAndFeels();

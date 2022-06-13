@@ -1,6 +1,6 @@
 /*
  ==============================================================================
-    Copyright (c) 2019-2021 Foleys Finest Audio - Daniel Walz
+    Copyright (c) 2019-2022 Foleys Finest Audio - Daniel Walz
     All rights reserved.
 
     License for non-commercial projects:
@@ -34,6 +34,14 @@
  ==============================================================================
  */
 
+#include "foleys_PropertiesEditor.h"
+
+#include "foleys_StyleBoolPropertyComponent.h"
+#include "foleys_StyleChoicePropertyComponent.h"
+#include "foleys_StyleColourPropertyComponent.h"
+#include "foleys_StyleGradientPropertyComponent.h"
+#include "foleys_StyleTextPropertyComponent.h"
+#include "foleys_MultiListPropertyComponent.h"
 
 namespace foleys
 {
@@ -274,6 +282,11 @@ void PropertiesEditor::addDecoratorProperties()
     array.add (new StyleColourPropertyComponent (builder, IDs::captionColour, styleItem));
     array.add (new StyleChoicePropertyComponent (builder, IDs::captionPlacement, styleItem, getAllKeyNames (makeJustificationsChoices())));
     array.add (new StyleTextPropertyComponent (builder, IDs::tooltip, styleItem));
+    array.add (new StyleTextPropertyComponent (builder, IDs::accessibilityTitle, styleItem));
+    array.add (new StyleBoolPropertyComponent (builder, IDs::accessibility, styleItem));
+    array.add (new StyleTextPropertyComponent (builder, IDs::accessibilityDescription, styleItem));
+    array.add (new StyleTextPropertyComponent (builder, IDs::accessibilityHelpText, styleItem));
+    array.add (new StyleTextPropertyComponent (builder, IDs::accessibilityFocusOrder, styleItem));
     array.add (new StyleTextPropertyComponent (builder, IDs::margin, styleItem));
     array.add (new StyleTextPropertyComponent (builder, IDs::padding, styleItem));
     array.add (new StyleTextPropertyComponent (builder, IDs::border, styleItem));
@@ -344,12 +357,15 @@ void PropertiesEditor::addContainerProperties()
 
     array.add (new StyleChoicePropertyComponent (builder, IDs::display, styleItem, { IDs::contents, IDs::flexbox, IDs::tabbed }));
     array.add (new StyleTextPropertyComponent (builder, IDs::repaintHz, styleItem));
+    array.add (new StyleChoicePropertyComponent (builder, IDs::scrollMode, styleItem, { IDs::noScroll, IDs::scrollHorizontal, IDs::scrollVertical, IDs::scrollBoth }));
 
     array.add (new StyleChoicePropertyComponent (builder, IDs::flexDirection, styleItem, { IDs::flexDirRow, IDs::flexDirRowReverse, IDs::flexDirColumn, IDs::flexDirColumnReverse }));
     array.add (new StyleChoicePropertyComponent (builder, IDs::flexWrap, styleItem, { IDs::flexNoWrap, IDs::flexWrapNormal, IDs::flexWrapReverse }));
     array.add (new StyleChoicePropertyComponent (builder, IDs::flexAlignContent, styleItem, { IDs::flexStretch, IDs::flexStart, IDs::flexEnd, IDs::flexCenter, IDs::flexSpaceAround, IDs::flexSpaceBetween }));
     array.add (new StyleChoicePropertyComponent (builder, IDs::flexAlignItems, styleItem, { IDs::flexStretch, IDs::flexStart, IDs::flexEnd, IDs::flexCenter }));
     array.add (new StyleChoicePropertyComponent (builder, IDs::flexJustifyContent, styleItem, { IDs::flexStart, IDs::flexEnd, IDs::flexCenter, IDs::flexSpaceAround, IDs::flexSpaceBetween }));
+
+    array.add (new StyleChoicePropertyComponent (builder, IDs::focusContainerType, styleItem, { IDs::focusNone, IDs::focusContainer, IDs::focusKeyContainer }));
 
     properties.addSection ("Container", array, false);
 }

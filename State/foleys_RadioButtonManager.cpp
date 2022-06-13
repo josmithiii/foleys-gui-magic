@@ -1,6 +1,6 @@
 /*
  ==============================================================================
-    Copyright (c) 2020-2022 Foleys Finest Audio - Daniel Walz
+    Copyright (c) 2021-2022 Foleys Finest Audio - Daniel Walz
     All rights reserved.
 
     License for non-commercial projects:
@@ -32,55 +32,40 @@
     OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
     OF THE POSSIBILITY OF SUCH DAMAGE.
  ==============================================================================
-*/
+ */
 
-#pragma once
-
-#include <juce_core/juce_core.h>
-#include <juce_data_structures/juce_data_structures.h>
 
 namespace foleys
 {
 
-/**
- ApplicationSettings are persistent settings shared by all plugin instances.
- They are hierarchically ordered in a ValueTree and loaded via SharedResourcePointer,
- so they don't exist duplicated in one process.
- */
-class ApplicationSettings : public juce::ChangeBroadcaster,
-                            private juce::Timer,
-                            private juce::ValueTree::Listener
+void RadioButtonManager::addButton (juce::Button* button)
 {
-public:
-    ApplicationSettings();
-    ~ApplicationSettings() override;
+    if (std::find(buttons.begin(), buttons.end(), button) == buttons.end())
+        buttons.push_back(button);
 
-    /**
-     The settings tree is used to hang in your settings trees. The whole tree is stored.
-     It is synchronised instead of replaced on load, so it is safe to add yourself as
-     ValueTree::Listener.
-     */
-    juce::ValueTree settings { "Settings" };
-
-    void setFileName (juce::File file);
-
-private:
-    void timerCallback() override;
-
-    void load();
-    void save();
-
-    void valueTreeChildAdded (juce::ValueTree& parentTree,
-                              juce::ValueTree& childWhichHasBeenAdded) override;
-    void valueTreeChildRemoved (juce::ValueTree& parentTree, juce::ValueTree&, int) override;
-    void valueTreePropertyChanged (juce::ValueTree&, const juce::Identifier&) override;
-
-    juce::File   settingsFile;
-    juce::String checksum;
-
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ApplicationSettings)
-};
-
-using SharedApplicationSettings = juce::SharedResourcePointer<ApplicationSettings>;
-
+    button->addListener (this);
 }
+
+void RadioButtonManager::removeButton (juce::Button* button)
+{
+    buttons.erase (std::remove_if (buttons.begin(), buttons.end(), [button](const auto& other)
+                        { return other == button; }),
+                   buttons.end());
+    button->removeListener (this);
+}
+
+void RadioButtonManager::buttonStateChanged (juce::Button* button)
+{
+    if (!button->getToggleState())
+        return;
+
+    auto groupID = button->getRadioGroupId();
+    if (groupID == 0)
+        return;
+
+    for (auto* otherButton : buttons)
+        if (button != otherButton && otherButton->getRadioGroupId() == groupID)
+            otherButton->setToggleState (false, juce::sendNotificationSync);
+}
+
+} // namespace foleys

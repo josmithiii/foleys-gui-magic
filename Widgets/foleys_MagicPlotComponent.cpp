@@ -1,6 +1,6 @@
 /*
  ==============================================================================
-    Copyright (c) 2019-2021 Foleys Finest Audio - Daniel Walz
+    Copyright (c) 2019-2022 Foleys Finest Audio - Daniel Walz
     All rights reserved.
 
     License for non-commercial projects:
@@ -34,6 +34,7 @@
  ==============================================================================
  */
 
+#include "foleys_MagicPlotComponent.h"
 
 namespace foleys
 {
@@ -61,6 +62,19 @@ void MagicPlotComponent::setDecayFactor (float decayFactor)
     updateGlowBufferSize();
 }
 
+void MagicPlotComponent::setGradientFromString (const juce::String& cssString, Stylesheet& stylesheet)
+{
+    if (cssString.isNotEmpty())
+    {
+        gradient = std::make_unique<GradientBackground>();
+        gradient->setup(cssString, stylesheet);
+    }
+    else
+    {
+        gradient.reset();
+    }
+}
+
 void MagicPlotComponent::paint (juce::Graphics& g)
 {
     if (plotSource == nullptr)
@@ -72,6 +86,9 @@ void MagicPlotComponent::paint (juce::Graphics& g)
         plotSource->createPlotPaths (path, filledPath, getLocalBounds().toFloat(), *this);
         lastDataTimestamp = lastUpdate;
     }
+
+    if (gradient)
+        gradient->setupGradientFill (g, getLocalBounds().toFloat());
 
     if (! glowBuffer.isNull())
         drawPlotGlowing (g);
@@ -85,11 +102,15 @@ void MagicPlotComponent::drawPlot (juce::Graphics& g)
 {
     const auto active = plotSource->isActive();
     auto colour = findColour (active ? plotFillColourId : plotInactiveFillColourId);
-    if (colour.isTransparent() == false)
-    {
+
+    if (!gradient && colour.isTransparent() == false)
         g.setColour (colour);
+
+    if (gradient)
+        gradient->setupGradientFill (g, getLocalBounds().toFloat());
+
+    if (gradient || !colour.isTransparent())
         g.fillPath (filledPath);
-    }
 
     colour = findColour (active ? plotColourId : plotInactiveColourId);
     if (colour.isTransparent() == false)

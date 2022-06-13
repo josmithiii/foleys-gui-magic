@@ -1,6 +1,6 @@
 /*
  ==============================================================================
-    Copyright (c) 2020 Foleys Finest Audio - Daniel Walz
+    Copyright (c) 2020-2022 Foleys Finest Audio - Daniel Walz
     All rights reserved.
 
     License for non-commercial projects:
@@ -34,6 +34,10 @@
  ==============================================================================
 */
 
+#include <juce_cryptography/juce_cryptography.h>
+
+#include "foleys_ApplicationSettings.h"
+#include "../Helpers/foleys_ScopedInterProcessLock.h"
 
 namespace foleys
 {
@@ -57,45 +61,48 @@ void ApplicationSettings::setFileName (juce::File file)
     startTimerHz (1);
 }
 
-void ApplicationSettings::load()
+void ApplicationSettings::load() // load settingsFile if it has changed, merging it with current settings, and save that out
 {
-    juce::InterProcessLock lock (settingsFile.getFileName() + ".lock");
+    ScopedInterProcessLock lock (settingsFile.getFileName() + ".lock", 500,
+    [this]
+    {
+        auto newChecksum = juce::MD5 (settingsFile).toHexString();
+        if (checksum == newChecksum)
+            return;
 
-    auto newChecksum = juce::MD5 (settingsFile).toHexString();
-    if (checksum == newChecksum)
-        return;
+        auto stream = settingsFile.createInputStream();
+        if (stream.get() == nullptr)
+            return;
 
-    auto stream = settingsFile.createInputStream();
-    if (stream.get() == nullptr)
-        return;
+        auto tree = juce::ValueTree::fromXml (stream->readEntireStreamAsString());
+        if (! tree.isValid())
+            return;
 
-    auto tree = juce::ValueTree::fromXml (stream->readEntireStreamAsString());
-    if (! tree.isValid())
-        return;
+        settings.copyPropertiesAndChildrenFrom (tree, nullptr);
+        settings.addListener (this);
 
-    settings.copyPropertiesAndChildrenFrom (tree, nullptr);
-    settings.addListener (this);
-
-    checksum = newChecksum;
-    sendChangeMessage();
+        checksum = newChecksum;
+        sendChangeMessage();
+    });
 }
 
 void ApplicationSettings::save()
 {
-    juce::InterProcessLock lock (settingsFile.getFileName() + ".lock");
+    ScopedInterProcessLock lock (settingsFile.getFileName() + ".lock", 1000,
+    [this] {
+        auto parent = settingsFile.getParentDirectory();
+        parent.createDirectory();
 
-    auto parent = settingsFile.getParentDirectory();
-    parent.createDirectory();
+        auto stream = settingsFile.createOutputStream();
+        if (stream.get() == nullptr)
+            return;
 
-    auto stream = settingsFile.createOutputStream();
-    if (stream.get() == nullptr)
-        return;
+        stream->setPosition (0);
+        stream->truncate();
+        stream->writeString (settings.toXmlString());
 
-    stream->setPosition (0);
-    stream->truncate();
-    stream->writeString (settings.toXmlString());
-
-    checksum = juce::MD5 (settingsFile).toHexString();
+        checksum = juce::MD5 (settingsFile).toHexString();
+    });
 }
 
 void ApplicationSettings::timerCallback()

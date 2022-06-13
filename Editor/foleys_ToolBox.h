@@ -1,6 +1,6 @@
 /*
  ==============================================================================
-    Copyright (c) 2019-2021 Foleys Finest Audio - Daniel Walz
+    Copyright (c) 2019-2022 Foleys Finest Audio - Daniel Walz
     All rights reserved.
 
     License for non-commercial projects:
@@ -35,6 +35,12 @@
  */
 
 #pragma once
+
+#include <juce_gui_basics/juce_gui_basics.h>
+
+#include "foleys_GUITreeEditor.h"
+#include "foleys_PropertiesEditor.h"
+#include "foleys_Palette.h"
 
 namespace foleys
 {
@@ -96,12 +102,16 @@ private:
         AutoSave
     };
 
+    static juce::String positionOptionToString (PositionOption option);
+    static PositionOption positionOptionFromString (juce::String text);
+
     std::unique_ptr<juce::FileFilter> getFileFilter() const;
 
     juce::Component::SafePointer<juce::Component> parent;
 
-    MagicGUIBuilder&    builder;
-    juce::UndoManager&  undo;
+    MagicGUIBuilder&            builder;
+    juce::UndoManager&          undo;
+    juce::ApplicationProperties appProperties;
 
     juce::TextButton    fileMenu   { TRANS ("File...") };
     juce::TextButton    viewMenu   { TRANS ("View...") };

@@ -38,34 +38,84 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
+#include "../Helpers/foleys_ParameterAttachment.h"
+
 namespace foleys
 {
 
-class MagicProcessorState;
+  // Keep in synch with XYDraggerItemJOS:
+  enum DOT_TYPE { DOT_TYPE_DOT, DOT_TYPE_POLE, DOT_TYPE_ZERO, DOT_TYPE_POLE_ZERO };
 
 /**
- The MidiLearnComponent displays the last moved CC controller and allows via dragging
- onto a knob to connect to its parameter
+ This is a 2D parameter dragging component.
  */
-class MidiLearnComponent  : public juce::Component,
-                            public juce::SettableTooltipClient,
-                            private juce::Timer
+class XYDragComponentJOS  : public juce::Component,
+                         public juce::SettableTooltipClient
 {
 public:
-    MidiLearnComponent() = default;
 
-    void setMagicProcessorState (MagicProcessorState* state);
+    enum ColourIds
+    {
+        xyDotColourId = 0x2002000,
+        xyDotOverColourId,
+        xyHorizontalColourId,
+        xyHorizontalOverColourId,
+        xyVerticalColourId,
+        xyVerticalOverColourId
+    };
+
+    XYDragComponentJOS();
+
+    void setCrossHair (bool horizontal, bool vertical);
+    void setDotType (DOT_TYPE dotType);
 
     void paint (juce::Graphics& g) override;
-    void mouseDrag (const juce::MouseEvent& event) override;
+
+    void setParameterX (juce::RangedAudioParameter* parameter);
+    void setParameterY (juce::RangedAudioParameter* parameter);
+
+    void setRightClickParameter (juce::RangedAudioParameter* parameter);
+
+    void setRadius (float radius);
+    void setLineThickness (float thickness);
+    void setSenseFactor (float factor);
+    void setJumpToClick (bool shouldJumpToClick);
+
+    bool hitTest (int x, int y) override;
+    void mouseDown (const juce::MouseEvent&) override;
+    void mouseMove (const juce::MouseEvent&) override;
+    void mouseDrag (const juce::MouseEvent&) override;
+    void mouseUp (const juce::MouseEvent&) override;
+    void mouseEnter (const juce::MouseEvent&) override;
+    void mouseExit (const juce::MouseEvent&) override;
 
 private:
 
-    void timerCallback() override;
+    void updateWhichToDrag (juce::Point<float> p);
 
-    MagicProcessorState* processorState = nullptr;
+    int getXposition() const;
+    int getYposition() const;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MidiLearnComponent)
+    bool mouseOverDot = false;
+    bool mouseOverX   = false;
+    bool mouseOverY   = false;
+
+    bool wantsHorizontalDrag = true;
+    bool wantsVerticalDrag = true;
+
+    DOT_TYPE dotType = DOT_TYPE_POLE;
+
+    ParameterAttachment<float> xAttachment;
+    ParameterAttachment<float> yAttachment;
+
+    juce::RangedAudioParameter* contextMenuParameter = nullptr;
+
+    bool  jumpToClick = false;
+    float radius      = 4.0f;
+    float lineThickness = 2.0f;
+    float senseFactor = 2.0f;
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (XYDragComponentJOS)
 };
 
-}
+} // namespace foleys
