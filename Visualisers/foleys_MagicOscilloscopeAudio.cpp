@@ -154,6 +154,9 @@ void MagicOscilloscopeAudio::pushSamples (const juce::AudioBuffer<float>& buffer
     samples.copyFrom (0, w, buffer, firstChannelToPlot, startSample, numSamplesTrimmed);
     if (numChannelsOut>1) // must also copy higher channels
       {
+        if (numChannelsOut>samples.getNumChannels()) {
+            setNumChannels(numChannelsOut);
+        }
         for (int c=firstChannelToPlot+1; c <= lastChannelToPlot; c++)
           {
             samples.copyFrom (c-firstChannelToPlot, w, buffer, c, startSample, numSamplesTrimmed);
