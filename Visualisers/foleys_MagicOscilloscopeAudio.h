@@ -64,6 +64,8 @@ public:
     void pushSamples (const juce::AudioBuffer<float>& buffer, int plotLength=0) override;
     void pushSamples (const std::shared_ptr<juce::AudioBuffer<float>> bufSP, int channelToPlot=0,
                       int numChannelsToPlot=1, int plotLength=0) override;
+    void pushSamples (const juce::AudioBuffer<float>& bufR, int channelToPlot,
+                      int numChannelsToPlot, int plotLength=0) override;
 
     /**
      This is the callback that creates the frequency plot for drawing.

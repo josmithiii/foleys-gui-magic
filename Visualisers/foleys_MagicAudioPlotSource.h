@@ -164,11 +164,16 @@ public:
      responsibility to put that into a FIFO and return as quickly as possible.
      */
     virtual void pushSamples (const juce::AudioBuffer<float>& buffer, int currentPlotLength=0)=0;
+    virtual void pushSamples (const juce::AudioBuffer<float>& bufR, int channelToPlot,
+                              int numChannelsToPlot, int currentPlotLength)
+    {
+        pushSamples(bufR,0); // FIXME: TODO
+    }
     virtual void pushSamples (const std::shared_ptr<juce::AudioBuffer<float>> bufSP) { pushSamples(*bufSP.get(),0); }
     virtual void pushSamples (const std::shared_ptr<juce::AudioBuffer<float>> bufSP, int channelToPlot=0,
                               int numChannelsToPlot=1, int currentPlotLength=0)
     {
-      pushSamples(*bufSP.get(),0);
+      pushSamples(*bufSP.get(),0); // FIXME: TODO
     }
 
     /**

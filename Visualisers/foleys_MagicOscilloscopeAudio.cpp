@@ -76,6 +76,18 @@ void MagicOscilloscopeAudio::pushSamples (const std::shared_ptr<juce::AudioBuffe
   pushSamples (buffer, plotLengthIn);
 }
 
+void MagicOscilloscopeAudio::pushSamples (const juce::AudioBuffer<float>& bufR,
+                                          int firstChannelToPlotIn, int numChannelsToPlotIn, int plotLengthIn)
+{
+  float* const* readPointers = (float*const*)(bufR.getArrayOfReadPointers());
+  int numChannelsIn = bufR.getNumChannels();
+  int firstChannelToPlot = std::min<int>(firstChannelToPlotIn, numChannelsIn-1);
+  int numChansClipped = std::min<int>(numChannelsToPlotIn,numChannelsIn-firstChannelToPlot);
+  // AudioBuffer (Type *const *dataToReferTo, int numChannelsToUse, int numSamples)
+  juce::AudioBuffer<float> buffer(readPointers+firstChannelToPlot, numChansClipped, bufR.getNumSamples() );
+  pushSamples (buffer, plotLengthIn);
+}
+
 void MagicOscilloscopeAudio::pushSamples (const juce::AudioBuffer<float>& buffer, int plotLengthIn)
 {
   const int numSamples = buffer.getNumSamples();
