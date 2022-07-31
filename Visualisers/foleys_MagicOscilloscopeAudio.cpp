@@ -53,7 +53,7 @@ void MagicOscilloscopeAudio::checkAudioBufferForNaNs (juce::AudioBuffer<float>& 
   for (int c=0; c<nChans; c++) {
     float* bufP = buffer.getWritePointer(c);
     for (int n=0; n<nSamps; n++) {
-      if (isnan(bufP[n])) {
+      if (std::isnan(bufP[n])) {
         bufP[n] = 0.0f;
         nNaNs++;
       }
