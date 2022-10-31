@@ -262,7 +262,12 @@ void GuiItem::resized()
     {
         auto b = getClientBounds();
         component->setVisible (b.getWidth() > 2 && b.getHeight() > 2);
-        component->setBounds (b);
+//        if (visibility.getValue())
+            component->setBounds (b);
+//        else {
+//            setBounds (juce::Rectangle<int>(0,0,0,0));
+//            updateInternal();
+//        }
     }
 }
 
@@ -291,8 +296,15 @@ juce::Colour GuiItem::getTabColour() const
 
 void GuiItem::valueChanged (juce::Value& source)
 {
-    if (source == visibility)
-        setVisible (visibility.getValue());
+  if (source == visibility) {
+    setVisible (visibility.getValue());
+    // if (not isVisible) {
+    // if (not visibility.getValue()) {
+    //   // getWrappedComponent()->
+    //   setBounds(juce::Rectangle<int>(0,0,0,0));
+    //   magicBuilder.updateLayout();
+    // }
+  }
 }
 
 void GuiItem::valueTreePropertyChanged (juce::ValueTree& treeThatChanged, const juce::Identifier&)
