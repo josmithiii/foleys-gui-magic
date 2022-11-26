@@ -91,6 +91,11 @@ GuiItem* GuiItem::findGuiItemWithId (const juce::String& name)
 
 void GuiItem::updateInternal()
 {
+  if (didUpdateInternal) {
+      return;
+  }
+  didUpdateInternal = true;
+
     auto& stylesheet = magicBuilder.getStylesheet();
 
     if (auto* newLookAndFeel = stylesheet.getLookAndFeel (configNode))
