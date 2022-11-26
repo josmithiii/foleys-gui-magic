@@ -63,6 +63,8 @@ public:
     GuiItem (MagicGUIBuilder& builder, juce::ValueTree node);
     ~GuiItem() override;
 
+    bool didUpdateInternal = false;
+
     /**
      Allows accessing the Component inside that GuiItem. Don't keep this pointer!
      */
