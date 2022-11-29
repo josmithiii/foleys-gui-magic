@@ -91,10 +91,14 @@ GuiItem* GuiItem::findGuiItemWithId (const juce::String& name)
 
 void GuiItem::updateInternal()
 {
-  if (didUpdateInternal) {
+  // BEGIN JOS: (from Nick):
+  if (!magicBuilder.isEditModeOn()) {
+    if (didUpdateInternal) {
       return;
+    }
+    didUpdateInternal = true;
   }
-  didUpdateInternal = true;
+  // END JOS: (from Nick):
 
     auto& stylesheet = magicBuilder.getStylesheet();
 
