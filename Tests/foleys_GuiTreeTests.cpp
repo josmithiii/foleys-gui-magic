@@ -1,6 +1,6 @@
 /*
  ==============================================================================
-    Copyright (c) 2021-2022 Foleys Finest Audio - Daniel Walz
+    Copyright (c) 2022 Foleys Finest Audio - Daniel Walz
     All rights reserved.
 
     License for non-commercial projects:
@@ -34,52 +34,5 @@
  ==============================================================================
  */
 
-#pragma once
+#include "../foleys_gui_magic.h"
 
-namespace foleys
-{
-
-
-class RadioButtonManager
-{
-public:
-    RadioButtonManager() = default;
-
-    void addButton (juce::Button* button);
-    void removeButton (juce::Button* button);
-
-    void buttonActivated (juce::Button* button);
-private:
-    std::vector<juce::Button*> buttons;
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (RadioButtonManager)
-
-};
-
-// ==============================================================================
-
-class RadioButtonHandler  : private juce::Button::Listener,
-                            private juce::RangedAudioParameter::Listener
-{
-public:
-    RadioButtonHandler (juce::Button& buttonToControl, RadioButtonManager& manager);
-    ~RadioButtonHandler() override;
-
-    void setRadioGroupValue (juce::var value, juce::RangedAudioParameter* parameter);
-
-private:
-
-    void buttonClicked (juce::Button *) override;
-    void parameterValueChanged (int parameterIndex, float newValue) override;
-    void parameterGestureChanged (int /*parameterIndex*/, bool /*gestureIsStarting*/) override {}
-
-    juce::Button& button;
-    RadioButtonManager& radioButtonManager;
-
-    juce::var radioButtonValue;
-    juce::RangedAudioParameter* parameter = nullptr;
-
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (RadioButtonHandler)
-};
-
-
-} // namespace foleys

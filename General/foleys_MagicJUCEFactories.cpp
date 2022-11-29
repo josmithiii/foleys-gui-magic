@@ -296,33 +296,30 @@ public:
         addAndMakeVisible (button);
     }
 
-    ~TextButtonItem() override
-    {
-        magicBuilder.removeFromRadioButtonManager (&button);
-    }
-
     void update() override
     {
         attachment.reset();
 
-        auto parameter = configNode.getProperty (IDs::parameter, juce::String()).toString();
-        if (parameter.isNotEmpty())
-            attachment = getMagicState().createAttachment (parameter, button);
+        auto parameterName = configNode.getProperty (IDs::parameter, juce::String()).toString();
+        auto radioValue = getProperty (IDs::buttonRadioValue);
+
+        if (parameterName.isNotEmpty() && radioValue.isVoid())
+            attachment = getMagicState().createAttachment (parameterName, button);
 
         auto groupID = static_cast<int>(getProperty (IDs::buttonRadioGroup));
         if (groupID > 0)
         {
             button.setRadioGroupId (groupID);
-            magicBuilder.addToRadioButtonManager (&button);
         }
 
-        button.setClickingTogglesState (parameter.isNotEmpty() || groupID > 0);
+        button.setClickingTogglesState (parameterName.isNotEmpty() || groupID > 0);
         button.setButtonText (magicBuilder.getStyleProperty (pText, configNode));
 
         auto triggerID = getProperty (pOnClick).toString();
         if (triggerID.isNotEmpty())
             button.onClick = getMagicState().getTrigger (triggerID);
 
+        handler.setRadioGroupValue(radioValue, getMagicState().getParameter(parameterName));
     }
 
     std::vector<SettableProperty> getSettableProperties() const override
@@ -333,6 +330,7 @@ public:
         props.push_back ({ configNode, pText, SettableProperty::Text, {}, {} });
         props.push_back ({ configNode, pOnClick, SettableProperty::Choice, {}, magicBuilder.createTriggerMenuLambda() });
         props.push_back ({ configNode, IDs::buttonRadioGroup, SettableProperty::Number, {}, {} });
+        props.push_back ({ configNode, IDs::buttonRadioValue, SettableProperty::Number, {}, {} });
 
         return props;
     }
@@ -344,6 +342,7 @@ public:
 
 private:
     juce::TextButton button;
+    RadioButtonHandler handler {button, magicBuilder.getRadioButtonManager()};
     std::unique_ptr<juce::ButtonParameterAttachment> attachment;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TextButtonItem)
@@ -374,17 +373,14 @@ public:
         addAndMakeVisible (button);
     }
 
-    ~ToggleButtonItem() override
-    {
-        magicBuilder.removeFromRadioButtonManager (&button);
-    }
-
     void update() override
     {
         attachment.reset();
-        auto parameter = configNode.getProperty (IDs::parameter, juce::String()).toString();
-        if (parameter.isNotEmpty())
-            attachment = getMagicState().createAttachment (parameter, button);
+
+        auto parameterName = configNode.getProperty (IDs::parameter, juce::String()).toString();
+        auto radioValue = getProperty (IDs::buttonRadioValue);
+        if (parameterName.isNotEmpty() && radioValue.isVoid())
+            attachment = getMagicState().createAttachment (parameterName, button);
 
         button.setButtonText (magicBuilder.getStyleProperty (pText, configNode));
 
@@ -397,8 +393,9 @@ public:
         {
             button.setRadioGroupId (groupID);
             button.setClickingTogglesState (true);
-            magicBuilder.addToRadioButtonManager (&button);
         }
+
+        handler.setRadioGroupValue(radioValue, getMagicState().getParameter(parameterName));
     }
 
     std::vector<SettableProperty> getSettableProperties() const override
@@ -408,6 +405,7 @@ public:
         props.push_back ({ configNode, IDs::parameter, SettableProperty::Choice, {}, magicBuilder.createParameterMenuLambda() });
         props.push_back ({ configNode, pValue, SettableProperty::Choice, {}, magicBuilder.createPropertiesMenuLambda() });
         props.push_back ({ configNode, IDs::buttonRadioGroup, SettableProperty::Number, {}, {} });
+        props.push_back ({ configNode, IDs::buttonRadioValue, SettableProperty::Number, {}, {} });
         return props;
     }
 
@@ -418,6 +416,7 @@ public:
 
 private:
     juce::ToggleButton button;
+    RadioButtonHandler handler {button, magicBuilder.getRadioButtonManager()};
     std::unique_ptr<juce::ButtonParameterAttachment> attachment;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ToggleButtonItem)
@@ -456,6 +455,7 @@ public:
 
     void update() override
     {
+        // JOS convenience expansion:
         juce::String labelText = magicBuilder.getStyleProperty (pText, configNode);
         label.setText (labelText, juce::dontSendNotification);
 
@@ -517,7 +517,7 @@ public:
     }
 
 private:
-    juce::Label label;
+    juce::Label                                label;
     std::unique_ptr<juce::ParameterAttachment> attachment;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (LabelItem)
@@ -664,8 +664,8 @@ private:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PlotItem)
 };
-const juce::Identifier  PlotItem::pDecay         {"plot-decay"};
-const juce::Identifier  PlotItem::pGradient      {"plot-gradient"};
+const juce::Identifier  PlotItem::pDecay    {"plot-decay"};
+const juce::Identifier  PlotItem::pGradient {"plot-gradient"};
 
 //==============================================================================
 

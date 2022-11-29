@@ -87,9 +87,6 @@ void MagicPlotComponent::paint (juce::Graphics& g)
         lastDataTimestamp = lastUpdate;
     }
 
-    if (gradient)
-        gradient->setupGradientFill (g, getLocalBounds().toFloat());
-
     if (! glowBuffer.isNull())
         drawPlotGlowing (g);
     else

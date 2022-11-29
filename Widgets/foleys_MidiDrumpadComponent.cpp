@@ -63,7 +63,7 @@ void MidiDrumpadComponent::setMatrix (int rows, int columns)
 {
     numRows = std::max (rows, 1);
     numColumns = std::max (columns, 1);
-    
+
     updateButtons();
 }
 
