@@ -92,7 +92,10 @@ GuiItem* GuiItem::findGuiItemWithId (const juce::String& name)
 void GuiItem::updateInternal()
 {
   // BEGIN JOS: (from Nick):
-  if (!magicBuilder.isEditModeOn()) {
+#if FOLEYS_SHOW_GUI_EDITOR_PALLETTE
+  if (!magicBuilder.isEditModeOn())
+#endif
+  {
     if (didUpdateInternal) {
       return;
     }
