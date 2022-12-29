@@ -41,22 +41,18 @@ namespace foleys
 
 RadioButtonHandler::RadioButtonHandler (juce::Button& buttonToControl, RadioButtonManager& manager)
   : button (buttonToControl),
-    radioButtonManager(manager)
+    radioButtonManager (manager)
 {
     radioButtonManager.addButton (&button);
-//#define GESTURE_WITHIN_GESTURE_BUG_FIXED
-#ifdef GESTURE_WITHIN_GESTURE_BUG_FIXED // JOS temp workaround
     button.addListener (this);
-#else
-    // DBG("*** RadioButtonHandler is DISABLED until the double-gesture bug can be found and fixed");
-#endif
 }
 
 RadioButtonHandler::~RadioButtonHandler()
 {
-#ifdef GESTURE_WITHIN_GESTURE_BUG_FIXED // JOS temp workaround
+    if (parameter)
+        parameter->removeListener (this);
+
     button.removeListener (this);
-#endif
     radioButtonManager.removeButton (&button);
 }
 
@@ -69,7 +65,7 @@ void RadioButtonHandler::setRadioGroupValue (juce::var value, juce::RangedAudioP
 
         parameter = parameterToControl;
         if (parameter)
-            parameter->removeListener (this);
+            parameter->addListener (this);
     }
 
     radioButtonValue = value;
@@ -114,8 +110,8 @@ void RadioButtonManager::buttonActivated (juce::Button* button)
     if (groupID == 0)
         return;
 
-    for (auto* otherButton : buttons)
-        if (button != otherButton && otherButton->getRadioGroupId() == groupID)
+    for (auto& otherButton : buttons)
+        if (otherButton && button != otherButton && otherButton->getRadioGroupId() == groupID)
             otherButton->setToggleState (false, juce::dontSendNotification);
 }
 
@@ -128,7 +124,7 @@ void RadioButtonManager::addButton (juce::Button* button)
 void RadioButtonManager::removeButton (juce::Button* button)
 {
     buttons.erase (std::remove_if (buttons.begin(), buttons.end(), [button](const auto& other)
-                        { return other == button; }),
+                        { return other == button || other == nullptr; }),
                    buttons.end());
 }
 
