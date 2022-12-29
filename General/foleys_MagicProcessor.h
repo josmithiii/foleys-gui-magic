@@ -108,6 +108,7 @@ public:
     //==============================================================================
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
+    void setStateInformationNoDrawing (const void* data, int sizeInBytes);
 
     //==============================================================================
     int getNumPrograms() override                           { return 1; }

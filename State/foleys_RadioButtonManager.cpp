@@ -48,7 +48,7 @@ RadioButtonHandler::RadioButtonHandler (juce::Button& buttonToControl, RadioButt
 #ifdef GESTURE_WITHIN_GESTURE_BUG_FIXED // JOS temp workaround
     button.addListener (this);
 #else
-    DBG("*** RadioButtonHandler is DISABLED until the double-gesture bug can be found and fixed");
+    // DBG("*** RadioButtonHandler is DISABLED until the double-gesture bug can be found and fixed");
 #endif
 }
 

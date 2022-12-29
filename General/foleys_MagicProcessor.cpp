@@ -113,4 +113,12 @@ void MagicProcessor::setStateInformation (const void* data, int sizeInBytes)
     postSetStateInformation();
 }
 
+void MagicProcessor::setStateInformationNoDrawing (const void* data, int sizeInBytes)
+{
+    magicState.setStateInformation (data, sizeInBytes, nullptr);
+
+    postSetStateInformation();
+}
+
+
 } // namespace foleys
