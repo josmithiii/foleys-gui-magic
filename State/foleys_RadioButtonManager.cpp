@@ -44,7 +44,7 @@ RadioButtonHandler::RadioButtonHandler (juce::Button& buttonToControl, RadioButt
     radioButtonManager (manager)
 {
     radioButtonManager.addButton (&button);
-    button.addListener (this);
+    //JOS: button.addListener (this);
 }
 
 RadioButtonHandler::~RadioButtonHandler()
@@ -52,7 +52,7 @@ RadioButtonHandler::~RadioButtonHandler()
     if (parameter)
         parameter->removeListener (this);
 
-    button.removeListener (this);
+    //JOS: button.removeListener (this);
     radioButtonManager.removeButton (&button);
 }
 
