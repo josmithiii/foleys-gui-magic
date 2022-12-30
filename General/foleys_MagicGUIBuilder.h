@@ -41,7 +41,9 @@
 #include "../Layout/foleys_GuiItem.h"
 #include "../Layout/foleys_Stylesheet.h"
 #include "../State/foleys_MagicGUIState.h"
+#ifdef GESTURE_WITHIN_GESTURE_BUG_FIXED // JOS temp workaround
 #include "../State/foleys_RadioButtonManager.h"
+#endif
 
 namespace foleys
 {
@@ -195,12 +197,14 @@ public:
         };
     }
 
+#ifdef GESTURE_WITHIN_GESTURE_BUG_FIXED // JOS temp workaround
     /*!
      * Grant access to the RadioButtonManager
      * @return the radioButtonManager
      */
     RadioButtonManager& getRadioButtonManager();
-
+#endif
+  
     void changeListenerCallback (juce::ChangeBroadcaster* sender) override;
 
     /**
@@ -240,7 +244,9 @@ private:
 
     MagicGUIState& magicState;
 
+#ifdef GESTURE_WITHIN_GESTURE_BUG_FIXED // JOS temp workaround
     RadioButtonManager radioButtonManager;
+#endif
 
     std::unique_ptr<GuiItem> root;
 

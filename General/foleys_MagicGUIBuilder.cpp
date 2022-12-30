@@ -352,10 +352,12 @@ juce::var MagicGUIBuilder::getPropertyDefaultValue (juce::Identifier property) c
     return {};
 }
 
+#ifdef GESTURE_WITHIN_GESTURE_BUG_FIXED // JOS temp workaround
 RadioButtonManager& MagicGUIBuilder::getRadioButtonManager()
 {
     return radioButtonManager;
 }
+#endif
 
 void MagicGUIBuilder::changeListenerCallback (juce::ChangeBroadcaster*)
 {

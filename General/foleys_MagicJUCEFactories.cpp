@@ -321,7 +321,9 @@ public:
         if (triggerID.isNotEmpty())
             button.onClick = getMagicState().getTrigger (triggerID);
 
+#ifdef GESTURE_WITHIN_GESTURE_BUG_FIXED // JOS temp workaround
         handler.setRadioGroupValue(radioValue, getMagicState().getParameter(parameterName));
+#endif
     }
 
     std::vector<SettableProperty> getSettableProperties() const override
@@ -344,7 +346,9 @@ public:
 
 private:
     juce::TextButton button;
+#ifdef GESTURE_WITHIN_GESTURE_BUG_FIXED // JOS temp workaround
     RadioButtonHandler handler {button, magicBuilder.getRadioButtonManager()};
+#endif
     std::unique_ptr<juce::ButtonParameterAttachment> attachment;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TextButtonItem)
@@ -399,7 +403,9 @@ public:
             button.setClickingTogglesState (true);
         }
 
+#ifdef GESTURE_WITHIN_GESTURE_BUG_FIXED // JOS temp workaround
         handler.setRadioGroupValue(radioValue, getMagicState().getParameter(parameterName));
+#endif
     }
 
     std::vector<SettableProperty> getSettableProperties() const override
@@ -420,7 +426,9 @@ public:
 
 private:
     juce::ToggleButton button;
+#ifdef GESTURE_WITHIN_GESTURE_BUG_FIXED // JOS temp workaround
     RadioButtonHandler handler {button, magicBuilder.getRadioButtonManager()};
+#endif
     std::unique_ptr<juce::ButtonParameterAttachment> attachment;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ToggleButtonItem)
