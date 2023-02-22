@@ -132,7 +132,12 @@ public:
     /**
      Returns the last moved controller for MIDI learn
      */
-    int  getLastController() const;
+     int  getLastController() const;
+  
+    /**
+     Returns the last moved controller for MIDI learn
+     */
+    juce::MidiMessage  getLastMidiMessage() const;
 
 private:
 

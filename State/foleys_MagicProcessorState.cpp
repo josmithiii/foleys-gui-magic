@@ -231,6 +231,11 @@ int MagicProcessorState::getLastController() const
     return midiMapper.getLastController();
 }
 
+juce::MidiMessage MagicProcessorState::getLastMidiMessage() const
+{
+    return midiMapper.getLastMidiMessage();
+}
+
 void MagicProcessorState::timerCallback()
 {
     getPropertyAsValue ("playhead:bpm").setValue (bpm.load());

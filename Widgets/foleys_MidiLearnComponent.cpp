@@ -49,6 +49,7 @@ void MidiLearnComponent::paint (juce::Graphics& g)
 {
     if (processorState)
     {
+        // auto m = processorState->getLastMidiMessage();
         auto cc = processorState->getLastController();
         g.setColour (juce::Colours::silver);
         g.drawFittedText ("CC: " + (cc > 0 ? juce::String (cc) : "unknown"),

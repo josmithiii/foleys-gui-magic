@@ -80,6 +80,11 @@ public:
     int  getLastController() const;
 
     /*!
+     * @return the last MIDI Message received by MIDI Mapper
+     */
+    juce::MidiMessage  getLastMidiMessage() const;
+
+    /*!
      * Grant access to the ValueTree to save or restore the mappings manually
      * @return the ValueTree containing the mappings
      */
@@ -101,6 +106,7 @@ private:
 
     MagicProcessorState&        state;
     std::atomic<int>            lastController { -1 };
+    std::atomic<juce::MidiMessage> lastMidiMessage { 0 };
     MidiMapping                 midiMapper;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MidiParameterMapper)
