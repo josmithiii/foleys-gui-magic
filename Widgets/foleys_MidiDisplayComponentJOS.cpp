@@ -1,5 +1,6 @@
 /*
  ==============================================================================
+    Copyright (c) 2023 Julius Smith - made from foleys_MidiLearnComponent.h:
     Copyright (c) 2019-2022 Foleys Finest Audio - Daniel Walz
     All rights reserved.
 
@@ -34,29 +35,39 @@
  ==============================================================================
  */
 
-#include "foleys_MidiLearnComponent.h"
+#include "foleys_MidiDisplayComponentJOS.h"
 
 namespace foleys
 {
 
-void MidiLearnComponent::setMagicProcessorState (MagicProcessorState* state)
+void MidiDisplayComponent::setMagicProcessorState (MagicProcessorState* state)
 {
     processorState = state;
     startTimerHz (4);
 }
 
-void MidiLearnComponent::paint (juce::Graphics& g)
+void MidiDisplayComponent::paint (juce::Graphics& g)
 {
     if (processorState)
     {
-        auto cc = processorState->getLastController();
-        g.setColour (juce::Colours::silver);
-        g.drawFittedText ("CC: " + (cc > 0 ? juce::String (cc) : "unknown"),
-                          getLocalBounds(), juce::Justification::centred, 1);
+      auto channel = processorState->getLastMidiChannel();
+      auto text = juce::String("Channel: " + (channel > 0 ? juce::String (channel) : "unknown"));
+
+      auto note = processorState->getLastMidiNote();
+      text += ("\nNote: " + (note > 0 ? juce::String (note) : "unknown"));
+
+      auto velocity = processorState->getLastMidiVelocity();
+      text += ("\nVelocity: " + (velocity > 0 ? juce::String (velocity) : "unknown"));
+
+      auto cc = processorState->getLastController();
+      text += ("\nCC: " + (cc > 0 ? juce::String (cc) : "unknown"));
+
+      g.setColour (juce::Colours::silver);
+      g.drawFittedText (text, getLocalBounds(), juce::Justification::centred, 1);
     }
 }
 
-void MidiLearnComponent::mouseDrag (const juce::MouseEvent& event)
+void MidiDisplayComponent::mouseDrag (const juce::MouseEvent& event)
 {
     if (processorState && event.mouseWasDraggedSinceMouseDown())
     {
@@ -71,7 +82,7 @@ void MidiLearnComponent::mouseDrag (const juce::MouseEvent& event)
     }
 }
 
-void MidiLearnComponent::timerCallback()
+void MidiDisplayComponent::timerCallback()
 {
     repaint();
 }

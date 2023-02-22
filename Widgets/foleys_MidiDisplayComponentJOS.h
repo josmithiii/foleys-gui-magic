@@ -1,5 +1,6 @@
 /*
  ==============================================================================
+    Copyright (c) 2023 Julius Smith - made from foleys_MidiLearnComponent.h:
     Copyright (c) 2019-2022 Foleys Finest Audio - Daniel Walz
     All rights reserved.
 
@@ -34,47 +35,38 @@
  ==============================================================================
  */
 
-#include "foleys_MidiLearnComponent.h"
+#pragma once
+
+#include <juce_gui_basics/juce_gui_basics.h>
 
 namespace foleys
 {
 
-void MidiLearnComponent::setMagicProcessorState (MagicProcessorState* state)
+class MagicProcessorState;
+
+/**
+ The MidiDisplayComponent displays the last moved CC controller and allows via dragging
+ onto a knob to connect to its parameter
+ */
+class MidiDisplayComponent  : public juce::Component,
+                              public juce::SettableTooltipClient,
+                              private juce::Timer
 {
-    processorState = state;
-    startTimerHz (4);
-}
+public:
+    MidiDisplayComponent() = default;
 
-void MidiLearnComponent::paint (juce::Graphics& g)
-{
-    if (processorState)
-    {
-        auto cc = processorState->getLastController();
-        g.setColour (juce::Colours::silver);
-        g.drawFittedText ("CC: " + (cc > 0 ? juce::String (cc) : "unknown"),
-                          getLocalBounds(), juce::Justification::centred, 1);
-    }
-}
+    void setMagicProcessorState (MagicProcessorState* state);
 
-void MidiLearnComponent::mouseDrag (const juce::MouseEvent& event)
-{
-    if (processorState && event.mouseWasDraggedSinceMouseDown())
-    {
-        auto cc = processorState->getLastController();
-        if (cc < 1)
-            return;
+    void paint (juce::Graphics& g) override;
+    void mouseDrag (const juce::MouseEvent& event) override;
 
-        if (auto* container = juce::DragAndDropContainer::findParentDragContainerFor (this))
-        {
-            container->startDragging (IDs::dragCC + juce::String (cc), this);
-        }
-    }
-}
+private:
 
-void MidiLearnComponent::timerCallback()
-{
-    repaint();
-}
+    void timerCallback() override;
 
+    MagicProcessorState* processorState = nullptr;
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MidiDisplayComponent)
+};
 
 }

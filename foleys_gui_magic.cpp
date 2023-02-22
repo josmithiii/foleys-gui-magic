@@ -79,6 +79,7 @@
 #include "Widgets/foleys_XYDragComponentJOS.cpp"
 #include "Widgets/foleys_FileBrowserDialog.cpp"
 #include "Widgets/foleys_MidiLearnComponent.cpp"
+#include "Widgets/foleys_MidiDisplayComponentJOS.cpp"
 #include "Widgets/foleys_MidiDrumpadComponent.cpp"
 
 #include "LookAndFeels/foleys_JuceLookAndFeels.cpp"

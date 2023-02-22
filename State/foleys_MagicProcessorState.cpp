@@ -231,9 +231,19 @@ int MagicProcessorState::getLastController() const
     return midiMapper.getLastController();
 }
 
-juce::MidiMessage MagicProcessorState::getLastMidiMessage() const
+int MagicProcessorState::getLastMidiChannel() const
 {
-    return midiMapper.getLastMidiMessage();
+    return midiMapper.getLastMidiChannel();
+}
+
+int MagicProcessorState::getLastMidiNote() const
+{
+    return midiMapper.getLastMidiNote();
+}
+
+int MagicProcessorState::getLastMidiVelocity() const
+{
+    return midiMapper.getLastMidiVelocity();
 }
 
 void MagicProcessorState::timerCallback()

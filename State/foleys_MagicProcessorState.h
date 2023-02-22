@@ -116,7 +116,7 @@ public:
     juce::AudioProcessor* getProcessor() override;
 
     /**
-     Send the midi data to the keyboard and to the MidiLearn mapper.
+     Send the midi data to the keyboard and to the MidiLearn mapper and MidiDisplay.
 
      @param buffer the midi buffer from processBlock
      @param numSamples the number of samples in the corresponding audio buffer
@@ -135,9 +135,19 @@ public:
      int  getLastController() const;
   
     /**
-     Returns the last moved controller for MIDI learn
+     Returns the last MIDI Channel on which MIDI was received by MIDI Mapper
      */
-    juce::MidiMessage  getLastMidiMessage() const;
+     int getLastMidiChannel() const;
+
+    /**
+     Returns the last MIDI Note received by MIDI Mapper
+     */
+     int getLastMidiNote() const;
+
+    /**
+     Returns the last MIDI Velocity received by MIDI Mapper
+     */
+     int getLastMidiVelocity() const;
 
 private:
 
