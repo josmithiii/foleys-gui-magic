@@ -55,7 +55,8 @@ namespace foleys
  The MagicGUIBuilder is responsible to recreate the GUI from a single ValueTree.
  You can add your own factories to the builder to allow additional components.
  */
-class MagicGUIBuilder : public juce::ChangeListener
+class MagicGUIBuilder : public juce::ChangeListener,
+                        public juce::ValueTree::Listener
 {
 public:
     MagicGUIBuilder (MagicGUIState& magicStateToUse);
@@ -206,6 +207,8 @@ public:
 #endif
   
     void changeListenerCallback (juce::ChangeBroadcaster* sender) override;
+
+    void valueTreeRedirected (juce::ValueTree& treeWhichHasBeenChanged) override;
 
     /**
      Lookup the default value of the property
