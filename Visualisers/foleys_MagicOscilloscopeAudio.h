@@ -56,7 +56,7 @@ public:
      */
     MagicOscilloscopeAudio (int channelToDisplay=-1);
 
-    void checkAudioBufferForNaNs (juce::AudioBuffer<float>& buffer);
+    static void checkAudioBufferForNaNs (juce::AudioBuffer<float>& buffer);
 
     /**
      Push samples of an AudioBuffer to be visualised.
