@@ -103,11 +103,13 @@ void MagicPlotComponent::drawPlot (juce::Graphics& g)
     if (!gradient && colour.isTransparent() == false)
         g.setColour (colour);
 
+#if JOS_ALLOW_GRADIENTS == 1
     if (gradient)
         gradient->setupGradientFill (g, getLocalBounds().toFloat());
 
     if (gradient || !colour.isTransparent())
         g.fillPath (filledPath);
+#endif
 
     colour = findColour (active ? plotColourId : plotInactiveColourId);
     if (colour.isTransparent() == false)
