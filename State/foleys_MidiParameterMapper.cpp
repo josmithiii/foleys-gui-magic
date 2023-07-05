@@ -100,18 +100,19 @@ void MidiParameterMapper::mapMidiController (int cc, const juce::String& paramet
 
     juce::ValueTree node { IDs::mapping, {{IDs::cc, cc}, {IDs::parameter, parameterID}} };
 
+    // If mapping already there, remove it:
     if (mappings.isValid()) {
       int index = 0;
       while (index < mappings.getNumChildren()) {
         const auto& child = mappings.getChild (index);
         if (int (child.getProperty (IDs::cc, -1)) == cc && child.getProperty (IDs::parameter, juce::String()).toString() == parameterID) {
-          mappings.removeChild (child, nullptr); // If mapping already there, remove it
-          DBG("REMOVED mapping " << cc << " to " << parameterID);
+          mappings.removeChild (child, nullptr);
           return;
         } else
           ++index;
       }
     }
+    // Otherwise add it:
     mappings.appendChild (node, nullptr);
 }
 
