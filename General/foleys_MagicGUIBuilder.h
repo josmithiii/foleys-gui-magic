@@ -41,7 +41,7 @@
 #include "../Layout/foleys_GuiItem.h"
 #include "../Layout/foleys_Stylesheet.h"
 #include "../State/foleys_MagicGUIState.h"
-#ifdef GESTURE_WITHIN_GESTURE_BUG_FIXED // JOS temp workaround
+#if JOS_ALLOW_RADIO_BUTTONS == 1 // JOS temp workaround
 #include "../State/foleys_RadioButtonManager.h"
 #endif
 
@@ -198,7 +198,7 @@ public:
         };
     }
 
-#ifdef GESTURE_WITHIN_GESTURE_BUG_FIXED // JOS temp workaround
+#if JOS_ALLOW_RADIO_BUTTONS == 1 // JOS temp workaround
     /*!
      * Grant access to the RadioButtonManager
      * @return the radioButtonManager
@@ -247,7 +247,7 @@ private:
 
     MagicGUIState& magicState;
 
-#ifdef GESTURE_WITHIN_GESTURE_BUG_FIXED // JOS temp workaround
+#if JOS_ALLOW_RADIO_BUTTONS == 1 // JOS temp workaround
     RadioButtonManager radioButtonManager;
 #endif
 

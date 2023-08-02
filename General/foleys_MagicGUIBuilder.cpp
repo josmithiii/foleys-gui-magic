@@ -354,7 +354,7 @@ juce::var MagicGUIBuilder::getPropertyDefaultValue (juce::Identifier property) c
     return {};
 }
 
-#ifdef GESTURE_WITHIN_GESTURE_BUG_FIXED // JOS temp workaround
+#if JOS_ALLOW_RADIO_BUTTONS == 1 // JOS temp workaround
 RadioButtonManager& MagicGUIBuilder::getRadioButtonManager()
 {
     return radioButtonManager;

@@ -83,6 +83,13 @@
 #define JOS_ALLOW_GRADIENTS 1
 #endif
 
+/** Config: JOS_ALLOW_RADIO_BUTTONS
+            Set this to zero to suppress all plot gradients.
+  */
+#ifndef JOS_ALLOW_RADIO_BUTTONS
+#define JOS_ALLOW_RADIO_BUTTONS 1
+#endif
+
 
 
 

@@ -341,7 +341,7 @@ public:
             button.onClick = triggerToCall;
         }
 
-#ifdef GESTURE_WITHIN_GESTURE_BUG_FIXED // JOS temp workaround
+#if JOS_ALLOW_RADIO_BUTTONS == 1 // JOS temp workaround
         handler.setRadioGroupValue(radioValue, getMagicState().getParameter(parameterName));
 #endif
     }
@@ -367,7 +367,7 @@ public:
 
 private:
     juce::TextButton button;
-#ifdef GESTURE_WITHIN_GESTURE_BUG_FIXED // JOS temp workaround
+#if JOS_ALLOW_RADIO_BUTTONS == 1 // JOS temp workaround
     RadioButtonHandler handler {button, magicBuilder.getRadioButtonManager()};
 #endif
     std::unique_ptr<juce::ButtonParameterAttachment> attachment;
@@ -427,7 +427,7 @@ public:
             button.setClickingTogglesState (true);
         }
 
-#ifdef GESTURE_WITHIN_GESTURE_BUG_FIXED // JOS temp workaround
+#if JOS_ALLOW_RADIO_BUTTONS == 1 // JOS temp workaround
         handler.setRadioGroupValue(radioValue, getMagicState().getParameter(parameterName));
 #endif
     }
@@ -450,7 +450,7 @@ public:
 
 private:
     juce::ToggleButton button;
-#ifdef GESTURE_WITHIN_GESTURE_BUG_FIXED // JOS temp workaround
+#if JOS_ALLOW_RADIO_BUTTONS == 1 // JOS temp workaround
     RadioButtonHandler handler {button, magicBuilder.getRadioButtonManager()};
 #endif
     std::unique_ptr<juce::ButtonParameterAttachment> attachment;
@@ -1288,13 +1288,13 @@ public:
 
     ~ListBoxItem() override
     {
-        if (auto* m = dynamic_cast<juce::ChangeBroadcaster*>(listBox.getModel()))
+        if (auto* m = dynamic_cast<juce::ChangeBroadcaster*>(listBox.getListBoxModel()))
             m->removeChangeListener (this);
     }
 
     void update() override
     {
-        if (auto* m = dynamic_cast<juce::ChangeBroadcaster*>(listBox.getModel()))
+        if (auto* m = dynamic_cast<juce::ChangeBroadcaster*>(listBox.getListBoxModel()))
             m->removeChangeListener (this);
 
         auto modelID = configNode.getProperty ("list-box-model", juce::String()).toString();
