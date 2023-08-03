@@ -310,8 +310,8 @@ void GuiItem::valueChanged (juce::Value& source)
 {
   if (source == visibility) {
     setVisible (visibility.getValue());
-    // if (not isVisible) {
-    // if (not visibility.getValue()) {
+    // if (! isVisible) {
+    // if (! visibility.getValue()) {
     //   // getWrappedComponent()->
     //   setBounds(juce::Rectangle<int>(0,0,0,0));
     //   magicBuilder.updateLayout();

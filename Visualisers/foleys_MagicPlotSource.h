@@ -52,10 +52,7 @@ class MagicPlotSource
 {
 public:
 
-    /** Constructor. */
     MagicPlotSource()=default;
-
-    /** Destructor. */
     virtual ~MagicPlotSource()=default;
 
     /**

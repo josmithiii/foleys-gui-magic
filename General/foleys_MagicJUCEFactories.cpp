@@ -999,7 +999,7 @@ public:
                 break;
             }
         }
-        if (not matched)
+        if (! matched)
         {
             draggerJOS.setDotType (DOT_TYPE_ZERO); // default
         }
