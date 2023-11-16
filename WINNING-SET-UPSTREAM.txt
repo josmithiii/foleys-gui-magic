@@ -1,0 +1,21 @@
+git branch --set-upstream-to=remotes/foleys/develop foleys-develop
+
+<jos@josmp14:/l/pgmf> git remote show foleys
+* remote foleys
+  Fetch URL: https://github.com/ffAudio/foleys_gui_magic
+  Push  URL: https://github.com/ffAudio/foleys_gui_magic
+  HEAD branch: main
+  Remote branches:
+    devel                         tracked            [THIS ONE LOOKS ACTIVE]
+    develop                       tracked            [THIS LOOKS DEAD AND WE MAY BE BASED ON IT]
+    doxygen                       tracked
+    feature/scroll-container      tracked
+    feature/tabbed-customisations tracked
+    feature/unit-tests            tracked
+    gh-pages                      tracked
+    main                          tracked            [ACTIVE BUT WE ARE A DEVELOP DERIVATIVE]
+    non-transparent-decorators    tracked
+    tests/toggle-visible          tracked
+    ubuntu                        tracked
+  Local branch configured for 'git pull':
+    foleys-develop merges with remote develop
