@@ -1,4 +1,6 @@
-JOS FORK OF PGM
+JOS FORK OF PGM devel branch (BSD licensed version)
 
-Document this
+See ./WINNING-SET-UPSTREAM.txt
+
 See /l/sm/README.md
+

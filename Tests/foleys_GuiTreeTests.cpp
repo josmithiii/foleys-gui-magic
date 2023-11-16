@@ -34,5 +34,15 @@
  ==============================================================================
  */
 
-#include "../foleys_gui_magic.h"
+#include <foleys_gui_magic/foleys_gui_magic.h>
+#include <catch2/catch_test_macros.hpp>
 
+
+#include "foleys_TestProcessors.h"
+
+TEST_CASE ("GUI tree test", "[gui]")
+{
+std::unique_ptr<juce::AudioProcessor> processor (new UnitTestProcessor());
+std::unique_ptr<juce::AudioProcessorEditor> editor (processor->createEditor());
+REQUIRE (editor.get() != nullptr);
+}

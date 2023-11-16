@@ -1,6 +1,20 @@
 PluginGuiMagic - Versions history
 ================================
 
+1.4.1
+-----
+
+1.4.0 - 27.07.2023
+------------------
+
+- Removed commercial license / BSD V2 license for all projects
+- Reorganised repository:
+  - The module is now in a subdirectory: modules/foleys_gui_magic
+  - Integrated examples
+  - Added unit tests using catch2
+  - Validates using pluginval, see https://github.com/Tracktion/pluginval
+- Replaced the develop branch with a fresh branch
+
 1.3.9 - 07.07.2023
 ------------------
 
@@ -27,7 +41,7 @@ PluginGuiMagic - Versions history
 ------------------
 
 - Added accessibilities settings
-- Added Radio group features- Avoid a loop when undo colours
+- Added Radio group features - Avoid a loop when undo colours
 - Fixed fill when no colour was set
 - Fixed parsing of colours named "transparent"
 - Fixed crash with class selection popup MultiListPropertyComponent

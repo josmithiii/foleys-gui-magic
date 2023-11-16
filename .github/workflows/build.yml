@@ -1,0 +1,52 @@
+name: CMake
+
+on:
+  push:
+    branches:
+      - 'main'
+      - 'devel'
+      - 'next-generation'
+  pull_request: {}
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  PLUGINVAL_VERSION: v1.0.3
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    name: ${{ matrix.os }} - ${{ matrix.build_type }}
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest]
+        build_type: [Debug, Release]
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: Install pluginval
+        id: pluginval
+        env:
+          PLUGINVAL_BINARY: ${{ runner.os == 'macOS' && 'pluginval.app/Contents/MacOS/pluginval' || 'pluginval.exe' }}
+          TEMP_DIR: Builds/tmp
+        run: |
+          mkdir -p $TEMP_DIR
+          cd $TEMP_DIR
+          curl -LO "https://github.com/Tracktion/pluginval/releases/download/${{ env.PLUGINVAL_VERSION }}/pluginval_${{ runner.os }}.zip"
+          7z x pluginval_${{ runner.os }}.zip
+          echo PLUGINVAL_PATH=$(pwd)/$PLUGINVAL_BINARY >> $GITHUB_OUTPUT
+
+      - name: Configure CMake
+        run: cmake --preset maintainer --log-level=VERBOSE -D PLUGINVAL_PROGRAM=${{ steps.pluginval.outputs.PLUGINVAL_PATH }}
+
+      - name: Build
+        run: cmake --build --preset maintainer --config ${{ matrix.build_type }}
+
+      - name: Run tests
+        run: ctest --preset maintainer -j 4 -C ${{ matrix.build_type }}
