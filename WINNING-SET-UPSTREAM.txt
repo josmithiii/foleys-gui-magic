@@ -1,4 +1,15 @@
-git branch --set-upstream-to=remotes/foleys/develop foleys-develop
+mfjj/SM/pgmf/WINNING-SET-UPSTREAM.txt
+
+2023-11-16
+
+How to merge the latest PGM from its new BSD-licensed repo.
+For more background, see ../README.md
+
+<jos@josmp14:/l/mfjj/SM/pgmf> git branch --set-upstream-to=remotes/foleys/develop foleys-develop
+
+<jos@josmp14:/l/mfjj/SM/pgmf> git remote
+foleys
+origin
 
 <jos@josmp14:/l/pgmf> git remote show foleys
 * remote foleys
@@ -6,16 +17,47 @@ git branch --set-upstream-to=remotes/foleys/develop foleys-develop
   Push  URL: https://github.com/ffAudio/foleys_gui_magic
   HEAD branch: main
   Remote branches:
-    devel                         tracked            [THIS ONE LOOKS ACTIVE]
-    develop                       tracked            [THIS LOOKS DEAD AND WE MAY BE BASED ON IT]
+    devel                         tracked     [THIS ONE LOOKS ACTIVE, MY GITHUB FORK IS BASED ON IT]
+    develop                       tracked     [THIS ONE IS DEAD, AND WE ARE BASED ON IT]
     doxygen                       tracked
     feature/scroll-container      tracked
     feature/tabbed-customisations tracked
     feature/unit-tests            tracked
     gh-pages                      tracked
-    main                          tracked            [ACTIVE BUT WE ARE A DEVELOP DERIVATIVE]
+    main                          tracked     [ACTIVE, RECEIVES MERGES FROM DEVELOP]
     non-transparent-decorators    tracked
     tests/toggle-visible          tracked
     ubuntu                        tracked
   Local branch configured for 'git pull':
     foleys-develop merges with remote develop
+
+This clone, an expansion of the older foleys develop branch, now
+updated by the new foleys devel branch, is hosted at ccrma.
+
+<jos@josmp14:/l/mfjj/SM/pgmf> git remote show origin
+Welcome to CCRMA, Stanford University
+[This system is for authorized use only]
+  i7-3820: 4 cores, 8 threads, 32G ram
+* remote origin
+  Fetch URL: ssh://ccrma-gate.stanford.edu/user/j/jos/rp/pgmf
+  Push  URL: ssh://ccrma-gate.stanford.edu/user/j/jos/rp/pgmf
+  HEAD branch: (unknown)
+  Remote branches:
+    jos          tracked
+    jos-devel    tracked
+    jos-develop  tracked
+    master-jos   tracked
+    workingPlots tracked
+  Local branches configured for 'git pull':
+    jos-devel   merges with remote jos-devel
+    jos-develop merges with remote jos-develop
+    main        merges with remote main
+  Local refs configured for 'git push':
+    jos-devel   pushes to jos-devel   (up to date)
+    jos-develop pushes to jos-develop (up to date)
+
+<jos@josmp14:/l/mfjj/SM/pgmf> git branch
+  foleys-devel
+  foleys-develop
+* jos-devel
+  jos-develop
