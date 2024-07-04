@@ -152,7 +152,7 @@ EqualizerExampleAudioProcessor::EqualizerExampleAudioProcessor()
     gainAttachment (treeState, gain, IDs::paramOutput)
 {
     FOLEYS_SET_SOURCE_PATH (__FILE__);
-    
+
     // GUI MAGIC: add plots to be displayed in the GUI
     for (size_t i = 0; i < attachments.size(); ++i)
     {
