@@ -42,7 +42,12 @@ MagicFilterPlot::MagicFilterPlot()
 {
     frequencies.resize (300);
     for (size_t i = 0; i < frequencies.size(); ++i)
-        frequencies [i] = 20.0 * std::pow (2.0, i / 30.0);
+    {
+      auto freq = 20.0 * std::pow (2.0, i / 30.0);
+      if  (freq >= sampleRate/2.0)
+        break;
+      frequencies [i] = freq;
+    }
 
     magnitudes.resize (frequencies.size());
 }
