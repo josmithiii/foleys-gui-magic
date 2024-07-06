@@ -81,14 +81,11 @@
 #endif
 
 /** Config: JOS_ALLOW_RADIO_BUTTONS
-            Set this to zero to suppress all plot gradients.
+            Set this to zero to suppress all radio buttons (which interfere with gestures).
   */
 #ifndef JOS_ALLOW_RADIO_BUTTONS
 #define JOS_ALLOW_RADIO_BUTTONS 1
 #endif
-
-
-
 
 #include <juce_core/juce_core.h>
 #include <juce_audio_basics/juce_audio_basics.h>
