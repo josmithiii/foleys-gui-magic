@@ -300,9 +300,8 @@ public:
         attachment.reset();
 
         auto parameterName = configNode.getProperty (IDs::parameter, juce::String()).toString();
-        auto radioValue    = getProperty (IDs::buttonRadioValue);
 #if JOS_ALLOW_RADIO_BUTTONS == 1 // JOS temp workaround
-        radioValue = nullptr;
+        auto radioValue    = getProperty (IDs::buttonRadioValue);
 #endif
         auto propertyName  = getProperty (pProperty).toString();
 
@@ -412,7 +411,7 @@ public:
 
         auto parameterName = configNode.getProperty (IDs::parameter, juce::String()).toString();
         auto radioValue = getProperty (IDs::buttonRadioValue);
-#if JOS_ALLOW_RADIO_BUTTONS == 0
+#if JOS_ALLOW_RADIO_BUTTONS == 1 // JOS temp workaround
         radioValue = null;
 #endif
         if (parameterName.isNotEmpty() && radioValue.isVoid())
