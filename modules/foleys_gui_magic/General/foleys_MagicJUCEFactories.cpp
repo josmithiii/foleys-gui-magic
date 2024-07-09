@@ -300,9 +300,7 @@ public:
         attachment.reset();
 
         auto parameterName = configNode.getProperty (IDs::parameter, juce::String()).toString();
-#if JOS_ALLOW_RADIO_BUTTONS == 1 // JOS temp workaround
         auto radioValue    = getProperty (IDs::buttonRadioValue);
-#endif
         auto propertyName  = getProperty (pProperty).toString();
 
         if (parameterName.isNotEmpty() && radioValue.isVoid())
@@ -314,9 +312,6 @@ public:
             property.referTo (getMagicState().getPropertyAsValue (propertyName));
 
         auto groupID = static_cast<int>(getProperty (IDs::buttonRadioGroup));
-#if JOS_ALLOW_RADIO_BUTTONS == 1 // JOS temp workaround
-      groupID = 0;
-#endif
         if (groupID > 0)
         {
             button.setRadioGroupId (groupID);
@@ -411,13 +406,11 @@ public:
 
         auto parameterName = configNode.getProperty (IDs::parameter, juce::String()).toString();
         auto radioValue = getProperty (IDs::buttonRadioValue);
-#if JOS_ALLOW_RADIO_BUTTONS == 1 // JOS temp workaround
-        radioValue = null;
-#endif
         if (parameterName.isNotEmpty() && radioValue.isVoid())
             attachment = getMagicState().createAttachment (parameterName, button);
         else
             attachment.reset();
+
         button.setButtonText (magicBuilder.getStyleProperty (pText, configNode));
 
         auto propertyID = getProperty (pProperty).toString();
