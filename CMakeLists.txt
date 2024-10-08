@@ -31,20 +31,23 @@
 
 cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
 
-set (FGM_VERSION 1.4.0)
+set(FGM_VERSION 1.4.0)
 
-project (foleys_gui_magic
+project(foleys_gui_magic
         DESCRIPTION "PluginGuiMagic"
         HOMEPAGE_URL "https://foleysfinest.com/PluginGuiMagic"
-        LANGUAGES CXX)
+        LANGUAGES CXX C)
 
 list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/CMakeIncludes")
 
 include (PGMPluginval)
 
-option (FOLEYS_BUILD_EXAMPLES "Build the examples" ON)
+option(USE_LOCAL_JUCE "Use local JUCE directory instead of fetching from GitHub" ON)
+option(JUCE_INCLUDE_SHEENBIDI "Include Sheenbidi in JUCE" OFF)
+
+option (FOLEYS_BUILD_EXAMPLES "Build the examples" OFF)
 option (FOLEYS_BUILD_TESTS "Build and run the unit tests" ON)
-option (FOLEYS_RUN_PLUGINVAL "Run pluginval on the example plugins" ON)
+option (FOLEYS_RUN_PLUGINVAL "Run pluginval on the example plugins" OFF)
 
 set_property (GLOBAL PROPERTY USE_FOLDERS ON)
 set_property (GLOBAL PROPERTY DEBUG_CONFIGURATIONS Debug)
@@ -64,19 +67,39 @@ set (CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING
 set (CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 # JUCE
-include (FetchContent)
 
-FetchContent_Declare (
-        juce
+# JUCE's CMake options
+set(JUCE_ENABLE_MODULE_SOURCE_GROUPS ON)
+set(JUCE_BUILD_EXTRAS OFF)
+set(JUCE_BUILD_EXAMPLES OFF)
+
+# Add these lines before FetchContent_MakeAvailable(juce)
+if(NOT JUCE_INCLUDE_SHEENBIDI)
+    add_compile_definitions(JUCE_INCLUDE_SHEENBIDI=0)
+endif()
+
+## JOS:
+if(USE_LOCAL_JUCE)
+    set(JUCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../JUCE" CACHE PATH "Path to JUCE library")
+    message(STATUS "JUCE_DIR: ${JUCE_DIR}")
+    if(EXISTS ${JUCE_DIR})
+        add_subdirectory(${JUCE_DIR} JUCE)
+    else()
+        message(FATAL_ERROR "Local JUCE directory not found at ${JUCE_DIR}")
+    endif()
+else()
+    include(FetchContent)
+    FetchContent_Declare(
+        JUCE
         GIT_REPOSITORY https://github.com/juce-framework/JUCE.git
-        GIT_TAG origin/master
-        GIT_SHALLOW ON)
+        GIT_TAG 8.0.2
+        GIT_SHALLOW ON
+    )
+    FetchContent_MakeAvailable(JUCE)
+endif()
 
-set (JUCE_ENABLE_MODULE_SOURCE_GROUPS ON)
-set (JUCE_BUILD_EXTRAS OFF)
-set (JUCE_BUILD_EXAMPLES OFF)
-
-FetchContent_MakeAvailable (juce)
+# Modify the file path for Sheenbidi
+set(SHEENBIDI_PATH "${CMAKE_BINARY_DIR}/_deps/juce-build/tools/extras/Build/juceaide/CMakeFiles/juceaide.dir/__/__/__/modules/juce_graphics/juce_graphics_Sheenbidi.c.o")
 
 add_subdirectory (modules)
 
@@ -93,6 +116,15 @@ endif()
 if (FOLEYS_BUILD_EXAMPLES)
     add_subdirectory(Examples)
 endif ()
+
+
+# Modify your target to include Sheenbidi directly if needed
+target_sources(FoleysGUIMagicTests PRIVATE 
+    ${CMAKE_BINARY_DIR}/_deps/juce-src/modules/juce_graphics/juce_graphics_Sheenbidi.c)
+
+# Ensure the directory containing Sheenbidi is in the include path
+target_include_directories(FoleysGUIMagicTests PRIVATE 
+    "${CMAKE_CURRENT_SOURCE_DIR}/_deps/juce-src/modules")
 
 # install rules
 
