@@ -66,8 +66,6 @@ set (CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING
 # static linking on Windows
 set (CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
-# JUCE
-
 # JUCE's CMake options
 set(JUCE_ENABLE_MODULE_SOURCE_GROUPS ON)
 set(JUCE_BUILD_EXTRAS OFF)
@@ -101,22 +99,28 @@ endif()
 # Modify the file path for Sheenbidi
 set(SHEENBIDI_PATH "${CMAKE_BINARY_DIR}/_deps/juce-build/tools/extras/Build/juceaide/CMakeFiles/juceaide.dir/__/__/__/modules/juce_graphics/juce_graphics_Sheenbidi.c.o")
 
-add_subdirectory (modules)
+add_subdirectory(modules)
 
 if(FOLEYS_BUILD_TESTS)
     enable_testing()
-    add_subdirectory (Tests)
+    add_subdirectory(Tests)
 
     if(foleys_gui_magic_IS_TOP_LEVEL)
-        include (CTest)
+        include(CTest)
     endif()
 endif()
 
 # this must be AFTER the enable_testing() call above!
 if (FOLEYS_BUILD_EXAMPLES)
     add_subdirectory(Examples)
-endif ()
+endif()
 
+# Remove these lines as they refer to targets that don't exist yet
+# target_sources(FoleysGUIMagicTests PRIVATE 
+#     ${CMAKE_BINARY_DIR}/_deps/juce-src/modules/juce_graphics/juce_graphics_Sheenbidi.c)
+
+# target_include_directories(FoleysGUIMagicTests PRIVATE 
+#     "${CMAKE_CURRENT_SOURCE_DIR}/_deps/juce-src/modules")
 
 # Modify your target to include Sheenbidi directly if needed
 target_sources(FoleysGUIMagicTests PRIVATE 
@@ -166,4 +170,3 @@ cpack_add_component (foleys_gui_magic
         INSTALL_TYPES Developer)
 
 export (PACKAGE foleys_gui_magic)
-
