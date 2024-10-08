@@ -43,7 +43,7 @@ list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/CMakeIncludes")
 include (PGMPluginval)
 
 option(USE_LOCAL_JUCE "Use local JUCE directory instead of fetching from GitHub" ON)
-option(JUCE_INCLUDE_SHEENBIDI "Include Sheenbidi in JUCE" OFF)
+option(JUCE_INCLUDE_SHEENBIDI "Include Sheenbidi in JUCE" ON)
 
 option (FOLEYS_BUILD_EXAMPLES "Build the examples" OFF)
 option (FOLEYS_BUILD_TESTS "Build and run the unit tests" ON)
@@ -96,9 +96,6 @@ else()
     FetchContent_MakeAvailable(JUCE)
 endif()
 
-# Modify the file path for Sheenbidi
-set(SHEENBIDI_PATH "${CMAKE_BINARY_DIR}/_deps/juce-build/tools/extras/Build/juceaide/CMakeFiles/juceaide.dir/__/__/__/modules/juce_graphics/juce_graphics_Sheenbidi.c.o")
-
 add_subdirectory(modules)
 
 if(FOLEYS_BUILD_TESTS)
@@ -122,9 +119,14 @@ endif()
 # target_include_directories(FoleysGUIMagicTests PRIVATE 
 #     "${CMAKE_CURRENT_SOURCE_DIR}/_deps/juce-src/modules")
 
+# Path for Sheenbidi
+set(SHEENBIDI_PATH "${CMAKE_BINARY_DIR}/JUCE/tools/extras/Build/juceaide/CMakeFiles/juceaide.dir/__/__/__/modules/juce_graphics/juce_graphics_Sheenbidi.c.o")
+
 # Modify your target to include Sheenbidi directly if needed
+if(NOT JUCE_INCLUDE_SHEENBIDI)
 target_sources(FoleysGUIMagicTests PRIVATE 
-    ${CMAKE_BINARY_DIR}/_deps/juce-src/modules/juce_graphics/juce_graphics_Sheenbidi.c)
+    ${SHEENBIDI_PATH})
+endif()
 
 # Ensure the directory containing Sheenbidi is in the include path
 target_include_directories(FoleysGUIMagicTests PRIVATE 
