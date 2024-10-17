@@ -151,7 +151,7 @@ public:
     /**
      This method is called by the MagicProcessorState to allow the plot computation to be set up
      */
-    virtual void prepareToPlay (double sampleRateToUse, int samplesPerBlockExpected)
+    virtual void prepareToPlay (double sampleRateToUse, int /* samplesPerBlockExpected */)
     {
         sampleRate = sampleRateToUse;
         samples.setSize (1, static_cast<int> (sampleRate));
