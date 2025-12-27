@@ -147,6 +147,11 @@ public:
      */
      int getLastMidiVelocity() const;
 
+    /**
+     Returns the last MIDI Pitch Bend value received (0-16383, 8192 = center)
+     */
+     int getLastPitchBend() const;
+
 private:
 
     void addParametersToMenu (const juce::AudioProcessorParameterGroup& group, juce::PopupMenu& menu, int& index) const;

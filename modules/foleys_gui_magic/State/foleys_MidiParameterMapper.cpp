@@ -84,6 +84,9 @@ void MidiParameterMapper::processMidiBuffer (juce::MidiBuffer& buffer)
             lastMidiChannel.store(mm.getChannel());
             lastMidiNote.store(mm.getNoteNumber());
             lastMidiVelocity.store(mm.getVelocity());
+        } else if (mm.isPitchWheel())
+        {
+            lastPitchBend.store(mm.getPitchWheelValue());
         }
     }
 
@@ -165,6 +168,11 @@ int MidiParameterMapper::getLastMidiNote() const
 int MidiParameterMapper::getLastMidiVelocity() const
 {
     return lastMidiVelocity.load();
+}
+
+int MidiParameterMapper::getLastPitchBend() const
+{
+    return lastPitchBend.load();
 }
 
 juce::ValueTree MidiParameterMapper::getMappingSettings()

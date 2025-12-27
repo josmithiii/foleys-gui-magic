@@ -248,6 +248,11 @@ int MagicProcessorState::getLastMidiVelocity() const
     return midiMapper.getLastMidiVelocity();
 }
 
+int MagicProcessorState::getLastPitchBend() const
+{
+    return midiMapper.getLastPitchBend();
+}
+
 void MagicProcessorState::timerCallback()
 {
     getPropertyAsValue ("playhead:bpm").setValue (bpm.load());

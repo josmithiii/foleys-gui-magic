@@ -62,8 +62,12 @@ void MidiDisplayComponent::paint (juce::Graphics& g)
       auto cc = processorState->getLastController();
       text += ("\nCC: " + (cc > 0 ? juce::String (cc) : "unknown"));
 
+      auto pitchBend = processorState->getLastPitchBend();
+      // Display as signed value: -8192 to +8191 (0 = center)
+      text += ("\nPitchBend: " + juce::String (pitchBend - 8192));
+
       g.setColour (juce::Colours::silver);
-      g.drawFittedText (text, getLocalBounds(), juce::Justification::centred, 1);
+      g.drawFittedText (text, getLocalBounds(), juce::Justification::centred, 5);
     }
 }
 
