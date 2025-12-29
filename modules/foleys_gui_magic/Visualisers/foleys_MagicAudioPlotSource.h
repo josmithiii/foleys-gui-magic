@@ -151,7 +151,7 @@ public:
     /**
      This method is called by the MagicProcessorState to allow the plot computation to be set up
      */
-    virtual void prepareToPlay (double sampleRateToUse, int samplesPerBlockExpected)
+    virtual void prepareToPlay (double sampleRateToUse, int /* samplesPerBlockExpected */)
     {
         sampleRate = sampleRateToUse;
         samples.setSize (1, static_cast<int> (sampleRate));
@@ -164,14 +164,14 @@ public:
      responsibility to put that into a FIFO and return as quickly as possible.
      */
     virtual void pushSamples (const juce::AudioBuffer<float>& buffer, int currentPlotLength=0)=0;
-    virtual void pushSamples (const juce::AudioBuffer<float>& bufR, int channelToPlot,
-                              int numChannelsToPlot, int currentPlotLength)
+    virtual void pushSamples (const juce::AudioBuffer<float>& bufR, int /*channelToPlot*/,
+                              int /*numChannelsToPlot*/, int /*currentPlotLength*/)
     {
         pushSamples(bufR,0); // FIXME: TODO
     }
     virtual void pushSamples (const std::shared_ptr<juce::AudioBuffer<float>> bufSP) { pushSamples(*bufSP.get(),0); }
-    virtual void pushSamples (const std::shared_ptr<juce::AudioBuffer<float>> bufSP, int channelToPlot=0,
-                              int numChannelsToPlot=1, int currentPlotLength=0)
+    virtual void pushSamples (const std::shared_ptr<juce::AudioBuffer<float>> bufSP, int /*channelToPlot*/=0,
+                              int /*numChannelsToPlot*/=1, int /*currentPlotLength*/=0)
     {
       pushSamples(*bufSP.get(),0); // FIXME: TODO
     }
@@ -188,12 +188,12 @@ public:
             Default is 0 meaning take the default (which itself defaults to 10 ms of audio data).
             A good setting for this is one period in samples, if you know what that is.
      */
-    virtual void pushSamples (const juce::AudioBuffer<float>& bufferX, int channelX,
-                               const juce::AudioBuffer<float>& bufferY, int channelY,
-                               const int currentPlotLength=0) { }
-    virtual void pushSamples (const std::shared_ptr<juce::AudioBuffer<float>> bufSPX, int channelX,
-                              const std::shared_ptr<juce::AudioBuffer<float>> bufSPY, int channelY,
-                              const int currentPlotLength=0) { }
+    virtual void pushSamples (const juce::AudioBuffer<float>& /*bufferX*/, int /*channelX*/,
+                               const juce::AudioBuffer<float>& /*bufferY*/, int /*channelY*/,
+                               const int /*currentPlotLength*/=0) { }
+    virtual void pushSamples (const std::shared_ptr<juce::AudioBuffer<float>> /*bufSPX*/, int /*channelX*/,
+                              const std::shared_ptr<juce::AudioBuffer<float>> /*bufSPY*/, int /*channelY*/,
+                              const int /*currentPlotLength*/=0) { }
 
     /**
      This is the callback that creates the plot for drawing.

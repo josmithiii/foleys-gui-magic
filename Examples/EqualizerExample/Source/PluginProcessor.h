@@ -78,11 +78,15 @@ public:
 
         void setSampleRate (double sampleRate);
         bool isActive() const { return active; }
+        bool isChanged() const { return changed; }
+        void setChanged(bool c) { changed = c; }
 
-        std::function<void(const FilterAttachment&)> postFilterUpdate;
+        std::function<void(FilterAttachment&)> postFilterUpdate;
 
         juce::dsp::IIR::Coefficients<float>::Ptr coefficients;
         double                                   sampleRate = 0.0;
+
+        juce::String getTypeName() { return prefix; }
 
     private:
         void updateFilter();
@@ -97,6 +101,11 @@ public:
         std::atomic<float>  gain       { 0.0f };
         std::atomic<float>  quality    { 1.0f };
         std::atomic<bool>   active     { true };
+        bool changed { true }; // plot optimization
+        FilterType lastType { NoFilter };
+        float lastFrequency { 0.0 };
+        float lastGain { -1.0 };
+        float lastQuality { 0.0 };
 
         AttachedValue<FilterType> typeAttachment;
         AttachedValue<float> frequencyAttachment;
