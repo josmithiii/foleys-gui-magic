@@ -56,6 +56,8 @@ void RootItem::updateColours()
 
     for (const auto& child : *this)
         child->updateColours();
+
+    repaint();
 }
 
 

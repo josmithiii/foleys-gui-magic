@@ -107,10 +107,24 @@ juce::ValueTree Stylesheet::getCurrentPalette()
 
 void Stylesheet::valueTreePropertyChanged (juce::ValueTree&, const juce::Identifier& name)
 {
+    if (batchUpdating)
+        return;
+
     if (name.toString().contains("color"))
         builder.updateColours();
     else
         builder.updateComponents();
+}
+
+void Stylesheet::beginBatchUpdate()
+{
+    batchUpdating = true;
+}
+
+void Stylesheet::endBatchUpdate()
+{
+    batchUpdating = false;
+    builder.updateColours();
 }
 
 void Stylesheet::updateValidRanges()

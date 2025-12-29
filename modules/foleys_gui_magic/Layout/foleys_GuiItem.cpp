@@ -127,7 +127,10 @@ void GuiItem::updateColours()
 
     auto* component = getWrappedComponent();
     if (component == nullptr)
+    {
+        repaint();
         return;
+    }
 
     for (auto& pair : colourTranslation)
     {
@@ -135,6 +138,9 @@ void GuiItem::updateColours()
         if (colour.isNotEmpty())
             component->setColour (pair.second, magicBuilder.getStylesheet().getColour (colour));
     }
+
+    component->repaint();
+    repaint();
 }
 
 void GuiItem::configureComponent()

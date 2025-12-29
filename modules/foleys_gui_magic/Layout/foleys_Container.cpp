@@ -252,6 +252,8 @@ void Container::updateColours()
 
     for (auto& child : children)
         child->updateColours();
+
+    repaint();
 }
 
 void Container::updateContinuousRedraw()

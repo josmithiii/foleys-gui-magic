@@ -168,6 +168,18 @@ public:
     void addListener (juce::ValueTree::Listener* listener);
     void removeListener (juce::ValueTree::Listener* listener);
 
+    /**
+     Begin a batch update. While batch updating, property changes to the palette
+     will not trigger automatic updateColours() calls. Call endBatchUpdate() when
+     done to trigger a single update.
+     */
+    void beginBatchUpdate();
+
+    /**
+     End a batch update and trigger a single updateColours() call.
+     */
+    void endBatchUpdate();
+
 private:
     void valueTreePropertyChanged (juce::ValueTree&, const juce::Identifier&) override;
 
@@ -219,6 +231,8 @@ private:
     int mediaHeight = 0;
 
     SizeRange validMediaRanges;
+
+    bool batchUpdating = false;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Stylesheet)
 };
