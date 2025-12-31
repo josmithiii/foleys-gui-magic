@@ -33,6 +33,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <juce_core/juce_core.h>
 #include <juce_data_structures/juce_data_structures.h>
 
@@ -40,9 +41,21 @@ namespace foleys
 {
 
 /**
- ApplicationSettings are persistent settings shared by all plugin instances.
- They are hierarchically ordered in a ValueTree and loaded via SharedResourcePointer,
- so they don't exist duplicated in one process.
+ * ApplicationSettings are persistent settings shared by all plugin instances.
+ *
+ * They are hierarchically ordered in a ValueTree and loaded via SharedResourcePointer,
+ * so they don't exist duplicated in one process.
+ *
+ * Settings are automatically saved when the ValueTree changes. The save operation is
+ * designed to be non-blocking to avoid hanging the GUI thread:
+ * - Uses non-blocking inter-process lock (timeout=0)
+ * - Writes to a temp file then renames (atomic, avoids blocking truncate)
+ * - Skips save if lock unavailable (next change will retry)
+ * - Uses atomic flag to prevent reentrant saves
+ *
+ * The settings file location is set via setFileName() and should be called early,
+ * typically in the plugin constructor. Example path:
+ *   ~/Library/Application Support/CompanyName/PluginName.pgmsettings
  */
 class ApplicationSettings : public juce::ChangeBroadcaster,
                             private juce::Timer,
@@ -53,19 +66,39 @@ public:
     ~ApplicationSettings() override;
 
     /**
-     The settings tree is used to hang in your settings trees. The whole tree is stored.
-     It is synchronised instead of replaced on load, so it is safe to add yourself as
-     ValueTree::Listener.
+     * The settings tree is used to hang in your settings trees. The whole tree is stored.
+     * It is synchronised instead of replaced on load, so it is safe to add yourself as
+     * ValueTree::Listener.
+     *
+     * MIDI CC-to-parameter mappings are stored under a "mappings" child node.
      */
     juce::ValueTree settings { "Settings" };
 
+    /**
+     * Set the file path for persistent storage.
+     * @param file The file to save/load settings from
+     */
     void setFileName (juce::File file);
 
 private:
     void timerCallback() override;
 
+    /**
+     * Load settings from file if checksum changed (called periodically by timer).
+     * Uses non-blocking lock to avoid GUI thread hangs.
+     */
     void load();
+
+    /**
+     * Save settings to file using atomic temp-file-then-rename approach.
+     * Uses non-blocking lock - skips save if lock unavailable.
+     */
     void save();
+
+    /**
+     * Called by ValueTree listeners. Uses atomic flag to prevent reentrant saves.
+     */
+    void saveIfNotBusy();
 
     void valueTreeChildAdded (juce::ValueTree& parentTree,
                               juce::ValueTree& childWhichHasBeenAdded) override;
@@ -74,6 +107,9 @@ private:
 
     juce::File   settingsFile;
     juce::String checksum;
+
+    /** Atomic flag to prevent reentrant/recursive saves from ValueTree listeners */
+    std::atomic<bool> savePending { false };
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ApplicationSettings)
 };

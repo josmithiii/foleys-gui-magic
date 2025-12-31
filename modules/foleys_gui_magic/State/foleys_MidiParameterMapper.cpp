@@ -100,19 +100,28 @@ void MidiParameterMapper::mapMidiController (int cc, const juce::String& paramet
 
     juce::ValueTree node { IDs::mapping, {{IDs::cc, cc}, {IDs::parameter, parameterID}} };
 
-    // If mapping already there, remove it:
     if (mappings.isValid()) {
       int index = 0;
       while (index < mappings.getNumChildren()) {
         const auto& child = mappings.getChild (index);
-        if (int (child.getProperty (IDs::cc, -1)) == cc && child.getProperty (IDs::parameter, juce::String()).toString() == parameterID) {
+        auto childCC = int (child.getProperty (IDs::cc, -1));
+        auto childParam = child.getProperty (IDs::parameter, juce::String()).toString();
+
+        // If exact mapping exists, remove it (toggle off) and return
+        if (childCC == cc && childParam == parameterID) {
           mappings.removeChild (child, nullptr);
           return;
-        } else
-          ++index;
+        }
+        // Remove any existing mapping for this parameter (replace mode - one CC per param)
+        else if (childParam == parameterID) {
+          mappings.removeChild (child, nullptr);
+          // Don't increment index since we removed an element
+          continue;
+        }
+        ++index;
       }
     }
-    // Otherwise add it:
+    // Add the new mapping
     mappings.appendChild (node, nullptr);
 }
 
@@ -202,8 +211,13 @@ void MidiParameterMapper::recreateMidiMapper()
         newMapping [ccNum].push_back (parameter);
     }
 
-    juce::ScopedLock lock (mappingLock);
-    midiMapper = newMapping;
+    // Use tryEnter to avoid blocking the GUI thread when audio thread is busy
+    // If we can't get the lock, skip this update - next change will retry
+    if (mappingLock.tryEnter())
+    {
+        midiMapper = newMapping;
+        mappingLock.exit();
+    }
 }
 
 void MidiParameterMapper::valueTreeChildAdded (juce::ValueTree&, juce::ValueTree&)

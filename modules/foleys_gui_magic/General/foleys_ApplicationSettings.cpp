@@ -61,7 +61,7 @@ void ApplicationSettings::setFileName (juce::File file)
 
 void ApplicationSettings::load() // load settingsFile if it has changed, merging it with current settings, and save that out
 {
-    ScopedInterProcessLock lock (settingsFile.getFileName() + ".lock", 500,
+    ScopedInterProcessLock lock (settingsFile.getFileName() + ".lock", 0,
     [this]
     {
         auto newChecksum = juce::MD5 (settingsFile).toHexString();
@@ -86,20 +86,32 @@ void ApplicationSettings::load() // load settingsFile if it has changed, merging
 
 void ApplicationSettings::save()
 {
-    ScopedInterProcessLock lock (settingsFile.getFileName() + ".lock", 1000,
-    [this] {
-        auto parent = settingsFile.getParentDirectory();
-        parent.createDirectory();
-
-        auto stream = settingsFile.createOutputStream();
-        if (stream.get() == nullptr)
+    if (! settingsFile.existsAsFile() && ! settingsFile.getParentDirectory().exists())
+    {
+        auto result = settingsFile.getParentDirectory().createDirectory();
+        if (result.failed())
+        {
+            DBG ("ApplicationSettings::save() - Failed to create directory: " << result.getErrorMessage());
             return;
+        }
+    }
 
-        stream->setPosition (0);
-        stream->truncate();
-        stream->writeString (settings.toXmlString());
-
-        checksum = juce::MD5 (settingsFile).toHexString();
+    // Use non-blocking lock (timeout=0) to avoid hanging the GUI thread
+    // If we can't get the lock, just skip this save - we'll save on the next change
+    ScopedInterProcessLock lock (settingsFile.getFileName() + ".lock", 0,
+    [this] {
+        // Write to temp file and rename (atomic, avoids truncate blocking)
+        auto tempFile = settingsFile.getSiblingFile (settingsFile.getFileName() + ".tmp");
+        if (tempFile.replaceWithText (settings.toXmlString()))
+        {
+            tempFile.moveFileTo (settingsFile);
+            checksum = juce::MD5 (settingsFile).toHexString();
+            DBG ("ApplicationSettings::save() - Saved to " << settingsFile.getFullPathName());
+        }
+        else
+        {
+            DBG ("ApplicationSettings::save() - Failed to write temp file");
+        }
     });
 }
 
@@ -110,17 +122,27 @@ void ApplicationSettings::timerCallback()
 
 void ApplicationSettings::valueTreeChildAdded (juce::ValueTree&, juce::ValueTree&)
 {
-    save();
+    saveIfNotBusy();
 }
 
 void ApplicationSettings::valueTreeChildRemoved (juce::ValueTree&, juce::ValueTree&, int)
 {
-    save();
+    saveIfNotBusy();
 }
 
 void ApplicationSettings::valueTreePropertyChanged (juce::ValueTree&, const juce::Identifier&)
 {
-    save();
+    saveIfNotBusy();
+}
+
+void ApplicationSettings::saveIfNotBusy()
+{
+    // Prevent recursive/reentrant saves
+    if (savePending.exchange(true) == false)
+    {
+        save();
+        savePending.store(false);
+    }
 }
 
 }

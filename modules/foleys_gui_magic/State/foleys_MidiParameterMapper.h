@@ -51,9 +51,17 @@ public:
      */
     void processMidiBuffer (juce::MidiBuffer& buffer);
 
-    /*!
-     * Map a MIDI CC to a parameter
-     * @param cc the MIDI CC number to map
+    /**
+     * Map a MIDI CC to a parameter.
+     *
+     * Behavior:
+     * - If the exact mapping (same CC + same parameter) already exists, it is removed
+     *   (toggle off / "MIDI Unlearn" by re-dragging the same CC).
+     * - If a different CC was previously mapped to this parameter, the old mapping is
+     *   removed and replaced with the new one (one CC per parameter).
+     * - One CC can still control multiple parameters (drag same CC to different controls).
+     *
+     * @param cc the MIDI CC number to map (1-127)
      * @param parameterID the parameterID to map to
      */
     void mapMidiController (int cc, const juce::String& parameterID);
@@ -103,6 +111,12 @@ public:
     juce::ValueTree getMappingSettings();
 
 private:
+    /**
+     * Rebuild the internal midiMapper from the settings ValueTree.
+     * Called when mappings change. Uses non-blocking tryEnter() on mappingLock
+     * to avoid blocking the GUI thread when the audio thread is processing MIDI.
+     * If the lock cannot be acquired, the update is skipped (next change will retry).
+     */
     void recreateMidiMapper();
 
     void valueTreeChildAdded (juce::ValueTree& parentTree,
