@@ -1089,6 +1089,18 @@ public:
             keyboard.setOrientation (juce::MidiKeyboardComponent::verticalKeyboardFacingRight);
         else
             keyboard.setOrientation (juce::MidiKeyboardComponent::horizontalKeyboard);
+
+        // JOS: Set MIDI channel (default to 2 to match GeoKeys firstMidiChannel for guitar plugins)
+        auto midiChannel = getProperty ("midi-channel");
+        keyboard.setMidiChannel (midiChannel.isVoid() ? 2 : int (midiChannel));
+    }
+
+    std::vector<SettableProperty> getSettableProperties() const override
+    {
+        std::vector<SettableProperty> props;
+        props.push_back ({ configNode, "key-width", SettableProperty::Number, 50.0f, {} });
+        props.push_back ({ configNode, "midi-channel", SettableProperty::Number, 2, {} });
+        return props;
     }
 
     juce::Component* getWrappedComponent() override
