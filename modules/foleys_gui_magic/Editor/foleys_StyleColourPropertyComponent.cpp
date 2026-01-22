@@ -82,6 +82,7 @@ StyleColourPropertyComponent::StyleColourPropertyComponent (MagicGUIBuilder& bui
             {
                 if (auto* lookandfeel = builder.getStylesheet().getLookAndFeel (node))
                 {
+                    juce::ignoreUnused (lookandfeel);
 //                    auto id = builder.findColourId (node.getType(), property);
 //                    if (id >= 0)
 //                        currentColour = lookandfeel->findColour (id);
@@ -158,6 +159,7 @@ void StyleColourPropertyComponent::getLookAndFeelColourFallback()
 
     if (auto* lookandfeel = stylesheet.getLookAndFeel (node))
     {
+        juce::ignoreUnused (lookandfeel);
 //        auto id = builder.findColourId (node.getType(), property);
 //        if (id >= 0)
 //            setColourDisplay (lookandfeel->findColour (id));
