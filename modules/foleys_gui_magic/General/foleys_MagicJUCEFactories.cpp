@@ -297,16 +297,19 @@ public:
 
     void update() override
     {
-        attachment.reset();
-
         auto parameterName = configNode.getProperty (IDs::parameter, juce::String()).toString();
         auto radioValue    = getProperty (IDs::buttonRadioValue);
         auto propertyName  = getProperty (pProperty).toString();
 
-        if (parameterName.isNotEmpty() && radioValue.isVoid())
-            attachment = getMagicState().createAttachment (parameterName, button);
-        else
+        // Only recreate the attachment if the parameter changed (same fix as ToggleButtonItem).
+        if (parameterName != currentParameterName)
+        {
             attachment.reset();
+            currentParameterName = parameterName;
+
+            if (parameterName.isNotEmpty() && radioValue.isVoid())
+                attachment = getMagicState().createAttachment (parameterName, button);
+        }
 
         if (propertyName.isNotEmpty())
             property.referTo (getMagicState().getPropertyAsValue (propertyName));
@@ -315,6 +318,10 @@ public:
         if (groupID > 0)
         {
             button.setRadioGroupId (groupID);
+
+#if JOS_ALLOW_RADIO_BUTTONS == 1 // JOS temp workaround
+            handler.setRadioGroupValue(radioValue, getMagicState().getParameter(parameterName));
+#endif
         }
 
         button.setClickingTogglesState (parameterName.isNotEmpty() || groupID > 0);
@@ -337,10 +344,6 @@ public:
         {
             button.onClick = triggerToCall;
         }
-
-#if JOS_ALLOW_RADIO_BUTTONS == 1 // JOS temp workaround
-        handler.setRadioGroupValue(radioValue, getMagicState().getParameter(parameterName));
-#endif
     }
 
     std::vector<SettableProperty> getSettableProperties() const override
@@ -368,6 +371,7 @@ private:
     RadioButtonHandler handler {button, magicBuilder.getRadioButtonManager()};
 #endif
     std::unique_ptr<juce::ButtonParameterAttachment> attachment;
+    juce::String currentParameterName;
     std::function<void()> triggerToCall;
     juce::Value property;
 
@@ -402,14 +406,21 @@ public:
 
     void update() override
     {
-        attachment.reset();
-
         auto parameterName = configNode.getProperty (IDs::parameter, juce::String()).toString();
         auto radioValue = getProperty (IDs::buttonRadioValue);
-        if (parameterName.isNotEmpty() && radioValue.isVoid())
-            attachment = getMagicState().createAttachment (parameterName, button);
-        else
+
+        // Only recreate the attachment if the parameter changed.
+        // Destroying a ButtonParameterAttachment mid-gesture leaves the parameter
+        // with isPerformingGesture=true (JUCE doesn't end the gesture in the destructor),
+        // causing jassert failures on subsequent clicks.
+        if (parameterName != currentParameterName)
+        {
             attachment.reset();
+            currentParameterName = parameterName;
+
+            if (parameterName.isNotEmpty() && radioValue.isVoid())
+                attachment = getMagicState().createAttachment (parameterName, button);
+        }
 
         button.setButtonText (magicBuilder.getStyleProperty (pText, configNode));
 
@@ -422,11 +433,11 @@ public:
         {
             button.setRadioGroupId (groupID);
             button.setClickingTogglesState (true);
-        }
 
 #if JOS_ALLOW_RADIO_BUTTONS == 1 // JOS temp workaround
-        handler.setRadioGroupValue(radioValue, getMagicState().getParameter(parameterName));
+            handler.setRadioGroupValue(radioValue, getMagicState().getParameter(parameterName));
 #endif
+        }
     }
 
     std::vector<SettableProperty> getSettableProperties() const override
@@ -451,6 +462,7 @@ private:
     RadioButtonHandler handler {button, magicBuilder.getRadioButtonManager()};
 #endif
     std::unique_ptr<juce::ButtonParameterAttachment> attachment;
+    juce::String currentParameterName;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ToggleButtonItem)
 };
