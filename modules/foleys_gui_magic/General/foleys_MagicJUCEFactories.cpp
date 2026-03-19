@@ -605,10 +605,10 @@ public:
 
   void update() override
   {
+    textEditor.setMultiLine (/* shouldBeMultiLine */ true, /* shouldWordWrap */ true); // otherwise use a label!
+
     juce::String text = magicBuilder.getStyleProperty (pText, configNode);
     textEditor.setText (text, juce::dontSendNotification);
-
-    textEditor.setMultiLine (/* shouldBeMultiLine */ true, /* shouldWordWrap */ true); // otherwise use a label!
     textEditor.setReturnKeyStartsNewLine(/* shouldStartNewLine */ true);
     auto justifications = makeJustificationsChoices();
     auto justification = getProperty (pJustification).toString();
