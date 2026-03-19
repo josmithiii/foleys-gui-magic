@@ -76,8 +76,10 @@ void ApplicationSettings::load() // load settingsFile if it has changed, merging
         if (! tree.isValid())
             return;
 
+        isLoading = true;
         settings.copyPropertiesAndChildrenFrom (tree, nullptr);
         settings.addListener (this);
+        isLoading = false;
 
         checksum = newChecksum;
         sendChangeMessage();
@@ -137,6 +139,9 @@ void ApplicationSettings::valueTreePropertyChanged (juce::ValueTree&, const juce
 
 void ApplicationSettings::saveIfNotBusy()
 {
+    if (isLoading)
+        return;
+
     // Prevent recursive/reentrant saves
     if (savePending.exchange(true) == false)
     {

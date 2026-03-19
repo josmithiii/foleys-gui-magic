@@ -111,6 +111,9 @@ private:
     /** Atomic flag to prevent reentrant/recursive saves from ValueTree listeners */
     std::atomic<bool> savePending { false };
 
+    /** Suppress saves while loading to prevent load→save→load cycles */
+    bool isLoading { false };
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ApplicationSettings)
 };
 
