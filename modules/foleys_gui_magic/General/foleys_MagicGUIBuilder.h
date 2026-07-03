@@ -178,6 +178,16 @@ public:
      */
     juce::StringArray getFactoryNames() const;
 
+    // JOS: app-installable fallback tooltip source. When a layout node has no
+    // explicit tooltip attribute, GuiItem::configureComponent() asks this
+    // function for one, keyed by the controlled parameter's ID (the layout's
+    // "parameter" attribute). An explicit layout tooltip always wins. Return
+    // an empty string for "no tooltip".
+    using TooltipProvider = std::function<juce::String (const juce::String& parameterID)>;
+
+    void setTooltipProvider (TooltipProvider provider);
+    const TooltipProvider& getTooltipProvider() const;
+
 
     std::function<void(juce::ComboBox&)> createChoicesMenuLambda (juce::StringArray choices) const;
     std::function<void(juce::ComboBox&)> createParameterMenuLambda() const;
@@ -243,6 +253,8 @@ private:
     juce::Component::SafePointer<juce::Component> parent;
 
     MagicGUIState& magicState;
+
+    TooltipProvider tooltipProvider; // JOS: fallback tooltips by parameter ID
 
 #if JOS_ALLOW_RADIO_BUTTONS == 1 // JOS temp workaround
     RadioButtonManager radioButtonManager;

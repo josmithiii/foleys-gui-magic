@@ -249,6 +249,17 @@ juce::StringArray MagicGUIBuilder::getFactoryNames() const
     return names;
 }
 
+// JOS: fallback tooltips by parameter ID (see header)
+void MagicGUIBuilder::setTooltipProvider (TooltipProvider provider)
+{
+    tooltipProvider = std::move (provider);
+}
+
+const MagicGUIBuilder::TooltipProvider& MagicGUIBuilder::getTooltipProvider() const
+{
+    return tooltipProvider;
+}
+
 void MagicGUIBuilder::registerLookAndFeel (juce::String name, std::unique_ptr<juce::LookAndFeel> lookAndFeel)
 {
     stylesheet.registerLookAndFeel (name, std::move (lookAndFeel));

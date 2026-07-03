@@ -156,6 +156,18 @@ void GuiItem::configureComponent()
         auto tooltip = magicBuilder.getStyleProperty (IDs::tooltip, configNode).toString();
         if (tooltip.isNotEmpty())
             tooltipClient->setTooltip (tooltip);
+        else if (const auto& provider = magicBuilder.getTooltipProvider())
+        {
+            // JOS: no explicit tooltip attribute in the layout -- fall back to the
+            // app-installed provider, keyed by the controlled parameter's ID
+            auto paramID = getControlledParameterID ({});
+            if (paramID.isNotEmpty())
+            {
+                auto provided = provider (paramID);
+                if (provided.isNotEmpty())
+                    tooltipClient->setTooltip (provided);
+            }
+        }
     }
 
     component->setAccessible (magicBuilder.getStyleProperty (IDs::accessibility, configNode));
