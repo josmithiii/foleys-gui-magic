@@ -227,7 +227,13 @@ bool ToolBox::saveGUI (const juce::File& xmlFile)
 
     if (auto stream = temp.getFile().createOutputStream())
     {
-        auto saved = stream->writeString (builder.getConfigTree().toXmlString());
+        // JUCE defaults XML newlines to CRLF on every platform; keep saved
+        // layouts LF everywhere except Windows so repo copies stay CRLF-free.
+        juce::XmlElement::TextFormat fmt;
+       #if ! JUCE_WINDOWS
+        fmt.newLineChars = "\n";
+       #endif
+        auto saved = stream->writeString (builder.getConfigTree().toXmlString (fmt));
         stream.reset();
 
         if (saved)
