@@ -233,7 +233,11 @@ bool ToolBox::saveGUI (const juce::File& xmlFile)
        #if ! JUCE_WINDOWS
         fmt.newLineChars = "\n";
        #endif
-        auto saved = stream->writeString (builder.getConfigTree().toXmlString (fmt));
+        // writeText, NOT writeString: writeString appends the string's
+        // terminating NUL byte (it pairs with readString), which left every
+        // saved layout XML ending in 0x00 -- invalid XML for strict parsers.
+        auto saved = stream->writeText (builder.getConfigTree().toXmlString (fmt),
+                                        false, false, nullptr);
         stream.reset();
 
         if (saved)
