@@ -222,19 +222,26 @@ juce::var Stylesheet::getStyleProperty (const juce::Identifier& name, const juce
                 return classNode.getProperty (name);
             }
         }
+    }
 
-        if (inherit)
+    // BEGIN JOS: the <Types> lookup used to live INSIDE the class loop above
+    // (upstream bug), so a node without any class attribute never consulted
+    // its Types entry at all -- e.g. <Types><View background-color=.../> was
+    // silently ignored for every class-less View. Types now apply to every
+    // node of that type, after classes (classes keep precedence), as any
+    // stylesheet user would expect.
+    if (inherit)
+    {
+        auto typeNode = currentStyle.getChildWithName (IDs::types).getChildWithName (node.getType());
+        if (typeNode.isValid() && typeNode.hasProperty (name))
         {
-            auto typeNode = currentStyle.getChildWithName (IDs::types).getChildWithName (node.getType());
-            if (typeNode.isValid() && typeNode.hasProperty (name))
-            {
-                if (definedHere)
-                    *definedHere = typeNode;
+            if (definedHere)
+                *definedHere = typeNode;
 
-                return typeNode.getProperty (name);
-            }
+            return typeNode.getProperty (name);
         }
     }
+    // END JOS.
 
     auto parent = node.getParent();
     if (parent.isValid() && parent.getType() != IDs::magic)
@@ -279,16 +286,23 @@ juce::LookAndFeel* Stylesheet::getLookAndFeel (const juce::ValueTree& node) cons
     if (lnfNode.isVoid())
         return nullptr;
 
-    auto lnf = lnfNode.toString();
-    if (lnf.isNotEmpty())
+    return getLookAndFeelByName (lnfNode.toString());
+}
+
+// BEGIN JOS: by-name lookup split out of getLookAndFeel so the root GuiItem
+// can fall back to the stock default LookAndFeel explicitly.
+juce::LookAndFeel* Stylesheet::getLookAndFeelByName (const juce::String& name) const
+{
+    if (name.isNotEmpty())
     {
-        const auto& it = lookAndFeels.find (lnf);
+        const auto& it = lookAndFeels.find (name);
         if (it != lookAndFeels.end())
             return it->second.get();
     }
 
     return nullptr;
 }
+// END JOS.
 
 juce::StringArray Stylesheet::getLookAndFeelNames() const
 {

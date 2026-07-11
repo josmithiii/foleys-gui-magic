@@ -54,8 +54,13 @@ void RootItem::updateColours()
     if (! outline.isVoid())
         tooltip.getLookAndFeel().setColour (juce::TooltipWindow::outlineColourId, Stylesheet::parseColour (outline));
 
-    for (const auto& child : *this)
-        child->updateColours();
+    // BEGIN JOS: also run the base class (root's own Decorator + children).
+    // This override used to handle ONLY the tooltip colours and then recurse,
+    // so a background-color set on the ROOT node never reached the root's
+    // Decorator -- the root always painted the constructor-default darkgrey
+    // and could not be restyled from the stylesheet at all.
+    Container::updateColours();
+    // END JOS.
 
     repaint();
 }

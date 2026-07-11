@@ -355,7 +355,12 @@ juce::var MagicGUIBuilder::getPropertyDefaultValue (juce::Identifier property) c
     if (property == IDs::display) return IDs::flexbox;
 
     if (property == IDs::captionPlacement) return "centred-top";
-    if (property == IDs::lookAndFeel) return "FoleysFinest";
+    // BEGIN JOS: no fake per-node lookAndFeel default -- unset means "inherit
+    // from the parent component"; the ROOT GuiItem falls back to FoleysFinest
+    // (see GuiItem::updateInternal). The old blanket default made every item
+    // set its own LnF, so one set on the root could never cascade, and the GUI
+    // editor showed "FoleysFinest" as if explicitly set on every node.
+    // END JOS.
 
     if (property == juce::Identifier ("font-size")) return 12.0;
 

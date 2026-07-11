@@ -107,6 +107,11 @@ public:
      */
     juce::LookAndFeel* getLookAndFeel (const juce::ValueTree& node) const;
 
+    // BEGIN JOS: registered LookAndFeel by name (nullptr if unknown); lets the
+    // root GuiItem fall back to the stock default without a fake style property.
+    juce::LookAndFeel* getLookAndFeelByName (const juce::String& name) const;
+    // END JOS.
+
     /**
      Finds a background image for the given node. Note that this will only return anything
      useful, if you have added any actual images into the BinaryData and have enabled the

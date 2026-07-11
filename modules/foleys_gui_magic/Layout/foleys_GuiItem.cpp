@@ -102,8 +102,29 @@ void GuiItem::updateInternal()
 
     auto& stylesheet = magicBuilder.getStylesheet();
 
-    if (auto* newLookAndFeel = stylesheet.getLookAndFeel (configNode))
-        setLookAndFeel (newLookAndFeel);
+    // BEGIN JOS: apply lookAndFeel only where it is EXPLICITLY defined (on the
+    // node, its id style, a class or a type); everything else inherits through
+    // the juce component hierarchy (setLookAndFeel (nullptr) is a no-op when
+    // nothing was set). The root falls back to "FoleysFinest" when nothing is
+    // defined anywhere, preserving PGM's stock look. Previously
+    // getPropertyDefaultValue() faked "FoleysFinest" for every node, so EVERY
+    // item called setLookAndFeel on itself and a lookAndFeel set once on the
+    // root could never cascade: the children always overrode it.
+    {
+        juce::ValueTree lnfDefinedIn;
+        stylesheet.getStyleProperty (IDs::lookAndFeel, configNode, true, &lnfDefinedIn);
+        const bool isRootNode = configNode.getParent().getType() == IDs::magic;
+
+        juce::LookAndFeel* newLookAndFeel = nullptr;
+        if (lnfDefinedIn.isValid())
+            newLookAndFeel = stylesheet.getLookAndFeel (configNode);
+
+        if (newLookAndFeel == nullptr && isRootNode)
+            newLookAndFeel = stylesheet.getLookAndFeelByName ("FoleysFinest");
+
+        setLookAndFeel (newLookAndFeel);   // nullptr => inherit from parent
+    }
+    // END JOS.
 
     decorator.configure (magicBuilder, configNode);
     configureComponent();

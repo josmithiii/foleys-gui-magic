@@ -76,7 +76,18 @@ void StyleChoicePropertyComponent::initialiseComboBox (bool editable)
     combo->onChange = [&]
     {
         if (auto* c = dynamic_cast<juce::ComboBox*>(editor.get()))
-            node.setProperty (property, c->getText(), &builder.getUndoManager());
+        {
+            // BEGIN JOS: blank means "unset" -- never write an empty string
+            // onto the node. The old behavior re-added the property as "" when
+            // the remove (X) button cleared it (the proxy Value fired, setText
+            // notified, and this callback wrote the now-empty text right back),
+            // leaving a blank-but-"changed" property.
+            if (c->getText().isNotEmpty())
+                node.setProperty (property, c->getText(), &builder.getUndoManager());
+            else
+                node.removeProperty (property, &builder.getUndoManager());
+            // END JOS.
+        }
 
         refresh();
     };
