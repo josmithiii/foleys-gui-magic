@@ -359,10 +359,23 @@ void GuiItem::valueTreePropertyChanged (juce::ValueTree& treeThatChanged, const 
 {
     if (treeThatChanged == configNode)
     {
+        // BEGIN JOS: a genuine property edit must not be swallowed by the
+        // didUpdateInternal once-only guard above (outside edit mode it made
+        // every property-panel edit a silent no-op until the next full
+        // rebuild -- e.g. lookAndFeel set on the root View never propagated
+        // unless the Edit toggle happened to be ON). Clear the guard on the
+        // edited item (and on the parent that re-runs it, whose
+        // Container::update() drives the children); the SIBLINGS' guards stay
+        // set, keeping the construction-time double-update dedup intact.
+        didUpdateInternal = false;
         if (auto* parent = findParentComponentOfClass<GuiItem>())
+        {
+            parent->didUpdateInternal = false;
             parent->updateInternal();
+        }
         else
             updateInternal();
+        // END JOS.
 
         return;
     }
@@ -373,7 +386,10 @@ void GuiItem::valueTreePropertyChanged (juce::ValueTree& treeThatChanged, const 
         auto name = treeThatChanged.getType().toString();
         auto classes = configNode.getProperty (IDs::styleClass, juce::String()).toString();
         if (classes.contains (name))
+        {
+            didUpdateInternal = false;   // JOS: same reason as above
             updateInternal();
+        }
     }
 }
 
