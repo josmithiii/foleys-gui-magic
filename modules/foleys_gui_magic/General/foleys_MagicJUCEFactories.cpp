@@ -51,6 +51,33 @@
 namespace foleys
 {
 
+//==============================================================================
+// JOS: reserve right-click (and ctrl-click) for the self-teaching GUI's
+// parameter-help popup (jos::ParamHelp).  Without this a right-click on a
+// ToggleButton toggles it (and on a ComboBox opens the value menu) instead of
+// showing the doc callout.  Left-click behaviour is unchanged, and the passive
+// help listener on the editor root still receives the popup mouseDown (JUCE
+// notifies registered listeners regardless of the component's own handler).
+class HelpableToggleButton : public juce::ToggleButton
+{
+public:
+    void mouseDown (const juce::MouseEvent& e) override
+    {
+        if (e.mods.isPopupMenu()) return;              // reserve for help; don't toggle
+        juce::ToggleButton::mouseDown (e);
+    }
+};
+
+class HelpableComboBox : public juce::ComboBox
+{
+public:
+    void mouseDown (const juce::MouseEvent& e) override
+    {
+        if (e.mods.isPopupMenu()) return;              // reserve for help; don't open menu
+        juce::ComboBox::mouseDown (e);
+    }
+};
+
 class SliderItem : public GuiItem
 {
 
@@ -259,13 +286,20 @@ public:
         return props;
     }
 
+    // JOS: expose the bound parameter so the self-teaching GUI can serve this
+    // ComboBox a tooltip + long-press/right-click help (mirrors SliderItem).
+    juce::String getControlledParameterID (juce::Point<int>) override
+    {
+        return configNode.getProperty (IDs::parameter, juce::String()).toString();
+    }
+
     juce::Component* getWrappedComponent() override
     {
         return &comboBox;
     }
 
 private:
-    juce::ComboBox comboBox;
+    HelpableComboBox comboBox;
     std::unique_ptr<juce::ComboBoxParameterAttachment> attachment;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ComboBoxItem)
@@ -451,13 +485,22 @@ public:
         return props;
     }
 
+    // JOS: expose the bound parameter so the self-teaching GUI can serve this
+    // ToggleButton a tooltip + long-press/right-click help (mirrors SliderItem).
+    // Radio-group members carry a buttonRadioValue instead of a live attachment,
+    // but they still map to the parameter, so document them the same way.
+    juce::String getControlledParameterID (juce::Point<int>) override
+    {
+        return configNode.getProperty (IDs::parameter, juce::String()).toString();
+    }
+
     juce::Component* getWrappedComponent() override
     {
         return &button;
     }
 
 private:
-    juce::ToggleButton button;
+    HelpableToggleButton button;
 #if JOS_ALLOW_RADIO_BUTTONS == 1 // JOS temp workaround
     RadioButtonHandler handler {button, magicBuilder.getRadioButtonManager()};
 #endif
