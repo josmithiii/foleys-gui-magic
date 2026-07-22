@@ -1148,6 +1148,15 @@ public:
         // JOS: Set MIDI channel (default to 2 to match GeoKeys firstMidiChannel for guitar plugins)
         auto midiChannel = getProperty ("midi-channel");
         keyboard.setMidiChannel (midiChannel.isVoid() ? 2 : int (midiChannel));
+
+        // JOS: Octave number assigned to middle C (note 60) in the key labels.
+        // JUCE's default is 3 (Yamaha/Roland: middle C = C3). Absent => unchanged,
+        // so existing plugins keep their current labels. The concert harp sets this
+        // to 4 (scientific pitch notation: note 24 = C1 .. note 103 = G7) so the
+        // Piano tab agrees with the Strum tabs and the plan's C1..G7 naming.
+        auto octaveForMiddleC = getProperty ("octave-for-middle-c");
+        if (! octaveForMiddleC.isVoid())
+            keyboard.setOctaveForMiddleC (int (octaveForMiddleC));
     }
 
     std::vector<SettableProperty> getSettableProperties() const override
@@ -1155,6 +1164,7 @@ public:
         std::vector<SettableProperty> props;
         props.push_back ({ configNode, "key-width", SettableProperty::Number, 50.0f, {} });
         props.push_back ({ configNode, "midi-channel", SettableProperty::Number, 2, {} });
+        props.push_back ({ configNode, "octave-for-middle-c", SettableProperty::Number, 3, {} });
         return props;
     }
 
