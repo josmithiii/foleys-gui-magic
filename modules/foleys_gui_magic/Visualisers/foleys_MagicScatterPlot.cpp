@@ -41,9 +41,13 @@ namespace foleys
 
 void MagicScatterPlot::pushSamples (const juce::AudioBuffer<float>& bufferIn, int currentPlotLengthIn)
 {
-  int numChannels = bufferIn.getNumChannels();
-  int chanX = std::min<int>(0,numChannels-1);
-  int chanY = std::min<int>(1,numChannels-1);
+  const int numChannels = bufferIn.getNumChannels();
+  if (numChannels < 1)
+    return; // nothing to scatter (the channel indices below would go negative)
+  // X = channel 0, Y = channel 1 -- or channel 0 against itself (the 45-degree
+  // diagonal) when only one channel was pushed.
+  const int chanX = 0;
+  const int chanY = std::min<int>(1,numChannels-1);
   pushSamples(/* bufferX */ bufferIn, chanX, /* bufferY */ bufferIn, chanY, currentPlotLengthIn);
 }
 

@@ -52,9 +52,13 @@ public:
     /**
      Create an oscilloscope adapter to push samples into for later display in the GUI.
 
-     @param channel lets you select the channel to analyse. -1 means summing all together (the default)
+     Which channels are shown is decided by what you push (the
+     pushSamples overload taking firstChannelToPlot/numChannelsToPlot slices
+     the buffer) together with `plot-num-channels`; there is no per-scope
+     starting-channel setting (the old `channelToDisplay` ctor argument, never
+     passed by anyone, went away with `plot-channel` on 2026-07-24).
      */
-    MagicOscilloscopeAudio (int channelToDisplay=-1);
+    MagicOscilloscopeAudio() = default;
 
     static void checkAudioBufferForNaNs (juce::AudioBuffer<float>& buffer);
 

@@ -109,13 +109,6 @@ void MagicAudioPlotComponent::setLatch (bool t)
       plotSource->setLatch (latch);
 }
 
-void MagicAudioPlotComponent::setChannel (int c)
-{
-    channel = c;
-    if (plotSource)
-      plotSource->setChannel (channel);
-}
-
 void MagicAudioPlotComponent::setNumChannels (int nc)
 {
     numChannels = nc;
@@ -151,7 +144,6 @@ void MagicAudioPlotComponent::paint (juce::Graphics& g)
             plotSource->setOverlay (overlay);
             plotSource->setNormalize (normalize);
             plotSource->setLatch (latch);
-            plotSource->setChannel (channel);
             plotSource->setNumChannels (numChannels);
             plotSource->setPlotLength (plotLength);
             plotSource->setPlotOffset (plotOffset);

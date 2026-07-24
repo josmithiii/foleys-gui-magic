@@ -40,11 +40,6 @@ namespace foleys
 {
 
 
-MagicOscilloscopeAudio::MagicOscilloscopeAudio (int channelToDisplay)
-  : MagicAudioPlotSource(channelToDisplay)
-{
-}
-
 void MagicOscilloscopeAudio::checkAudioBufferForNaNs (juce::AudioBuffer<float>& buffer)
 { // Check for and clear any NaNs in :
   int nChans = buffer.getNumChannels();
@@ -102,57 +97,46 @@ void MagicOscilloscopeAudio::pushSamples (const juce::AudioBuffer<float>& buffer
   plotLengthNow = std::max<int>(0,plotLengthIn);
   if ( plotLengthNow > 0 && writePosition.load() >= plotLengthNow ) // already have a plot waiting to go
       return;
-  const int numChannelsIn = buffer.getNumChannels();
-  int firstChannelToPlot = juce::jlimit(0,numChannelsIn-1,plotChannel);
-  int lastChannelToPlot = std::min<int> ( numChannelsIn-1, firstChannelToPlot + numPlotChannels );
+  // Plotting always starts at the pushed buffer's channel 0: selecting a
+  // different first channel is the pusher's job (see the pushSamples overload
+  // taking firstChannelToPlot, which slices the buffer for us).
+  const int lastChannelToPlot = channelsPlotted (buffer) - 1;
   if (overlayPlots) {
-    numChannelsOut = lastChannelToPlot - firstChannelToPlot + 1;
+    numChannelsOut = lastChannelToPlot + 1;
   } else {
     averageAllChannelsToSamplesChannel0(buffer);
     numChannelsOut = 1;
   }
 
-  // juce::AudioBuffer<float>* bufferP = &buffer;
-  int firstAudibleSample[numChannelsIn];
-  int lastAudibleSample[numChannelsIn];
   int startSample = 0;
   int numSamplesTrimmed = numSamples;
   if (latch) { // When latching, we don't push samples when they are inaudible (least-work method)
-    // bufferP = std::unique_ptr<juce::AudioBuffer<float>>(numChannelsIn,numSamples);
     if (buffer.hasBeenCleared())
       return; // push nothing - else find out if anything is audible:
-    // float magnitude = buffer.getMagnitude(/* startSample */ 0, numSamples);
-    // bool audible = (magnitude > 1.0E-4); // -80 dB threshold
-    bool audible = false;
-    for (int c=firstChannelToPlot; c<=lastChannelToPlot; c++) {
-      firstAudibleSample[c] = 0;
-      for (int s=0; s<numSamples; s++) {
-        if (fabsf(buffer.getReadPointer(c)[s]) > 1.0E-4) { // -80 dB threshold
-          firstAudibleSample[c] = s;
-          audible = true;
-          break; // This is faster than calling getMagnitude()
-        }
-      }
-    }
-    if (! audible)
-      return;
-    for (int c=firstChannelToPlot; c<=lastChannelToPlot; c++) {
-      lastAudibleSample[c] = firstAudibleSample[c];
-      for (int s=numSamples-1; s>=firstAudibleSample[c]; s--) {
-        if (fabsf(buffer.getReadPointer(c)[s]) > 1.0E-4) { // -80 dB threshold
-          lastAudibleSample[c] = s;
+    // Audible span = the union, over the plotted channels, of the samples above
+    // -80 dBFS.  Kept as a running min/max: no per-channel scratch array, so no
+    // variable-length array on the audio thread (and a channel that is entirely
+    // silent no longer drags the window's start back to sample 0, which is what
+    // the old `firstAudibleSample[c] = 0` seed did).
+    int firstAudible = numSamples;
+    int lastAudible  = -1;
+    for (int c = 0; c <= lastChannelToPlot; ++c) {
+      const float* d = buffer.getReadPointer (c);
+      for (int s = 0; s < numSamples; ++s)
+        if (fabsf (d[s]) > 1.0E-4f) { // -80 dB threshold (faster than getMagnitude())
+          firstAudible = std::min<int> (firstAudible, s);
           break;
         }
-      }
+      for (int s = numSamples - 1; s >= 0; --s)
+        if (fabsf (d[s]) > 1.0E-4f) {
+          lastAudible = std::max<int> (lastAudible, s);
+          break;
+        }
     }
-    int firstAudibleSampleAllChannels = firstAudibleSample[firstChannelToPlot];
-    int lastAudibleSampleAllChannels = lastAudibleSample[firstChannelToPlot];
-    for (int c=firstChannelToPlot+1; c<=lastChannelToPlot; c++) {
-      firstAudibleSampleAllChannels = std::min<int> ( firstAudibleSampleAllChannels, firstAudibleSample[c] );
-      lastAudibleSampleAllChannels = std::max<int> ( lastAudibleSampleAllChannels, lastAudibleSample[c] );
-    }
-    startSample = firstAudibleSampleAllChannels;
-    numSamplesTrimmed = lastAudibleSampleAllChannels - firstAudibleSampleAllChannels + 1;
+    if (lastAudible < 0)
+      return; // nothing audible in any plotted channel -- keep the latched plot
+    startSample = firstAudible;
+    numSamplesTrimmed = lastAudible - firstAudible + 1;
     jassert (numSamplesTrimmed >= 0 && numSamplesTrimmed <= numSamples);
   }
 
@@ -163,29 +147,29 @@ void MagicOscilloscopeAudio::pushSamples (const juce::AudioBuffer<float>& buffer
   if (plotLengthNow > 0  ||  samplesBeforeWrap >= numSamplesTrimmed) // We can copy without index-wrapping
   {
     // Copy all of the input buffer into our local ring buffer at its current write position w:
-    samples.copyFrom (0, w, buffer, firstChannelToPlot, startSample, numSamplesTrimmed);
-    if (numChannelsOut>1) // must also copy higher channels
+    if (numChannelsOut>samples.getNumChannels()) {
+        setNumChannels(numChannelsOut);
+    }
+    samples.copyFrom (0, w, buffer, 0, startSample, numSamplesTrimmed);
+    for (int c=1; c < numChannelsOut; c++) // must also copy higher channels
       {
-        if (numChannelsOut>samples.getNumChannels()) {
-            setNumChannels(numChannelsOut);
-        }
-        for (int c=firstChannelToPlot+1; c <= lastChannelToPlot; c++)
-          {
-            samples.copyFrom (c-firstChannelToPlot, w, buffer, c, startSample, numSamplesTrimmed);
-          }
+        samples.copyFrom (c, w, buffer, c, startSample, numSamplesTrimmed);
       }
   }
   else // must break up the copy into two pieces due to wraparound in the ring buffer:
   {
-    samples.copyFrom (0, w, buffer, firstChannelToPlot, startSample, samplesBeforeWrap);
-    samples.copyFrom (0, 0, buffer, firstChannelToPlot, startSample + samplesBeforeWrap, numSamplesTrimmed - samplesBeforeWrap);
-    if (numChannelsOut>1) // must also copy higher channels
+    // (the wrapped branch used to skip the setNumChannels() growth the
+    //  non-wrapped one does, so a first-ever push that happened to wrap wrote
+    //  past the end of `samples`)
+    if (numChannelsOut>samples.getNumChannels()) {
+        setNumChannels(numChannelsOut);
+    }
+    samples.copyFrom (0, w, buffer, 0, startSample, samplesBeforeWrap);
+    samples.copyFrom (0, 0, buffer, 0, startSample + samplesBeforeWrap, numSamplesTrimmed - samplesBeforeWrap);
+    for (int c=1; c < numChannelsOut; c++) // must also copy higher channels
       {
-        for (int c=firstChannelToPlot+1; c < firstChannelToPlot+numChannelsOut; c++)
-          {
-            samples.copyFrom (c-firstChannelToPlot, w, buffer, c, startSample, samplesBeforeWrap);
-            samples.copyFrom (c-firstChannelToPlot, 0, buffer, c, startSample + samplesBeforeWrap, numSamplesTrimmed - samplesBeforeWrap);
-          }
+        samples.copyFrom (c, w, buffer, c, startSample, samplesBeforeWrap);
+        samples.copyFrom (c, 0, buffer, c, startSample + samplesBeforeWrap, numSamplesTrimmed - samplesBeforeWrap);
       }
   }
 
@@ -200,7 +184,10 @@ void MagicOscilloscopeAudio::pushSamples (const juce::AudioBuffer<float>& buffer
 
 void MagicOscilloscopeAudio::createPlotPaths (juce::Path& path, juce::Path& filledPath, juce::Rectangle<float> bounds, MagicAudioPlotComponent&)
 {
-    if (sampleRate < 20.0f || numPlotChannels < 1)
+    // numChannelsOut is what pushSamples() actually wrote (>= 1).  This used to
+    // test numPlotChannels, which defaults to 0 -- so any AudioPlot whose layout
+    // omitted `plot-num-channels` rendered permanently blank, with no warning.
+    if (sampleRate < 20.0f || numChannelsOut < 1)
         return;
 
     if (plotLengthNow>0 && writePosition.load() < plotLengthNow)
@@ -209,7 +196,7 @@ void MagicOscilloscopeAudio::createPlotPaths (juce::Path& path, juce::Path& fill
     int numPlotSamplesAvailable = samples.getNumSamples();
     int numToDisplay = getNumToDisplay(); // either plotLength or plotLengthNow - defined in ./foleys_MagicAudioPlotSource.h
 
-    auto* data = samples.getReadPointer (0); // samples holds channels "plotChannel" to "plotChannel + numPlotChannels-1"
+    auto* data = samples.getReadPointer (0); // samples holds the numChannelsOut channels pushSamples() wrote
 
     int pos0 = 0;
     int pos = pos0;
@@ -223,6 +210,11 @@ void MagicOscilloscopeAudio::createPlotPaths (juce::Path& path, juce::Path& fill
       pos = getReadPosition(data, pos0); // go back to previous zero-transition if in triggered mode
 #endif
     }
+    // Every channel must start where channel 0 does.  The higher-channel loop
+    // below used to restart at the RAW pos0, which is trigger-unaligned (so the
+    // overlaid channels slid against each other) and, when writePosition <
+    // numToDisplay, NEGATIVE -- an out-of-bounds read.
+    const int posStart = pos;
 
     // Normalize all plotted channels if requested:
     if (normalize) {
@@ -258,10 +250,12 @@ void MagicOscilloscopeAudio::createPlotPaths (juce::Path& path, juce::Path& fill
     float plotMaxY = bounds.getY(); // (0,0) = upper-left corner => Min > Max in order to FLIP Y UPRIGHT
 
     float aPlotHeight = plotMaxY - plotMinY; // "algebraic" plot height - NEGATIVE since (0,0) is UPPER-left corner
-    float plotOffsetY = (overlayPlots ? 0.0f : plotOffset * aPlotHeight);
-    jassert(numPlotChannels>0);
-    // float plotScaleY = 1.0f / float(numPlotChannels);
-    // float plotHeightY = plotScaleY * aPlotHeight; // NEGATIVE - add overlapFactor?
+    // `plot-offset` separates the overlaid channels into lanes (1 == adjacent,
+    // non-overlapping).  The test used to be inverted -- offsetting was applied
+    // ONLY when NOT overlaying, i.e. only when numChannelsOut == 1 and nothing
+    // could be offset -- so plot-offset="0.2" drew every channel on top of the
+    // others.
+    float plotOffsetY = (overlayPlots ? plotOffset * aPlotHeight : 0.0f);
 
     path.clear();
     path.startNewSubPath (plotMinX, juce::jmap (data [pos], -1.0f, 1.0f, plotMinY, plotMaxY));  // FLIPS Y
@@ -272,12 +266,6 @@ void MagicOscilloscopeAudio::createPlotPaths (juce::Path& path, juce::Path& fill
         if (pos >= numPlotSamplesAvailable)
             pos -= numPlotSamplesAvailable;
 
-        static bool sawNonzero = false;
-        if (! sawNonzero && data[pos] != 0.0f)
-        {
-            sawNonzero = true;
-            DBG("MagicOscilloscopeAudio::createPlotPaths: First nonzero sample to plot is " << data[pos]);
-        }
         // FIXME: MAKE DOT-DASHED with 1 dot/channel, i.e., numPlotChannels dots per dash
         // Draw next point of bottom plotted channel:
         path.lineTo (juce::jmap (float (i),   0.0f, float (numToDisplay-1), plotMinX, plotMaxX),
@@ -296,7 +284,7 @@ void MagicOscilloscopeAudio::createPlotPaths (juce::Path& path, juce::Path& fill
     for (int c=1; c<numChannelsOut; c++)
     {
         data = samples.getReadPointer (c);
-        pos = pos0;
+        pos = posStart;
         path.startNewSubPath (bounds.getX(),
                               juce::jmap (data [pos], -1.0f, 1.0f, plotMinY+c*plotOffsetY, plotMaxY+c*plotOffsetY));
         for (int i = 1; i < numToDisplay; ++i)

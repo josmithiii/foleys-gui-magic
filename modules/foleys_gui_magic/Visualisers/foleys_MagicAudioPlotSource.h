@@ -55,9 +55,6 @@ public:
     /** Constructor. */
     MagicAudioPlotSource()=default;
 
-    /** Constructor allowing specification of a channel to display, or -1 to indicate all channels. */
-    MagicAudioPlotSource(int channelToDisplay) : plotChannel(std::max<int>(0,channelToDisplay)) {}
-
     /** Destructor. */
     virtual ~MagicAudioPlotSource()=default;
 
@@ -97,14 +94,12 @@ public:
     virtual void setLatch (bool isLatching) { latch = isLatching; }
 
     /**
-     Set first audio channel to plot (numbering from 0).
-     */
-    virtual void setChannel (int channel) {
-      plotChannel = std::max<int>(0,channel);
-    }
-
-    /**
      Set number of audio channels to plot in overlay mode, or to average if not overlaid.
+     Plotting always starts at channel 0 of whatever buffer is pushed; select a
+     different starting channel by pushing a slice --
+     pushSamples (buffer, firstChannelToPlot, numChannelsToPlot, plotLength) --
+     rather than by configuring the plot.  (The old `plot-channel` property /
+     setChannel() duplicated that and was removed 2026-07-24.)
      */
     virtual void setNumChannels (int nChans)
     {
@@ -238,10 +233,18 @@ protected:
     float plotOffset = 0;      // for overlays only, offset used from plot to plot
     bool normalize = false;    // normalize each plot in overlay, or final sum when not overlaying
     bool latch = false;
-    int plotChannel = 0;       // first channel to plot
-    int numPlotChannels = 0;   // number of channels to plot
+    int numPlotChannels = 0;   // number of channels to plot, from channel 0 (0 or 1 => just channel 0)
     int plotLength = 0;        // fixed default plot length for every plot
     int plotLengthNow = 0;     // overrides plotLength when nonzero (limited to circular buffer size)
+
+    /** Number of channels of `buffer` this plot covers: channels
+        [0, channelsPlotted) -- never more than the buffer holds, never fewer
+        than one. */
+    inline int channelsPlotted (const juce::AudioBuffer<float>& buffer) const
+    {
+        return juce::jlimit (1, std::max<int> (1, buffer.getNumChannels()),
+                             numPlotChannels);
+    }
 
     inline void averageAllChannelsToSamplesChannel0(const juce::AudioBuffer<float>& buffer)
     {
@@ -249,25 +252,30 @@ protected:
         const auto available  = samples.getNumSamples() - w;
 
         const auto numSamples = buffer.getNumSamples();
-        const auto numChannels = buffer.getNumChannels();
-        jassert(numChannels > 0);
-        const auto gain = 1.0f /  numChannels;
-        int topPlotChannel = std::min<int>(numChannels, plotChannel + numPlotChannels) - 1;
+        jassert(buffer.getNumChannels() > 0);
+        // Average over the channels actually summed (this used to divide by the
+        // buffer's TOTAL channel count, which scaled the plot down whenever the
+        // buffer carried more channels than the plot showed).
+        const int  topPlotChannel = channelsPlotted (buffer) - 1;
+        const auto gain = 1.0f / float (topPlotChannel + 1);
         if (available >= numSamples)
         {
           // samples.copyFrom (destChannel, destStartSample, ...)
-          samples.copyFrom (0, w, buffer.getReadPointer (plotChannel), numSamples, gain);
-          for (int c = plotChannel+1; c <= topPlotChannel; ++c)
+          samples.copyFrom (0, w, buffer.getReadPointer (0), numSamples, gain);
+          for (int c = 1; c <= topPlotChannel; ++c)
             samples.addFrom (0, w, buffer.getReadPointer (c), numSamples, gain);
         }
         else
         {
-          samples.copyFrom (0, w, buffer.getReadPointer (plotChannel), available, gain);
-          samples.copyFrom (0, 0, buffer.getReadPointer (plotChannel), numSamples - available, gain);
-          for (int c = plotChannel + 1; c <= topPlotChannel; ++c)
+          // Wrapped write: the SECOND half must continue reading where the first
+          // left off (+ available) -- it used to restart at the source's sample 0,
+          // repeating the head of the block instead of writing its tail.
+          samples.copyFrom (0, w, buffer.getReadPointer (0), available, gain);
+          samples.copyFrom (0, 0, buffer.getReadPointer (0) + available, numSamples - available, gain);
+          for (int c = 1; c <= topPlotChannel; ++c)
           {
             samples.addFrom (0, w, buffer.getReadPointer (c), available, gain);
-            samples.addFrom (0, 0, buffer.getReadPointer (c), numSamples - available, gain);
+            samples.addFrom (0, 0, buffer.getReadPointer (c) + available, numSamples - available, gain);
           }
         }
     }

@@ -771,7 +771,13 @@ public:
     static const juce::Identifier  pOverlay;
     static const juce::Identifier  pNormalize;
     static const juce::Identifier  pLatch;
-    static const juce::Identifier  pChannel;
+    // (`plot-channel` was removed 2026-07-24: the FIRST channel to plot is the
+    //  pusher's business -- pushSamples(buffer, firstChannel, numChannels, len)
+    //  already slices it -- and having a second, GUI-side selector for the same
+    //  thing was a standing source of confusion.  In jos-juce-plugins the
+    //  per-string selection it was reached for is now the APVTS parameter
+    //  `StringDisplay:stringToPlot`.  `plot-num-channels` stays: how many
+    //  channels to overlay is genuinely a look-and-feel choice.)
     static const juce::Identifier  pNumChannels;
     static const juce::Identifier  pPlotLength;
     static const juce::Identifier  pPlotOffset;
@@ -816,9 +822,6 @@ public:
         auto latch = bool (getProperty (pLatch));
         plot.setLatch (latch);
 
-        auto channel = int (getProperty (pChannel));
-        plot.setChannel (channel);
-
         auto numChannels = int (getProperty (pNumChannels));
         plot.setNumChannels (numChannels);
 
@@ -840,7 +843,6 @@ public:
         props.push_back ({ configNode, pOverlay,       SettableProperty::Toggle, {}, {} });
         props.push_back ({ configNode, pNormalize,     SettableProperty::Toggle, {}, {} });
         props.push_back ({ configNode, pLatch,         SettableProperty::Toggle, {}, {} });
-        props.push_back ({ configNode, pChannel,       SettableProperty::Number, {}, {} });
         props.push_back ({ configNode, pNumChannels,   SettableProperty::Number, {}, {} });
         props.push_back ({ configNode, pPlotLength,    SettableProperty::Number, {}, {} });
         props.push_back ({ configNode, pPlotOffset,    SettableProperty::Number, {}, {} });
@@ -864,7 +866,6 @@ const juce::Identifier  AudioPlotItem::pTriggeredNeg {"plot-triggered-neg"};
 const juce::Identifier  AudioPlotItem::pOverlay {"plot-overlay"};
 const juce::Identifier  AudioPlotItem::pNormalize {"plot-normalize"};
 const juce::Identifier  AudioPlotItem::pLatch {"plot-latch"};
-const juce::Identifier  AudioPlotItem::pChannel {"plot-channel"};
 const juce::Identifier  AudioPlotItem::pNumChannels {"plot-num-channels"};
 const juce::Identifier  AudioPlotItem::pPlotLength {"plot-length"};
 const juce::Identifier  AudioPlotItem::pPlotOffset {"plot-offset"};
