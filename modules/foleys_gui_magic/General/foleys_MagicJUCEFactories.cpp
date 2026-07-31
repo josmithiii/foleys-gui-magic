@@ -33,6 +33,9 @@
 
 #include <juce_audio_utils/juce_audio_utils.h>
 
+#include <iostream>   // std::cerr, for the unregistered-onClick report below
+#include <set>
+
 #include "foleys_MagicGUIBuilder.h"
 #include "foleys_StringDefinitions.h"
 #include "../Widgets/foleys_AutoOrientationSlider.h"
@@ -363,6 +366,37 @@ public:
 
         auto triggerID = getProperty (pOnClick).toString();
         triggerToCall = triggerID.isNotEmpty() ? getMagicState().getTrigger (triggerID) : nullptr;
+
+        // A NAMED TRIGGER THAT NOBODY REGISTERED IS A SILENTLY DEAD BUTTON.
+        // getTrigger() returns nullptr for a name it does not know, and
+        // assigning that to button.onClick below leaves a control that draws,
+        // highlights on hover and depresses on click while doing nothing at
+        // all -- with no complaint at build time or run time.  That is the one
+        // failure mode this widget has, and it is invisible, so say so.
+        //
+        // Silent while the PGM editor is open, where a not-yet-chosen onClick is
+        // an ordinary intermediate state.
+        if (triggerID.isNotEmpty() && triggerToCall == nullptr && ! magicBuilder.isEditModeOn())
+        {
+            // Once per button+trigger per PROCESS, not per instance.  update()
+            // re-runs on every style refresh, and the whole GUI tree is rebuilt
+            // several times during startup with fresh GuiItems each time -- a
+            // per-instance flag reported the same dead button four times before
+            // this was measured.
+            static std::set<juce::String> alreadyReported;
+
+            if (alreadyReported.insert (button.getButtonText() + "/" + triggerID).second)
+            {
+                std::cerr << "*** foleys_MagicJUCEFactories.cpp: TextButton \""
+                          << button.getButtonText() << "\" has onClick=\"" << triggerID
+                          << "\", which no addTrigger() ever registered -- this button "
+                             "will do NOTHING when pressed.  Register it with "
+                             "magicState.addTrigger (\"" << triggerID
+                          << "\", ...) or remove the button from the layout.\n";
+                // Debug stops here; release keeps the host alive and stays loud.
+                jassertfalse;
+            }
+        }
 
         if (propertyName.isNotEmpty())
         {
