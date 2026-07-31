@@ -71,6 +71,12 @@ namespace IDs
     static juce::Identifier tooltipText       { "tooltip-text" };
     static juce::Identifier tooltipBackground { "tooltip-background" };
     static juce::Identifier tooltipOutline    { "tooltip-outline" };
+    // BEGIN JOS: documentation id for a control that has NO parameter -- a
+    // TextButton wired to an onClick trigger, say.  The host's tooltip provider
+    // is keyed by parameter id, so such controls could never be documented; this
+    // gives them a key of their own (GuiItem::configureComponent).
+    static juce::Identifier helpID       { "help-id" };
+    // END JOS.
 
     static juce::Identifier accessibility            { "accessibility" };
     static juce::Identifier accessibilityTitle       { "title" };

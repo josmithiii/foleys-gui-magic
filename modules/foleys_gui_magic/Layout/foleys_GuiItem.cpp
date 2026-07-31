@@ -180,8 +180,14 @@ void GuiItem::configureComponent()
         else if (const auto& provider = magicBuilder.getTooltipProvider())
         {
             // JOS: no explicit tooltip attribute in the layout -- fall back to the
-            // app-installed provider, keyed by the controlled parameter's ID
+            // app-installed provider, keyed by the controlled parameter's ID, or
+            // by an explicit help-id for a control that has no parameter at all
+            // (a TextButton wired to an onClick trigger).  Without the second key
+            // every action button in the GUI was undocumentable.
             auto paramID = getControlledParameterID ({});
+            if (paramID.isEmpty())
+                paramID = magicBuilder.getStyleProperty (IDs::helpID, configNode).toString();
+
             if (paramID.isNotEmpty())
             {
                 auto provided = provider (paramID);
