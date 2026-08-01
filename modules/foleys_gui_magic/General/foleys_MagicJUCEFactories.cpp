@@ -376,7 +376,19 @@ public:
         //
         // Silent while the PGM editor is open, where a not-yet-chosen onClick is
         // an ordinary intermediate state.
-        if (triggerID.isNotEmpty() && triggerToCall == nullptr && ! magicBuilder.isEditModeOn())
+        //
+        // isEditModeOn() only EXISTS under FOLEYS_SHOW_GUI_EDITOR_PALLETTE (it is
+        // declared inside that #if in foleys_MagicGUIBuilder.h), so calling it
+        // unguarded broke every editor-less build -- headless JOSGLib among them.
+        // Without the editor there is no intermediate state to be quiet about, so
+        // the report is always due.
+#if FOLEYS_SHOW_GUI_EDITOR_PALLETTE
+        const bool editorIsOpen = magicBuilder.isEditModeOn();
+#else
+        const bool editorIsOpen = false;
+#endif
+
+        if (triggerID.isNotEmpty() && triggerToCall == nullptr && ! editorIsOpen)
         {
             // Once per button+trigger per PROCESS, not per instance.  update()
             // re-runs on every style refresh, and the whole GUI tree is rebuilt
