@@ -97,6 +97,7 @@ public:
     static const juce::Identifier  pDefaultValue;
     static const juce::Identifier  pMinValue;
     static const juce::Identifier  pMaxValue;
+    static const juce::Identifier  pMidValue;
     static const juce::Identifier  pInterval;
     static const juce::Identifier  pSuffix;
 
@@ -157,6 +158,17 @@ public:
         if (maxValue > minValue)
             slider.setRange (minValue, maxValue, interval);
 
+        // BEGIN JOS CHANGE
+        // mid-value="x": the value at the slider's physical midpoint, for
+        // property-bound sliders (value=) that need a non-linear feel.  A
+        // parameter attachment gets its skew from the NormalisableRange; a
+        // property binding has no range object, so this is the only way to
+        // express e.g. a log zoom.  mid-value = sqrt(min*max) gives log feel.
+        double midValue = getProperty (pMidValue);
+        if (midValue > minValue && midValue < maxValue)
+            slider.setSkewFactorFromMidPoint (midValue);
+        // END JOS CHANGE
+
         auto suffix = getProperty (pSuffix).toString();
         slider.setTextValueSuffix (suffix);
 
@@ -200,6 +212,9 @@ public:
         // END JOS CHANGE
         props.push_back ({ configNode, pMinValue, SettableProperty::Number, 0.0f, {} });
         props.push_back ({ configNode, pMaxValue, SettableProperty::Number, 2.0f, {} });
+        // BEGIN JOS CHANGE
+        props.push_back ({ configNode, pMidValue, SettableProperty::Number, 0.0f, {} });
+        // END JOS CHANGE
         props.push_back ({ configNode, pInterval, SettableProperty::Number, 0.0f, {} });
         props.push_back ({ configNode, pSuffix, SettableProperty::Text, {}, {} });
         props.push_back ({ configNode, pFilmStrip, SettableProperty::Choice, 0.0f, magicBuilder.createChoicesMenuLambda(Resources::getResourceFileNames()) });
@@ -231,6 +246,9 @@ const juce::StringArray SliderItem::pTextBoxPositions { "no-textbox", "textbox-a
 const juce::Identifier  SliderItem::pValue      { "value" };
 const juce::Identifier  SliderItem::pMinValue   { "min-value" };
 const juce::Identifier  SliderItem::pMaxValue   { "max-value" };
+// BEGIN JOS CHANGE
+const juce::Identifier  SliderItem::pMidValue   { "mid-value" };
+// END JOS CHANGE
 // BEGIN JOS CHANGE
 const juce::Identifier  SliderItem::pDefaultValue { "default" };
 // END JOS CHANGE
