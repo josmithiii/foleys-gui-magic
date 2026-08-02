@@ -140,6 +140,20 @@ juce::Value MagicGUIState::getPropertyAsValue (const juce::String& pathToPropert
     return tree.getPropertyAsValue (propName, nullptr);
 }
 
+void MagicGUIState::setChoicesProvider (const juce::String& pathToProperty, std::function<juce::StringArray()> provider)
+{
+    choicesProviders [pathToProperty] = std::move (provider);
+}
+
+juce::StringArray MagicGUIState::getChoicesFor (const juce::String& pathToProperty) const
+{
+    auto it = choicesProviders.find (pathToProperty);
+    if (it == choicesProviders.end() || ! it->second)
+        return {};
+
+    return it->second();
+}
+
 juce::StringArray MagicGUIState::getParameterNames() const
 {
     return {};

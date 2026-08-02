@@ -247,6 +247,9 @@ class ComboBoxItem : public GuiItem
 public:
     FOLEYS_DECLARE_GUI_FACTORY (ComboBoxItem)
 
+    static const juce::Identifier pProperty;
+    static const juce::Identifier pChoices;
+
     ComboBoxItem (MagicGUIBuilder& builder, const juce::ValueTree& node) : GuiItem (builder, node)
     {
         setColourTranslation (
@@ -266,11 +269,37 @@ public:
         addAndMakeVisible (comboBox);
     }
 
+    ~ComboBoxItem() override
+    {
+        property.removeListener (&propertyListener);
+    }
+
+    // JOS: dual parameter/property binding, exactly parallel to
+    // ToggleButtonItem.  parameter="..." is patch content (automatable, saved
+    // in presets) and is unchanged; property="..." is view state, stored in
+    // MagicGUIState's property tree as the selected item's TEXT (choice lists
+    // persist by NAME, not index -- a list may grow or reorder between
+    // sessions).  The property path never reaches the APVTS, so a
+    // property-bound choice stays out of presets and the automation list.
     void update() override
     {
         attachment.reset();
+        property.removeListener (&propertyListener);
+        comboBox.onChange = nullptr;
 
-        auto paramID = configNode.getProperty (IDs::parameter, juce::String()).toString();
+        const auto paramID    = configNode.getProperty (IDs::parameter, juce::String()).toString();
+        const auto propertyID = getProperty (pProperty).toString();
+
+        if (paramID.isNotEmpty() && propertyID.isNotEmpty())
+        {
+            // Both bindings on one ComboBox is a layout error: they would
+            // fight over the selection.  Say so and let the parameter win.
+            std::cerr << "*** foleys_MagicJUCEFactories.cpp: ComboBox has BOTH parameter=\""
+                      << paramID << "\" and property=\"" << propertyID
+                      << "\" -- using the parameter and IGNORING the property.\n";
+            jassertfalse;
+        }
+
         if (paramID.isNotEmpty())
         {
             if (auto* parameter = getMagicState().getParameter (paramID))
@@ -279,13 +308,75 @@ public:
                 comboBox.addItemList (parameter->getAllValueStrings(), 1);
                 attachment = getMagicState().createAttachment (paramID, comboBox);
             }
+            return;
         }
+
+        if (propertyID.isEmpty())
+            return;
+
+        // Choice list: the choices="A,B,C" layout attribute when present,
+        // otherwise a StringArray provider registered on MagicGUIState under
+        // the property path (for lists only code knows, e.g. a per-instrument
+        // string list).
+        juce::StringArray items;
+        const auto choicesAttr = getProperty (pChoices).toString();
+        if (choicesAttr.isNotEmpty())
+            items = juce::StringArray::fromTokens (choicesAttr, ",", "");
+        else
+            items = getMagicState().getChoicesFor (propertyID);
+        items.trim();
+        items.removeEmptyStrings();
+
+        if (items.isEmpty())
+        {
+            // An empty menu is a dead control with no complaint anywhere --
+            // the same invisible failure mode as TextButton's unregistered
+            // onClick.  Say so.
+            std::cerr << "*** foleys_MagicJUCEFactories.cpp: ComboBox property=\""
+                      << propertyID << "\" has no choices=\"...\" attribute and no "
+                         "setChoicesProvider() registration -- its menu will be EMPTY.\n";
+        }
+
+        comboBox.clear();
+        comboBox.addItemList (items, 1);
+
+        property.referTo (getMagicState().getPropertyAsValue (propertyID));
+        property.addListener (&propertyListener);
+        propertyChanged (property); // seed the selection from the current value
+
+        comboBox.onChange = [this]
+        {
+            if (comboBox.getSelectedId() > 0)
+                property.setValue (comboBox.getText());
+        };
+    }
+
+    // The property (text) changed -- from this box, a relaunch restore, or
+    // another control bound to the same path.  Select the item of that name;
+    // an unknown or unset name shows NO selection rather than silently
+    // substituting another item.  (A nested listener, NOT an override of
+    // GuiItem::valueChanged -- the base class is already a Value::Listener
+    // for its visibility binding.)
+    void propertyChanged (juce::Value& source)
+    {
+        const auto text = source.getValue().toString();
+        for (int i = 0; i < comboBox.getNumItems(); ++i)
+        {
+            if (comboBox.getItemText (i) == text)
+            {
+                comboBox.setSelectedItemIndex (i, juce::dontSendNotification);
+                return;
+            }
+        }
+        comboBox.setSelectedId (0, juce::dontSendNotification);
     }
 
     std::vector<SettableProperty> getSettableProperties() const override
     {
         std::vector<SettableProperty> props;
         props.push_back ({ configNode, IDs::parameter, SettableProperty::Choice, {}, magicBuilder.createParameterMenuLambda() });
+        props.push_back ({ configNode, pProperty, SettableProperty::Choice, {}, magicBuilder.createPropertiesMenuLambda() });
+        props.push_back ({ configNode, pChoices, SettableProperty::Text, {}, {} });
         return props;
     }
 
@@ -302,11 +393,22 @@ public:
     }
 
 private:
+    struct PropertyListener : juce::Value::Listener
+    {
+        explicit PropertyListener (ComboBoxItem& o) : owner (o) {}
+        void valueChanged (juce::Value& source) override { owner.propertyChanged (source); }
+        ComboBoxItem& owner;
+    };
+
     HelpableComboBox comboBox;
     std::unique_ptr<juce::ComboBoxParameterAttachment> attachment;
+    juce::Value property;
+    PropertyListener propertyListener { *this };
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ComboBoxItem)
 };
+const juce::Identifier ComboBoxItem::pProperty { "property" };
+const juce::Identifier ComboBoxItem::pChoices  { "choices" };
 
 //==============================================================================
 

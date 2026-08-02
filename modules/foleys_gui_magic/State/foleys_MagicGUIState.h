@@ -136,6 +136,19 @@ public:
     juce::Value getPropertyAsValue (const juce::String& pathToProperty);
 
     /**
+     JOS: register the choice list for a property-bound ComboBoxItem whose
+     items are decided in code (e.g. a per-instrument string list).  The key
+     is the property path used in the layout's property="..." attribute; a
+     <ComboBox property="..."> without a choices="..." attribute asks here.
+     */
+    void setChoicesProvider (const juce::String& pathToProperty, std::function<juce::StringArray()> provider);
+
+    /**
+     JOS: the choice list registered for a property path (empty if none).
+     */
+    juce::StringArray getChoicesFor (const juce::String& pathToProperty) const;
+
+    /**
      Populates a menu with properties found in the persistent ValueTree
      */
     void populatePropertiesMenu (juce::ComboBox& comboBox) const;
@@ -242,6 +255,9 @@ private:
     juce::MidiKeyboardState keyboardState;
 
     std::map<juce::Identifier, std::function<void()>>       triggers;
+
+    // JOS: choice lists for property-bound ComboBoxItems, keyed by property path.
+    std::map<juce::String, std::function<juce::StringArray()>> choicesProviders;
 
     std::map<juce::Identifier, std::unique_ptr<ObjectBase>> advertisedObjects;
 
