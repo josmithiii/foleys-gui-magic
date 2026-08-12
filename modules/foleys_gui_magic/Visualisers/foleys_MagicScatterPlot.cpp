@@ -137,32 +137,38 @@ void MagicScatterPlot::clearClipMarkers()
     numClipMarkers.store (0, std::memory_order_release);
     for (auto& cells : clipCells)
         cells.store (0);
+    outputClipped_.store (false, std::memory_order_relaxed);
 }
 
 void MagicScatterPlot::drawDecorations (juce::Graphics& g, juce::Rectangle<float> bounds,
-                                        MagicAudioPlotComponent& component)
+                                        MagicAudioPlotComponent&)
 {
     // The unit square: |sample| = 1, which createPlotPaths' jmap puts exactly
-    // on the component bounds.  Reference geometry, so it takes the plot
-    // colour, dimmed.
-    g.setColour (component.findColour (MagicAudioPlotComponent::plotColourId).withAlpha (0.35f));
-    g.drawRect (bounds, 1.0f);
+    // onto the component bounds -- so it is drawn INSET by the marker radius,
+    // or its stroke would vanish into the pane border (which is exactly what
+    // happened on first delivery: JOS, 2026-08-12, "it looks unchanged").
+    // Red in both states because this square is about clipping and nothing
+    // else: dim red while clean, bright and thick once the OUTPUT has gone
+    // over full scale (notifyOutputClipped -- the downstream fact the plotted
+    // string state cannot show).
+    const float r = 3.0f;                    // marker radius = square inset
+    const auto square = bounds.reduced (r);
+    const bool outClipped = outputClipped_.load (std::memory_order_relaxed);
+    g.setColour (juce::Colours::red.withAlpha (outClipped ? 1.0f : 0.4f));
+    g.drawRect (square, outClipped ? 2.5f : 1.0f);
 
     const int n = numClipMarkers.load (std::memory_order_acquire);
     if (n == 0)
         return;
 
     // Clipping is red everywhere in audio; these must not be mistakable for
-    // the trace.  Inset the centres by the marker radius so a marker on the
-    // square survives the component's clip region.
-    const float r = 3.0f;
-    const auto inner = bounds.reduced (r);
+    // the trace.  Centres ON the square, so the dots just touch the bounds.
     g.setColour (juce::Colours::red);
     for (int i = 0; i < n; ++i)
     {
         const auto m = clipMarkers[size_t (i)];
-        const float px = juce::jmap (m.x, -1.0f, 1.0f, inner.getX(), inner.getRight());
-        const float py = juce::jmap (m.y, -1.0f, 1.0f, inner.getBottom(), inner.getY());
+        const float px = juce::jmap (m.x, -1.0f, 1.0f, square.getX(), square.getRight());
+        const float py = juce::jmap (m.y, -1.0f, 1.0f, square.getBottom(), square.getY());
         g.fillEllipse (px - r, py - r, 2.0f * r, 2.0f * r);
     }
 }

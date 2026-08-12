@@ -94,9 +94,17 @@ public:
      */
     void drawDecorations (juce::Graphics& g, juce::Rectangle<float> bounds, MagicAudioPlotComponent& component) override;
 
-    /** Forget all clip markers.  Message thread; benign against a concurrent
-        audio-thread detection (worst case one marker survives the clear). */
+    /** Forget all clip markers AND the output-clipped state.  Message thread;
+        benign against a concurrent audio-thread detection (worst case one
+        marker survives the clear). */
     void clearClipMarkers() override;
+
+    /** The final output went over full scale: the unit square turns bright
+        red until clearClipMarkers().  Audio thread. */
+    void notifyOutputClipped() override { outputClipped_.store (true, std::memory_order_relaxed); }
+
+    /** Whether notifyOutputClipped() fired since the last clear. */
+    bool wasOutputClipped() const { return outputClipped_.load (std::memory_order_relaxed); }
 
     /** How many clip markers have been collected since the last clear. */
     int getNumClipMarkers() const { return numClipMarkers.load (std::memory_order_acquire); }
@@ -123,6 +131,7 @@ private:
     juce::Point<float> clipMarkers[kMaxClipMarkers];  // normalised [-1,1], on the square
     std::atomic<int>          numClipMarkers { 0 };   // single producer: the audio thread
     std::atomic<juce::uint32> clipCells[4] { {0}, {0}, {0}, {0} };  // right/left/top/bottom dedupe masks
+    std::atomic<bool>         outputClipped_ { false };  // the DOWNSTREAM fact (notifyOutputClipped)
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MagicScatterPlot)
 };

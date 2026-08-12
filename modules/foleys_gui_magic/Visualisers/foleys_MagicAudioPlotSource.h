@@ -216,6 +216,15 @@ public:
     virtual void clearClipMarkers() {}
 
     /**
+     Tell the source the FINAL OUTPUT went over full scale this block -- a
+     different fact from the plotted data escaping the unit square (the plot
+     may show one string's state while the clip happens downstream at the
+     summed, gained output).  MagicScatterPlot turns its unit square bright
+     red until clearClipMarkers().  Audio thread; default: ignored.
+     */
+    virtual void notifyOutputClipped() {}
+
+    /**
      You can add an active state to your plot to allow to paint in different colours
      */
     virtual bool isActive() const { return active; }
