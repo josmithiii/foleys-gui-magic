@@ -161,6 +161,12 @@ void MagicAudioPlotComponent::paint (juce::Graphics& g)
     {
         drawPlot (g);
     }
+
+    // AFTER the plot (and outside the glow buffer, so they stay crisp and do
+    // not decay): persistent overlays like the scatter plot's unit square and
+    // clip markers.  Every frame -- createPlotPaths above only runs when new
+    // data arrived, and a persistent marker must outlive the data that set it.
+    plotSource->drawDecorations (g, getLocalBounds().toFloat(), *this);
 }
 
 void MagicAudioPlotComponent::drawPlot (juce::Graphics& g)

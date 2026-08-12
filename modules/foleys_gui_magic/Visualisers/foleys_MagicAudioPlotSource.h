@@ -201,6 +201,21 @@ public:
     virtual void createPlotPaths (juce::Path& path, juce::Path& filledPath, juce::Rectangle<float> bounds, MagicAudioPlotComponent& component) = 0;
 
     /**
+     Drawn by MagicAudioPlotComponent::paint AFTER the plot paths, every frame
+     (createPlotPaths only runs when new data arrived, so anything persistent
+     -- reference geometry, clip markers -- must be drawn here, not baked into
+     the paths).  Default: no decorations.
+     */
+    virtual void drawDecorations (juce::Graphics&, juce::Rectangle<float>, MagicAudioPlotComponent&) {}
+
+    /**
+     Forget any persistent clip markers a source may have collected (see
+     MagicScatterPlot).  Default: nothing to forget.  Message thread; safe to
+     call while audio is running.
+     */
+    virtual void clearClipMarkers() {}
+
+    /**
      You can add an active state to your plot to allow to paint in different colours
      */
     virtual bool isActive() const { return active; }

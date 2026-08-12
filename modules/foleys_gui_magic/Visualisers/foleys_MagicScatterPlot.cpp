@@ -86,7 +86,85 @@ void MagicScatterPlot::pushSamples (const juce::AudioBuffer<float>& bufferX, int
     else
         writePosition.store (numSamples - available);
 
+    detectClipping (bufferX.getReadPointer (channelX),
+                    bufferY.getReadPointer (channelY), numSamples);
+
     resetLastDataFlag();
+}
+
+// ====================================================================================================
+
+void MagicScatterPlot::detectClipping (const float* dataX, const float* dataY, int numSamples)
+{
+    // Audio thread.  Sides: 0 = right (x > 1), 1 = left (x < -1),
+    // 2 = top (y > 1), 3 = bottom (y < -1).  `along` is the free coordinate,
+    // clamped onto the square, so the marker sits where the trace escaped.
+    // NaN compares false everywhere and is skipped.
+    auto mark = [this] (int side, float along)
+    {
+        along = juce::jlimit (-1.0f, 1.0f, along);
+        const int cell = juce::jlimit (0, kCellsPerSide - 1,
+                                       int ((along + 1.0f) * 0.5f * float (kCellsPerSide)));
+        const juce::uint32 bit = juce::uint32 (1) << cell;
+        if ((clipCells[side].fetch_or (bit) & bit) != 0)
+            return;                                   // this cell already has its marker
+        const int n = numClipMarkers.load (std::memory_order_relaxed);
+        if (n >= kMaxClipMarkers)
+            return;                                   // full (cannot happen before every cell is lit)
+        switch (side)
+        {
+            case 0: clipMarkers[size_t (n)] = {  1.0f, along }; break;
+            case 1: clipMarkers[size_t (n)] = { -1.0f, along }; break;
+            case 2: clipMarkers[size_t (n)] = { along,  1.0f }; break;
+            default: clipMarkers[size_t (n)] = { along, -1.0f }; break;
+        }
+        numClipMarkers.store (n + 1, std::memory_order_release);
+    };
+
+    for (int i = 0; i < numSamples; ++i)
+    {
+        const float x = dataX[i];
+        const float y = dataY[i];
+        if (x >  1.0f) mark (0, y);
+        if (x < -1.0f) mark (1, y);
+        if (y >  1.0f) mark (2, x);
+        if (y < -1.0f) mark (3, x);
+    }
+}
+
+void MagicScatterPlot::clearClipMarkers()
+{
+    numClipMarkers.store (0, std::memory_order_release);
+    for (auto& cells : clipCells)
+        cells.store (0);
+}
+
+void MagicScatterPlot::drawDecorations (juce::Graphics& g, juce::Rectangle<float> bounds,
+                                        MagicAudioPlotComponent& component)
+{
+    // The unit square: |sample| = 1, which createPlotPaths' jmap puts exactly
+    // on the component bounds.  Reference geometry, so it takes the plot
+    // colour, dimmed.
+    g.setColour (component.findColour (MagicAudioPlotComponent::plotColourId).withAlpha (0.35f));
+    g.drawRect (bounds, 1.0f);
+
+    const int n = numClipMarkers.load (std::memory_order_acquire);
+    if (n == 0)
+        return;
+
+    // Clipping is red everywhere in audio; these must not be mistakable for
+    // the trace.  Inset the centres by the marker radius so a marker on the
+    // square survives the component's clip region.
+    const float r = 3.0f;
+    const auto inner = bounds.reduced (r);
+    g.setColour (juce::Colours::red);
+    for (int i = 0; i < n; ++i)
+    {
+        const auto m = clipMarkers[size_t (i)];
+        const float px = juce::jmap (m.x, -1.0f, 1.0f, inner.getX(), inner.getRight());
+        const float py = juce::jmap (m.y, -1.0f, 1.0f, inner.getBottom(), inner.getY());
+        g.fillEllipse (px - r, py - r, 2.0f * r, 2.0f * r);
+    }
 }
 
 // ====================================================================================================

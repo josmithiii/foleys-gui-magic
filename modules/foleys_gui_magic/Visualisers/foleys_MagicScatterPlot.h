@@ -83,12 +83,46 @@ public:
       */
     virtual void createPlotPaths (juce::Path& path, juce::Path& filledPath, juce::Rectangle<float> bounds, MagicAudioPlotComponent& component) override;
 
+    /**
+     The unit square (|X| = |Y| = 1, which the sample mapping puts exactly on
+     the component bounds) plus a persistent marker on that square wherever a
+     pushed sample has ever exceeded it -- an over-unity excursion is
+     otherwise INVISIBLE here (mapped outside the bounds and clipped away),
+     and a one-block transient is gone before any eye reaches it.  Markers
+     accumulate until clearClipMarkers() (e.g. when the plotted string
+     changes).
+     */
+    void drawDecorations (juce::Graphics& g, juce::Rectangle<float> bounds, MagicAudioPlotComponent& component) override;
+
+    /** Forget all clip markers.  Message thread; benign against a concurrent
+        audio-thread detection (worst case one marker survives the clear). */
+    void clearClipMarkers() override;
+
+    /** How many clip markers have been collected since the last clear. */
+    int getNumClipMarkers() const { return numClipMarkers.load (std::memory_order_acquire); }
+
+    /** Marker i in normalised coordinates: always ON the unit square (one
+        coordinate is exactly +-1, the other is the escape position). */
+    juce::Point<float> getClipMarker (int i) const { return clipMarkers[size_t (i)]; }
+
     virtual void prepareToPlay (double sampleRate, int samplesPerBlockExpected) override;
 
 private:
 
+    /** Audio thread: mark any |x| > 1 or |y| > 1 excursion in this block on
+        the unit square.  Fixed storage, no locks, no allocation: the square's
+        perimeter is quantised into cells (4 sides x kCellsPerSide bitmask)
+        so a sustained clip episode costs one marker, not one per sample. */
+    void detectClipping (const float* dataX, const float* dataY, int numSamples);
+
     juce::AudioBuffer<float> samplesX;
     juce::AudioBuffer<float> samplesY;
+
+    static constexpr int kCellsPerSide  = 32;
+    static constexpr int kMaxClipMarkers = 4 * kCellsPerSide;
+    juce::Point<float> clipMarkers[kMaxClipMarkers];  // normalised [-1,1], on the square
+    std::atomic<int>          numClipMarkers { 0 };   // single producer: the audio thread
+    std::atomic<juce::uint32> clipCells[4] { {0}, {0}, {0}, {0} };  // right/left/top/bottom dedupe masks
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MagicScatterPlot)
 };
