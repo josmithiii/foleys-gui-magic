@@ -1433,17 +1433,49 @@ public:
         addAndMakeVisible (meter);
     }
 
+    // JOS FORK ADDITION (2026-08-13): the meter's READING, stated by the layout.
+    // See foleys_MagicLevelMeter.h for why none of this can be derived from the
+    // data the source carries.
+    static const juce::Identifier  pMeterScale;
+    static const juce::StringArray pMeterScales;
+    static const juce::Identifier  pMeterRangeDb;
+    static const juce::Identifier  pMeterOrientation;
+    static const juce::StringArray pMeterOrientations;
+    static const juce::Identifier  pMeterTicks;
+
     void update() override
     {
         auto sourceID = configNode.getProperty (IDs::source, juce::String()).toString();
         if (sourceID.isNotEmpty())
             meter.setLevelSource (getMagicState().getObjectWithType<MagicLevelSource>(sourceID));
+
+        // Every one of these falls back to the widget's own default when the
+        // layout is silent, so an existing <Meter/> keeps behaving exactly as it
+        // did before these properties existed.
+        const auto scale = getProperty (pMeterScale).toString();
+        meter.setScale (scale == pMeterScales [1] ? MagicLevelMeter::Scale::gainReduction
+                                                  : MagicLevelMeter::Scale::dBFS);
+
+        const auto rangeDb = getProperty (pMeterRangeDb);
+        meter.setRangeDb (rangeDb.isVoid() ? 0.0f : float (rangeDb));
+
+        const auto orientation = getProperty (pMeterOrientation).toString();
+        meter.setOrientation (orientation == pMeterOrientations [1] ? MagicLevelMeter::Orientation::vertical
+                            : orientation == pMeterOrientations [2] ? MagicLevelMeter::Orientation::horizontal
+                                                                    : MagicLevelMeter::Orientation::automatic);
+
+        const auto ticks = getProperty (pMeterTicks);
+        meter.setTickmarksEnabled (ticks.isVoid() || bool (ticks));
     }
 
     std::vector<SettableProperty> getSettableProperties() const override
     {
         std::vector<SettableProperty> props;
         props.push_back ({ configNode, IDs::source, SettableProperty::Choice, {}, magicBuilder.createObjectsMenuLambda<MagicLevelSource>() });
+        props.push_back ({ configNode, pMeterScale, SettableProperty::Choice, pMeterScales [0], magicBuilder.createChoicesMenuLambda (pMeterScales) });
+        props.push_back ({ configNode, pMeterRangeDb, SettableProperty::Number, {}, {} });
+        props.push_back ({ configNode, pMeterOrientation, SettableProperty::Choice, pMeterOrientations [0], magicBuilder.createChoicesMenuLambda (pMeterOrientations) });
+        props.push_back ({ configNode, pMeterTicks, SettableProperty::Toggle, {}, {} });
         return props;
     }
 
@@ -1457,6 +1489,12 @@ private:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (LevelMeterItem)
 };
+const juce::Identifier  LevelMeterItem::pMeterScale        { "meter-scale" };
+const juce::StringArray LevelMeterItem::pMeterScales       { "dbfs", "gain-reduction" };
+const juce::Identifier  LevelMeterItem::pMeterRangeDb      { "meter-range-db" };
+const juce::Identifier  LevelMeterItem::pMeterOrientation  { "meter-orientation" };
+const juce::StringArray LevelMeterItem::pMeterOrientations { "auto", "vertical", "horizontal" };
+const juce::Identifier  LevelMeterItem::pMeterTicks        { "meter-ticks" };
 
 //==============================================================================
 

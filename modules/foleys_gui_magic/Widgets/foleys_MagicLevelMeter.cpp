@@ -34,6 +34,8 @@
 #include "foleys_MagicLevelMeter.h"
 #include "../Visualisers/foleys_MagicLevelSource.h"
 
+#include <algorithm>
+
 namespace foleys
 {
 
@@ -46,6 +48,83 @@ MagicLevelMeter::MagicLevelMeter()
     setColour (tickmarkColourId, juce::Colours::silver);
 
     startTimerHz (30);
+}
+
+//==============================================================================
+// JOS FORK ADDITION (2026-08-13).  See the header for what each of these is
+// for; all of them are set from a layout by LevelMeterItem.
+
+void MagicLevelMeter::setScale (Scale newScale)
+{
+    if (scale == newScale)
+        return;
+
+    scale = newScale;
+
+    // A gain reduction meter cannot be "over", so a latch inherited from a
+    // previous configuration would be stuck on with nothing able to set it.
+    if (scale != Scale::dBFS)
+        clearClipped();
+
+    repaint();
+}
+
+void MagicLevelMeter::setRangeDb (float newRangeDb)
+{
+    explicitRangeDb = newRangeDb > 0.0f ? newRangeDb : 0.0f;
+    repaint();
+}
+
+float MagicLevelMeter::getRangeDb() const noexcept
+{
+    if (explicitRangeDb > 0.0f)
+        return explicitRangeDb;
+
+    return scale == Scale::gainReduction ? gainReductionRangeDb : defaultRangeDb;
+}
+
+void MagicLevelMeter::setOrientation (Orientation newOrientation)
+{
+    if (orientation == newOrientation)
+        return;
+
+    orientation = newOrientation;
+    repaint();
+}
+
+void MagicLevelMeter::setTickmarksEnabled (bool shouldBeEnabled)
+{
+    if (tickmarks == shouldBeEnabled)
+        return;
+
+    tickmarks = shouldBeEnabled;
+    repaint();
+}
+
+bool MagicLevelMeter::isClipped (int channel) const noexcept
+{
+    return juce::isPositiveAndBelow (channel, int (clipped.size()))
+             && clipped [size_t (channel)] != 0;
+}
+
+bool MagicLevelMeter::isAnyChannelClipped() const noexcept
+{
+    for (auto c : clipped)
+        if (c != 0)
+            return true;
+
+    return false;
+}
+
+void MagicLevelMeter::clearClipped()
+{
+    std::fill (clipped.begin(), clipped.end(), char (0));
+    repaint();
+}
+
+void MagicLevelMeter::mouseDown (const juce::MouseEvent&)
+{
+    clearClipped();
 }
 
 void MagicLevelMeter::paint (juce::Graphics& g)
@@ -74,7 +153,13 @@ void MagicLevelMeter::paint (juce::Graphics& g)
     const auto barFillColour = findColour (barFillColourId);
     const auto outlineColour = findColour (outlineColourId);
 
-    const auto infinity = -100.0f;
+    // JOS FORK (2026-08-13): was a hard-wired -100.  A widget that carries a
+    // configured range and then draws a different one is worse than one that
+    // never had the setting, so the fallback drawing honours it too -- which
+    // also gives the plugins that do NOT use the JOS LookAndFeel (Glow,
+    // Parallax, Vowelator) the standard 60 dB span instead of a scale that put
+    // every level anyone listens to in the top third of the bar.
+    const auto infinity = -getRangeDb();
     for (int i=0; i < numChannels; ++i)
     {
         auto bar = bounds.removeFromLeft (width).reduced (1);
@@ -99,6 +184,26 @@ void MagicLevelMeter::setLevelSource (MagicLevelSource* newSource)
 
 void MagicLevelMeter::timerCallback()
 {
+    // JOS FORK (2026-08-13): the clip latch is sampled HERE and not in paint(),
+    // because paint() is not guaranteed to run (an obscured or hidden meter is
+    // not painted) and a clip that happened while the window was behind another
+    // one is exactly the clip you want to find afterwards.
+    //
+    // 30 Hz against MagicLevelSource's max, which is held for the source's
+    // maxKeepMS (500 ms in this fleet): the hold is more than an order of
+    // magnitude longer than the poll, so nothing gets past this.
+    if (scale == Scale::dBFS && source != nullptr)
+    {
+        const auto numChannels = size_t (source->getNumChannels());
+
+        if (clipped.size() != numChannels)
+            clipped.assign (numChannels, char (0));
+
+        for (size_t c = 0; c < numChannels; ++c)
+            if (source->getMaxValue (int (c)) >= 1.0f)
+                clipped [c] = 1;
+    }
+
     repaint();
 }
 
