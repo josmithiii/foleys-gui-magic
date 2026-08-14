@@ -101,12 +101,22 @@ void MagicOscilloscopeAudio::pushSamples (const juce::AudioBuffer<float>& buffer
   // different first channel is the pusher's job (see the pushSamples overload
   // taking firstChannelToPlot, which slices the buffer for us).
   const int lastChannelToPlot = channelsPlotted (buffer) - 1;
-  if (overlayPlots) {
-    numChannelsOut = lastChannelToPlot + 1;
-  } else {
-    averageAllChannelsToSamplesChannel0(buffer);
-    numChannelsOut = 1;
-  }
+  // overlayPlots == false means "plot ONE trace: the average of the plotted
+  // channels".  It used to be implemented by a separate pre-pass
+  // (averageAllChannelsToSamplesChannel0(), now deleted from
+  // foleys_MagicAudioPlotSource.h) that ran HERE, before the latch logic had
+  // computed startSample/numSamplesTrimmed -- and the ring copy below then
+  // unconditionally did `samples.copyFrom (0, w, buffer, 0, ...)`, overwriting
+  // every averaged sample with the RAW channel 0.  So the averaging was dead
+  // code: non-overlay plots have been showing channel 0 all along.  It survived
+  // for years because it is invisible: channel 0 of a plausible signal looks
+  // exactly like a plausible average, and as of 2026-08-13 every non-overlay
+  // AudioPlot in the JOS fleet leaves `plot-num-channels` unset (== 1 channel
+  // to average), which is the one case where the raw copy and the average agree
+  // exactly.  The averaging is now done INSIDE the ring copy (writeChannel0),
+  // so there is one code path, and the latch trimming and the wraparound apply
+  // to the average exactly as they do to the raw copy.
+  numChannelsOut = (overlayPlots ? lastChannelToPlot + 1 : 1);
 
   int startSample = 0;
   int numSamplesTrimmed = numSamples;
@@ -143,6 +153,30 @@ void MagicOscilloscopeAudio::pushSamples (const juce::AudioBuffer<float>& buffer
   // Copy buffer samples to circular plot buffer:
   int w = writePosition.load(); // index of next write to samples ringbuffer
 
+  // The ONE place that decides what channel 0 of the ring receives: the raw
+  // first plotted channel when overlaying, the average of all plotted channels
+  // when not.  Both the unwrapped and the wrapped copy below call this, so the
+  // two can no longer disagree about which of the two it is.  Real-time safe:
+  // reference-capturing lambda (no std::function, no allocation), and the
+  // average is accumulated straight into the destination -- no scratch buffer,
+  // hence nothing to size ahead of time.  That matters here: not every user of
+  // this class goes through prepareToPlay() -- jos::StringShapeScope sizes
+  // `samples` itself and pushes whole strings, far longer than any audio block
+  // -- so a pre-sized scratch would have been the wrong size exactly there.
+  auto writeChannel0 = [&] (int destStart, int srcStart, int count)
+  {
+    if (count <= 0)
+      return;
+    if (overlayPlots) {
+      samples.copyFrom (0, destStart, buffer, 0, srcStart, count);
+    } else { // average the plotted channels into ring channel 0
+      const float gain = 1.0f / float (lastChannelToPlot + 1);
+      samples.copyFrom (0, destStart, buffer.getReadPointer (0) + srcStart, count, gain);
+      for (int c = 1; c <= lastChannelToPlot; ++c)
+        samples.addFrom (0, destStart, buffer.getReadPointer (c) + srcStart, count, gain);
+    }
+  };
+
   const auto samplesBeforeWrap = samples.getNumSamples() - w; // Number of samples we can write without ringbuffer index wrap-around
   if (plotLengthNow > 0  ||  samplesBeforeWrap >= numSamplesTrimmed) // We can copy without index-wrapping
   {
@@ -150,8 +184,8 @@ void MagicOscilloscopeAudio::pushSamples (const juce::AudioBuffer<float>& buffer
     if (numChannelsOut>samples.getNumChannels()) {
         setNumChannels(numChannelsOut);
     }
-    samples.copyFrom (0, w, buffer, 0, startSample, numSamplesTrimmed);
-    for (int c=1; c < numChannelsOut; c++) // must also copy higher channels
+    writeChannel0 (w, startSample, numSamplesTrimmed);
+    for (int c=1; c < numChannelsOut; c++) // must also copy higher channels (overlay mode only)
       {
         samples.copyFrom (c, w, buffer, c, startSample, numSamplesTrimmed);
       }
@@ -164,9 +198,9 @@ void MagicOscilloscopeAudio::pushSamples (const juce::AudioBuffer<float>& buffer
     if (numChannelsOut>samples.getNumChannels()) {
         setNumChannels(numChannelsOut);
     }
-    samples.copyFrom (0, w, buffer, 0, startSample, samplesBeforeWrap);
-    samples.copyFrom (0, 0, buffer, 0, startSample + samplesBeforeWrap, numSamplesTrimmed - samplesBeforeWrap);
-    for (int c=1; c < numChannelsOut; c++) // must also copy higher channels
+    writeChannel0 (w, startSample, samplesBeforeWrap);
+    writeChannel0 (0, startSample + samplesBeforeWrap, numSamplesTrimmed - samplesBeforeWrap);
+    for (int c=1; c < numChannelsOut; c++) // must also copy higher channels (overlay mode only)
       {
         samples.copyFrom (c, w, buffer, c, startSample, samplesBeforeWrap);
         samples.copyFrom (c, 0, buffer, c, startSample + samplesBeforeWrap, numSamplesTrimmed - samplesBeforeWrap);

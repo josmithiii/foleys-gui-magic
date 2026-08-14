@@ -270,39 +270,15 @@ protected:
                              numPlotChannels);
     }
 
-    inline void averageAllChannelsToSamplesChannel0(const juce::AudioBuffer<float>& buffer)
-    {
-        int w = writePosition.load();
-        const auto available  = samples.getNumSamples() - w;
-
-        const auto numSamples = buffer.getNumSamples();
-        jassert(buffer.getNumChannels() > 0);
-        // Average over the channels actually summed (this used to divide by the
-        // buffer's TOTAL channel count, which scaled the plot down whenever the
-        // buffer carried more channels than the plot showed).
-        const int  topPlotChannel = channelsPlotted (buffer) - 1;
-        const auto gain = 1.0f / float (topPlotChannel + 1);
-        if (available >= numSamples)
-        {
-          // samples.copyFrom (destChannel, destStartSample, ...)
-          samples.copyFrom (0, w, buffer.getReadPointer (0), numSamples, gain);
-          for (int c = 1; c <= topPlotChannel; ++c)
-            samples.addFrom (0, w, buffer.getReadPointer (c), numSamples, gain);
-        }
-        else
-        {
-          // Wrapped write: the SECOND half must continue reading where the first
-          // left off (+ available) -- it used to restart at the source's sample 0,
-          // repeating the head of the block instead of writing its tail.
-          samples.copyFrom (0, w, buffer.getReadPointer (0), available, gain);
-          samples.copyFrom (0, 0, buffer.getReadPointer (0) + available, numSamples - available, gain);
-          for (int c = 1; c <= topPlotChannel; ++c)
-          {
-            samples.addFrom (0, w, buffer.getReadPointer (c), available, gain);
-            samples.addFrom (0, 0, buffer.getReadPointer (c) + available, numSamples - available, gain);
-          }
-        }
-    }
+    /* There used to be an averageAllChannelsToSamplesChannel0() helper here,
+       called by MagicOscilloscopeAudio::pushSamples() before its ring copy.  It
+       was dead code -- the ring copy that followed overwrote channel 0 with the
+       raw input again -- and it wrote at the ring's write position while
+       ignoring the latch trimming that had not been computed yet.  The averaging
+       now happens inside that ring copy (see the writeChannel0 lambda in
+       foleys_MagicOscilloscopeAudio.cpp), where it gets the trimming and the
+       wraparound for free.  Any subclass that wants a channel average must do
+       the same rather than pre-passing over `samples`. */
 
     int getReadPosition(const float* data, const int pos0)
     {
