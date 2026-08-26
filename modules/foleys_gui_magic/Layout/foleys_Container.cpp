@@ -106,7 +106,12 @@ void Container::update()
 
 void Container::addChildItem (std::unique_ptr<GuiItem> child)
 {
-    containerBox.addAndMakeVisible (child.get());
+    // BEGIN JOS: addAndMakeVisible would end in setVisible(true) and undo a hide
+    // the `visibility=` binding already asked for while the item was being
+    // configured (createGuiItem configures BEFORE the caller parents it).
+    containerBox.addChildComponent (child.get());
+    child->applyVisibilityBinding();
+    // END JOS
     children.push_back (std::move (child));
 }
 
@@ -119,7 +124,10 @@ void Container::createSubComponents()
         auto childItem = magicBuilder.createGuiItem (childNode);
         if (childItem)
         {
-            containerBox.addAndMakeVisible (childItem.get());
+            // BEGIN JOS: see addChildItem - add hidden, then honour the binding.
+            containerBox.addChildComponent (childItem.get());
+            childItem->applyVisibilityBinding();
+            // END JOS
             childItem->createSubComponents();
 
             children.push_back (std::move (childItem));
@@ -165,7 +173,11 @@ void Container::setLayoutMode (LayoutType layoutToUse)
     {
         tabbedButtons.reset();
         for (auto& child : children)
-            child->setVisible (true);
+            // BEGIN JOS: was setVisible(true), which un-collapsed a child whose
+            // `visibility=` binding wanted it hidden, every time a container
+            // left Tabbed layout.
+            child->applyVisibilityBinding();
+            // END JOS
     }
 
     updateLayout();
@@ -198,18 +210,32 @@ void Container::updateLayout()
 
     if (layout == LayoutType::FlexBox)
     {
+        // BEGIN JOS: an INVISIBLE child gets no FlexItem, so it gives its space
+        // back to its siblings instead of leaving a hole.  Upstream added one
+        // for every child regardless, which is why TubePreampPanel.xml had to
+        // record a hidden knob's gap as a "KNOWN COSMETIC LIMIT".  What flips
+        // the visibility is `visibility="<parameter-or-property>"` on the item;
+        // GuiItem::setVisibleAndRelayout calls back in here when it changes.
+        //
+        // Only the FlexBox layout collapses.  A Tabbed container decides its
+        // children's visibility itself (updateSelectedTab, below), and an
+        // absolute-positioned Contents container has no flow to reclaim, so
+        // `visibility=` on a tab PAGE is still just a hide.
         flexBox.items.clear();
         for (auto& child : children)
-            flexBox.items.add (child->getFlexItem());
+            if (child->isVisible())
+                flexBox.items.add (child->getFlexItem());
 
         auto overall = clientBounds;
         flexBox.performLayout (overall);
 
         if (scrollMode != ScrollMode::NoScroll)
         {
-            // check sizes
+            // check sizes (a collapsed child keeps stale bounds - skip it, or
+            // the scrolled extent would still reserve the space it gave up)
             for (auto& child : children)
-                overall = overall.getUnion (child->getBounds());
+                if (child->isVisible())
+                    overall = overall.getUnion (child->getBounds());
 
             containerBox.setBounds (overall);
 
@@ -374,6 +400,12 @@ void Container::valueChanged (juce::Value& source)
 {
     if (source == currentTab)
       updateSelectedTab();
+
+    // BEGIN JOS: chain to the base, which owns the `visibility=` property
+    // binding.  Without this a <View> bound to a PROPERTY never hid - the
+    // override swallowed its own visibility notifications.
+    GuiItem::valueChanged (source);
+    // END JOS
 }
 
 void Container::updateSelectedTab()

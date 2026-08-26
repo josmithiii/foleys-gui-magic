@@ -190,6 +190,25 @@ public:
 
     MagicGUIBuilder& magicBuilder;
 
+    // BEGIN JOS: public because a CONTAINER calls these on its children, i.e.
+    // through a GuiItem* - protected would not reach through the base pointer
+    // even though Container is itself a GuiItem.
+    /**
+     Re-assert what the `visibility=` binding wants.
+
+     MUST be called by whoever parents this item, because the order is against
+     us: createGuiItem() configures the item (which is where the binding is read
+     and can hide it) and only THEN does the caller add it to its parent - and
+     juce::Component::addAndMakeVisible ends with setVisible (true), which would
+     silently undo the hide.  The panel would then come up expanded and only
+     collapse the first time its enable was toggled.  Containers call
+     addChildComponent() plus this instead.
+     */
+    void applyVisibilityBinding() { setVisible (visibilityWanted); }
+
+    bool isVisibilityWanted() const { return visibilityWanted; }
+    // END JOS
+
 protected:
 
     juce::ValueTree configNode;
@@ -232,7 +251,11 @@ private:
     std::unique_ptr<BorderDragger>          borderDragger;
     std::unique_ptr<juce::ComponentDragger> componentDragger;
 
+protected:
+    // JOS: protected, not private - Container::valueChanged overrides it and
+    // must chain here, or a <View> bound to a `visibility=` PROPERTY never hides.
     void valueChanged (juce::Value& source) override;
+private:
 
     void valueTreePropertyChanged (juce::ValueTree&, const juce::Identifier&) override;
 
@@ -250,7 +273,39 @@ private:
      */
     void configureComponent();
 
+    // BEGIN JOS: `visibility=` names either a magicState PROPERTY (upstream) or,
+    // since 2026-08-26, a PARAMETER id.  The parameter form is what makes a
+    // panel collapse when the effect it belongs to is switched off, without any
+    // C++ glue mirroring the parameter into a property (which is what
+    // jos::TubePreamp had to do by hand for its four "Tube:show*" flags).  A
+    // ParameterAttachment marshals the change to the message thread for us.
     juce::Value     visibility { true };
+    std::unique_ptr<juce::ParameterAttachment> visibilityAttachment;
+
+    /** Read `visibility=` and bind it.  Called from updateInternal, NOT from
+        configureComponent, which returns early for every Container. */
+    void configureVisibility();
+
+    /**
+     Show or hide this item AND make the parent re-run its layout, so that a
+     hidden item gives its space back to its siblings instead of leaving a hole.
+     Container::updateLayout skips invisible children when it fills the FlexBox.
+     */
+    void setVisibleAndRelayout (bool shouldBeVisible);
+
+    /**
+     Re-assert what the `visibility=` binding wants.
+
+     MUST be called by whoever parents this item, because the order is against
+     us: createGuiItem() configures the item (which is where the binding is read
+     and can hide it) and only THEN does the caller add it to its parent - and
+     juce::Component::addAndMakeVisible ends with setVisible (true), which would
+     silently undo the hide.  The panel would then come up expanded and only
+     collapse the first time its enable was toggled.  Containers call
+     addChildComponent() plus this instead.
+     */
+    bool            visibilityWanted = true;   // what that binding last asked for
+    // END JOS
 
     juce::String    highlight;
 

@@ -32,6 +32,7 @@
  */
 
 #include "foleys_GuiItem.h"
+#include <iostream>
 
 namespace foleys
 {
@@ -128,6 +129,7 @@ void GuiItem::updateInternal()
 
     decorator.configure (magicBuilder, configNode);
     configureComponent();
+    configureVisibility();   // JOS: NOT inside configureComponent - see there
     configureFlexBoxItem (configNode);
     configurePosition (configNode);
 
@@ -163,6 +165,66 @@ void GuiItem::updateColours()
     component->repaint();
     repaint();
 }
+
+// BEGIN JOS: the `visibility=` binding, lifted OUT of configureComponent.
+//
+// configureComponent() returns immediately when getWrappedComponent() is null,
+// and Container::getWrappedComponent() IS null - so upstream's binding was only
+// ever read for leaf widgets.  `visibility=` on a <View> did nothing at all,
+// silently, which is why TubePreampPanel.xml puts it on four <Slider>s rather
+// than on the group boxes it actually wants to hide.  A View is the whole point
+// of collapsing a PANEL, so this runs for every item, wrapped or not.
+//
+// `visibility=` resolves as a PARAMETER first and only then as a magicState
+// property.  Upstream only knew properties, so a panel that wanted to collapse
+// when its effect was switched off needed C++ mirroring the parameter into a
+// property (jos::TubePreamp still does that for its four "Tube:show*" flags,
+// which are a CHOICE, not a bool parameter).  Binding straight to the bool
+// keeps the whole thing in the layout XML.
+//
+// The unset-property case matters too: juce::Value::referTo calls its listeners
+// immediately, and an unwritten property reads void, i.e. FALSE - so before
+// this, `visibility="Show:foo"` hid the item forever on a first run, until
+// something wrote the property.  An unseeded show/hide flag now means SHOWN,
+// which is the only safe default: the failure mode of the other choice is an
+// invisible control with no way to get it back.
+void GuiItem::configureVisibility()
+{
+    auto visibilityNode = magicBuilder.getStyleProperty (IDs::visibility, configNode);
+    visibilityAttachment.reset();
+
+    if (visibilityNode.isVoid())
+        return;
+
+    const auto visibilityName = visibilityNode.toString();
+
+    if (auto* parameter = magicBuilder.getMagicState().getParameter (visibilityName))
+    {
+        visibilityAttachment = std::make_unique<juce::ParameterAttachment>
+            (*parameter,
+             [this] (float value) { setVisibleAndRelayout (value >= 0.5f); },
+             nullptr);
+        visibilityAttachment->sendInitialUpdate();
+        return;
+    }
+
+    auto value = magicBuilder.getMagicState().getPropertyAsValue (visibilityName);
+    if (value.getValue().isVoid())
+    {
+        // FAIL LOUD: a `visibility=` that names neither a parameter nor a
+        // property anything writes is almost always a typo, and its failure is
+        // otherwise SILENT - we would invent the property, seed it true, and
+        // the component would simply never hide.
+        std::cerr << "*** visibility=\"" << visibilityName << "\" on <"
+                  << configNode.getType().toString()
+                  << "> names no parameter and no existing property; "
+                  << "defaulting to SHOWN\n";
+        value.setValue (true);
+    }
+
+    visibility.referTo (value);
+}
+// END JOS
 
 void GuiItem::configureComponent()
 {
@@ -203,9 +265,6 @@ void GuiItem::configureComponent()
     component->setHelpText (magicBuilder.getStyleProperty (IDs::accessibilityHelpText, configNode).toString());
     component->setExplicitFocusOrder (magicBuilder.getStyleProperty (IDs::accessibilityFocusOrder, configNode));
 
-    auto  visibilityNode = magicBuilder.getStyleProperty (IDs::visibility, configNode);
-    if (! visibilityNode.isVoid())
-        visibility.referTo (magicBuilder.getMagicState().getPropertyAsValue (visibilityNode.toString()));
 }
 
 void GuiItem::configureFlexBoxItem (const juce::ValueTree& node)
@@ -348,16 +407,39 @@ juce::Colour GuiItem::getTabColour() const
     return decorator.getTabColour();
 }
 
+// BEGIN JOS: hiding an item now COLLAPSES it.  Upstream (and the commented-out
+// experiment that used to sit in valueChanged below) only called setVisible,
+// which leaves the item's FlexItem in the parent's FlexBox - so the panel
+// vanished but its gap stayed, which is the "KNOWN COSMETIC LIMIT" recorded in
+// TubePreampPanel.xml.  Container::updateLayout now skips invisible children,
+// and this asks the parent to re-run it so the siblings take the space back.
+void GuiItem::setVisibleAndRelayout (bool shouldBeVisible)
+{
+    // Recorded even when nothing changes right now: this runs from
+    // ParameterAttachment::sendInitialUpdate, BEFORE the item is parented, and
+    // whoever parents it re-asserts it via applyVisibilityBinding().
+    visibilityWanted = shouldBeVisible;
+
+    if (isVisible() == shouldBeVisible)
+        return;
+
+    setVisible (shouldBeVisible);
+
+    // The nearest Container is the one whose FlexBox this item sits in; a
+    // relayout there reflows the siblings.  Going through the whole builder
+    // would work too, but it re-reads the stylesheet for every item in the
+    // window on every toggle.
+    if (auto* container = dynamic_cast<Container*>(getParentComponent()))
+        container->updateLayout();
+    else
+        magicBuilder.updateLayout();
+}
+// END JOS
+
 void GuiItem::valueChanged (juce::Value& source)
 {
   if (source == visibility) {
-    setVisible (visibility.getValue());
-    // if (! isVisible) {
-    // if (! visibility.getValue()) {
-    //   // getWrappedComponent()->
-    //   setBounds(juce::Rectangle<int>(0,0,0,0));
-    //   magicBuilder.updateLayout();
-    // }
+    setVisibleAndRelayout (visibility.getValue());
   }
 }
 
