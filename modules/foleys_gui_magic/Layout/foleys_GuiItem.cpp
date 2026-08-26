@@ -429,16 +429,26 @@ void GuiItem::setVisibleAndRelayout (bool shouldBeVisible)
     // relayout there reflows the siblings.  Going through the whole builder
     // would work too, but it re-reads the stylesheet for every item in the
     // window on every toggle.
-    if (auto* container = dynamic_cast<Container*>(getParentComponent()))
-        container->updateLayout();
-    else
-        magicBuilder.updateLayout();
+    //
+    // WALK UP, do not test the immediate parent: a Container adds its children
+    // to its own `containerBox`, not to itself, so the parent of a GuiItem is
+    // that box and a one-hop dynamic_cast never matched.
+    for (auto* c = getParentComponent(); c != nullptr; c = c->getParentComponent())
+        if (auto* container = dynamic_cast<Container*>(c))
+        {
+            container->updateLayout();
+            return;
+        }
+
+    magicBuilder.updateLayout();
 }
 // END JOS
 
 void GuiItem::valueChanged (juce::Value& source)
 {
-  if (source == visibility) {
+  // JOS: refersToSameSourceAs, not operator== -- see the note in
+  // Container::valueChanged for what value-equality on a juce::Value cost us.
+  if (source.refersToSameSourceAs (visibility)) {
     setVisibleAndRelayout (visibility.getValue());
   }
 }

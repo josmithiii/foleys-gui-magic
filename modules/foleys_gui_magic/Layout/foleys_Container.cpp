@@ -398,12 +398,25 @@ void Container::changeListenerCallback (juce::ChangeBroadcaster*)
 
 void Container::valueChanged (juce::Value& source)
 {
-    if (source == currentTab)
+    // BEGIN JOS: refersToSameSourceAs, NOT operator==.  juce::Value::operator==
+    // compares by VALUE (juce_Value.cpp:206 -- `value->getValue() == other`), so
+    // ANY Value this item listens to that happens to hold the same thing as
+    // currentTab tested equal.  With `visibility=` on a <View>, switching a
+    // panel OFF sent a `false` here, false == the untouched currentTab (void),
+    // and a container with no tabs at all ran updateSelectedTab() -- whose body
+    // is `child->setVisible (currentTab == index++)`, i.e. it hid every child
+    // but the first.  Switching the panel back on then restored the PANEL and
+    // not its contents: JOS's ADSR box came back with Attack alone, Decay / Sus
+    // / Rel gone for good (2026-08-26).
+    //
+    // The layout check is belt and braces: only a Tabbed container has tabs to
+    // select, and updateSelectedTab() is destructive to any other kind.
+    if (layout == LayoutType::Tabbed && source.refersToSameSourceAs (currentTab))
       updateSelectedTab();
 
-    // BEGIN JOS: chain to the base, which owns the `visibility=` property
-    // binding.  Without this a <View> bound to a PROPERTY never hid - the
-    // override swallowed its own visibility notifications.
+    // Chain to the base, which owns the `visibility=` property binding.  Without
+    // this a <View> bound to a PROPERTY never hid - the override swallowed its
+    // own visibility notifications.
     GuiItem::valueChanged (source);
     // END JOS
 }
