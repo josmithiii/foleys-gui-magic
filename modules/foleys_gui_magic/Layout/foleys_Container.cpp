@@ -379,11 +379,31 @@ void Container::timerCallback()
 {
     auto needsRepaint = false;
 
+    // BEGIN JOS: a plot that is NOT ON SCREEN must not drive the repaint.
+    //
+    // The plot SOURCES keep filling from the audio thread whatever the GUI is
+    // showing, so a hidden plot's needsUpdate() is true on essentially every
+    // tick.  Since one repaint here repaints the WHOLE containerBox, a single
+    // plot sitting on an unselected tab (or in a collapsed panel) was enough to
+    // repaint the tab you ARE looking at at the container's full repaint-hz,
+    // forever -- and every string-analyzer layout in jos-juce-plugins has four
+    // to six of them.
+    //
+    // The filter is here rather than in updateContinuousRedraw(), where the
+    // lists are BUILT, for two reasons: visibility is dynamic (a tab switch
+    // never rebuilds them), and at build time nothing is showing yet --
+    // createSubComponents() runs before the editor is on a peer, so filtering
+    // there would find every child hidden and never start the timer at all.
+    //
+    // Skipping is safe and self-healing: MagicPlotComponent compares its own
+    // lastDataTimestamp against the source's, so a plot that comes back into
+    // view reports needsUpdate() immediately and paints the current frame.
     for (auto p : plotComponents)
-        if (p) needsRepaint |= p->needsUpdate();
+        if (p && p->isShowing()) needsRepaint |= p->needsUpdate();
 
     for (auto p : audioPlotComponents)
-        if (p) needsRepaint |= p->needsUpdate();
+        if (p && p->isShowing()) needsRepaint |= p->needsUpdate();
+    // END JOS
 
     if (needsRepaint)
         containerBox.repaint();
