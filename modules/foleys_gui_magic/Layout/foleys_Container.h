@@ -159,6 +159,14 @@ private:
     void updateTabbedButtons();
     void updateSelectedTab();
 
+    // BEGIN JOS: tab-follows="<parameterID>" - see IDs::tabFollows.
+    void updateTabFollowParameter();
+    void selectTabByName (const juce::String& tabName);
+
+    juce::String                               tabFollowParameterID;
+    std::unique_ptr<juce::ParameterAttachment> tabFollowAttachment;
+    // END JOS
+
     juce::Value   currentTab { juce::var {0} };
     int           tabbarHeight  = 30;
     int           refreshRateHz = 30;

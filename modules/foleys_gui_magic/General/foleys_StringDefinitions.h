@@ -112,6 +112,13 @@ namespace IDs
     static juce::String     flexbox      { "flexbox" };
     static juce::Identifier tabHeight    { "tab-height" };
     static juce::Identifier selectedTab  { "tab-selected" };
+    // BEGIN JOS: tab-follows="<parameterID>" on a display="tabbed" View makes the
+    // selected tab track that parameter's CURRENT TEXT: the tab whose caption
+    // equals the choice name is selected.  Name-based on purpose - `tab-selected`
+    // stores an INDEX, which reordering tabs silently shifts.  One-way: clicking a
+    // tab never writes the parameter.
+    static juce::Identifier tabFollows   { "tab-follows" };
+    // END JOS
 
     static juce::Identifier focusContainerType { "focus-container" };
     static juce::String     focusNone          { "focus-none" };

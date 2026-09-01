@@ -102,6 +102,14 @@ void Container::update()
 
         updateLayout();
     }
+
+    // BEGIN JOS: tab-follows="<parameterID>".  Only READ here - the binding is
+    // armed at the end of createSubComponents(), because THIS is called before
+    // the children exist (MagicGUIBuilder::createGuiItem does updateInternal()
+    // then createSubComponents()) and the children's captions are the tab names.
+    tabFollowParameterID = magicBuilder.getStyleProperty (IDs::tabFollows, configNode).toString();
+    tabFollowAttachment.reset();
+    // END JOS
 }
 
 void Container::addChildItem (std::unique_ptr<GuiItem> child)
@@ -136,6 +144,12 @@ void Container::createSubComponents()
 
     updateLayout();
     updateContinuousRedraw();
+
+    // BEGIN JOS: arm tab-follows LAST - the children are the tabs, `currentTab`
+    // already refers to its `tab-selected` property, and the initial update sent
+    // from here is therefore what OVERRIDES a persisted tab at startup.
+    updateTabFollowParameter();
+    // END JOS
 }
 
 GuiItem* Container::findGuiItemWithId (const juce::String& name)
@@ -443,10 +457,96 @@ void Container::valueChanged (juce::Value& source)
 
 void Container::updateSelectedTab()
 {
+    // BEGIN JOS: read the index ONCE, as an int.
+    //
+    //  * The tab BAR was never told.  This only ever set child visibility, so the
+    //    bar happened to agree simply because the click that moved it was what
+    //    called us.  Any OTHER writer of the `tab-selected` property - a restored
+    //    session, tab-follows, host automation - swapped the visible page and left
+    //    the highlight on the old tab.  updateTabbedButtons() re-synced it, but
+    //    only on the next resize.
+    //  * `currentTab == index` compared a juce::var to an int, and a VOID var
+    //    (what an unset `tab-selected` property reads as) equals nothing at all -
+    //    not even 0 - so a container whose property had never been written hid
+    //    EVERY page.  var-to-int is 0 for void, i.e. "no selection means tab 0",
+    //    which is what the tab bar itself already assumed.
+    const int selected = static_cast<int> (currentTab.getValue());
+
+    if (tabbedButtons != nullptr
+        && tabbedButtons->getCurrentTabIndex() != selected
+        && juce::isPositiveAndBelow (selected, tabbedButtons->getNumTabs()))
+        tabbedButtons->setCurrentTabIndex (selected, /* sendChangeMessage */ false);
+    // END JOS
+
     int index = 0;
     for (auto& child : children)
-        child->setVisible (currentTab == index++);
+        child->setVisible (selected == index++);
 }
+
+// BEGIN JOS: tab-follows="<parameterID>" - the selected tab tracks a parameter's
+// current CHOICE TEXT.  See IDs::tabFollows for why the match is by name.
+void Container::updateTabFollowParameter()
+{
+    tabFollowAttachment.reset();
+
+    if (layout != LayoutType::Tabbed || tabFollowParameterID.isEmpty())
+        return;
+
+    auto* parameter = getMagicState().getParameter (tabFollowParameterID);
+
+    if (parameter == nullptr)
+    {
+        // FAIL LOUD: a layout naming a parameter that does not exist is a typo,
+        // and a silently dead binding is exactly what this repo's attribute lints
+        // exist to prevent.
+        DBG ("*** tab-follows=\"" << tabFollowParameterID << "\": no such parameter");
+        jassertfalse;
+        return;
+    }
+
+    // ParameterAttachment marshals to the message thread for us, so selectTabByName
+    // - which touches Components - is never reached from the audio thread.  The
+    // callback carries the DENORMALISED value; ask the parameter to spell THAT one
+    // rather than re-reading whatever it holds by the time we run.
+    tabFollowAttachment = std::make_unique<juce::ParameterAttachment>(
+        *parameter,
+        [this, parameter] (float newValue)
+        {
+            selectTabByName (parameter->getText (parameter->convertTo0to1 (newValue), 128));
+        },
+        nullptr);
+
+    tabFollowAttachment->sendInitialUpdate();
+}
+
+void Container::selectTabByName (const juce::String& tabName)
+{
+    if (layout != LayoutType::Tabbed || tabName.isEmpty())
+        return;
+
+    int index = 0;
+    for (auto& child : children)
+    {
+        if (child->getTabCaption ({}).equalsIgnoreCase (tabName))
+        {
+            // Writing the Value persists the choice through `tab-selected`, but
+            // its listeners fire ASYNCHRONOUSLY, so select here too rather than
+            // waiting a message loop.  updateSelectedTab() re-reads currentTab,
+            // which setValue has already updated, and is idempotent when the
+            // async notification arrives and runs it again.
+            currentTab = index;
+            updateSelectedTab();
+            return;
+        }
+
+        ++index;
+    }
+
+    // No tab of that name: leave the selection where the player put it.  That is
+    // the feature, not a miss - "All", "HOPO" and "ADSR" name no exciter, and a
+    // Perform view offers a deliberate SUBSET of the editor's tabs.
+}
+// END JOS
 
 std::vector<std::unique_ptr<GuiItem>>::iterator Container::begin()
 {
