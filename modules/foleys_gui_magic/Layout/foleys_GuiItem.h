@@ -209,6 +209,32 @@ public:
     bool isVisibilityWanted() const { return visibilityWanted; }
     // END JOS
 
+    // BEGIN JOS CHANGE: a widget bound to a parameter THIS processor does not
+    // have hides itself instead of drawing a dead control.
+    /**
+     Does `paramID` name no parameter on this processor?  If so, say it ONCE on
+     stderr (naming the layout item and the parameter), hide this item so the
+     parent FlexBox reflows and the row leaves no hole, and return true.
+
+     Returns false - and does nothing at all - when the parameter exists, or
+     when paramID is empty.
+
+     WHY.  A shared layout fragment is a UNION: the day AutoHarp wears
+     `shared:PerformControls` it wears every row in it, including rows only a
+     guitar declares.  Before this, `MagicProcessorState::createAttachment` hit
+     `jassertfalse` (so every DEBUG build stopped on every layout build) and in
+     Release returned a null attachment, leaving a DRAWN but inert control
+     parked at its range minimum.  JOS's ruling, 2026-09-03: "PGM sliders that
+     are bound to nonexistent parameters just do nothing" - do nothing,
+     properly, which means not being there.
+
+     PARAMETER bindings only.  A missing `value=`/`property=` is a different
+     animal: pgmf INVENTS and seeds the property, which is a working per-GUI
+     value and not an error.
+     */
+    bool hideIfParameterMissing (const juce::String& paramID);
+    // END JOS CHANGE
+
 protected:
 
     juce::ValueTree configNode;
@@ -306,6 +332,13 @@ private:
      */
     bool            visibilityWanted = true;   // what that binding last asked for
     // END JOS
+
+    // BEGIN JOS CHANGE: the paramID hideIfParameterMissing() has already
+    // complained about, so the `***` line is once per ITEM and not once per
+    // update() - a Container leaving Tabbed layout, an edit-mode rebuild or a
+    // stylesheet change all re-run update() on every item in the window.
+    juce::String    missingParameterReported;
+    // END JOS CHANGE
 
     juce::String    highlight;
 

@@ -92,10 +92,14 @@ std::unique_ptr<juce::SliderParameterAttachment> MagicProcessorState::createAtta
     if (auto* parameter = getParameter (paramID))
         return std::make_unique<juce::SliderParameterAttachment>(*parameter, slider);
 
-    // You have connected a control to a parameter that doesn't exist. Please fix your GUI.
-    // You may safely click continue in your debugger
-  std::cerr << "*** foleys_MagicProcessorState.cpp: nonexistent paramID = " << paramID << "\n";
-    jassertfalse;
+    // BEGIN JOS CHANGE: a control bound to a parameter this processor does not
+    // have is NOT an error here - it is a shared layout fragment carrying a row
+    // some instrument lacks, and GuiItem::hideIfParameterMissing has already
+    // said so (once, with the item's id) and hidden the item.  Upstream's
+    // `jassertfalse` stopped every DEBUG build on every such layout, and the
+    // stderr line here was a SECOND complaint about the same widget.  Returning
+    // a null attachment is all that is left to do; every caller checks it.
+    // END JOS CHANGE
     return {};
 }
 
@@ -104,9 +108,14 @@ std::unique_ptr<juce::ComboBoxParameterAttachment> MagicProcessorState::createAt
     if (auto* parameter = getParameter (paramID))
         return std::make_unique<juce::ComboBoxParameterAttachment>(*parameter, combobox);
 
-    // You have connected a control to a parameter that doesn't exist. Please fix your GUI.
-    // You may safely click continue in your debugger
-    jassertfalse;
+    // BEGIN JOS CHANGE: a control bound to a parameter this processor does not
+    // have is NOT an error here - it is a shared layout fragment carrying a row
+    // some instrument lacks, and GuiItem::hideIfParameterMissing has already
+    // said so (once, with the item's id) and hidden the item.  Upstream's
+    // `jassertfalse` stopped every DEBUG build on every such layout, and the
+    // stderr line here was a SECOND complaint about the same widget.  Returning
+    // a null attachment is all that is left to do; every caller checks it.
+    // END JOS CHANGE
     return {};
 }
 
@@ -115,10 +124,14 @@ std::unique_ptr<juce::ButtonParameterAttachment> MagicProcessorState::createAtta
     if (auto* parameter = getParameter (paramID))
         return std::make_unique<juce::ButtonParameterAttachment>(*parameter, button);
 
-    // You have connected a control to a parameter that doesn't exist. Please fix your GUI.
-    // You may safely click continue in your debugger
-    std::cerr << "*** foleys_MagicProcessorState.cpp: createAttachment: nonexistent paramID = " << paramID << "\n";
-    jassertfalse;
+    // BEGIN JOS CHANGE: a control bound to a parameter this processor does not
+    // have is NOT an error here - it is a shared layout fragment carrying a row
+    // some instrument lacks, and GuiItem::hideIfParameterMissing has already
+    // said so (once, with the item's id) and hidden the item.  Upstream's
+    // `jassertfalse` stopped every DEBUG build on every such layout, and the
+    // stderr line here was a SECOND complaint about the same widget.  Returning
+    // a null attachment is all that is left to do; every caller checks it.
+    // END JOS CHANGE
     return {};
 }
 

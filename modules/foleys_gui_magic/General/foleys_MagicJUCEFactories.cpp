@@ -185,7 +185,11 @@ public:
         // END JOS CHANGE
 
         auto paramID = getControlledParameterID ({});
-        if (paramID.isNotEmpty())
+        // BEGIN JOS CHANGE: a parameter this processor does not have hides the
+        // whole item (one `***` line, no assert) instead of leaving a dead
+        // slider parked at its range minimum.  See GuiItem::hideIfParameterMissing.
+        if (paramID.isNotEmpty() && ! hideIfParameterMissing (paramID))
+        // END JOS CHANGE
             attachment = getMagicState().createAttachment (paramID, slider);
 
         auto filmStripName = getProperty (pFilmStrip).toString();
@@ -326,6 +330,14 @@ public:
                 comboBox.addItemList (parameter->getAllValueStrings(), 1);
                 attachment = getMagicState().createAttachment (paramID, comboBox);
             }
+            // BEGIN JOS CHANGE: ...and otherwise HIDE, with one `***` line and
+            // no assert.  A ComboBox was the worst of the three: no parameter
+            // meant no addItemList either, so it drew an EMPTY menu.
+            else
+            {
+                hideIfParameterMissing (paramID);
+            }
+            // END JOS CHANGE
             return;
         }
 
@@ -458,13 +470,20 @@ public:
         auto radioValue    = getProperty (IDs::buttonRadioValue);
         auto propertyName  = getProperty (pProperty).toString();
 
+        // BEGIN JOS CHANGE: outside the changed-parameter guard on purpose - the
+        // hide has to be re-asserted on every update(), while the attachment must
+        // NOT be rebuilt on every update().  A radio button (radio-value set)
+        // never attaches, so it is not judged here.
+        const bool parameterMissing = radioValue.isVoid() && hideIfParameterMissing (parameterName);
+        // END JOS CHANGE
+
         // Only recreate the attachment if the parameter changed (same fix as ToggleButtonItem).
         if (parameterName != currentParameterName)
         {
             attachment.reset();
             currentParameterName = parameterName;
 
-            if (parameterName.isNotEmpty() && radioValue.isVoid())
+            if (parameterName.isNotEmpty() && radioValue.isVoid() && ! parameterMissing)
                 attachment = getMagicState().createAttachment (parameterName, button);
         }
 
@@ -609,6 +628,11 @@ public:
         auto parameterName = configNode.getProperty (IDs::parameter, juce::String()).toString();
         auto radioValue = getProperty (IDs::buttonRadioValue);
 
+        // BEGIN JOS CHANGE: see TextButtonItem::update - the hide is re-asserted
+        // every update(), the attachment is not.
+        const bool parameterMissing = radioValue.isVoid() && hideIfParameterMissing (parameterName);
+        // END JOS CHANGE
+
         // Only recreate the attachment if the parameter changed.
         // Destroying a ButtonParameterAttachment mid-gesture leaves the parameter
         // with isPerformingGesture=true (JUCE doesn't end the gesture in the destructor),
@@ -618,7 +642,7 @@ public:
             attachment.reset();
             currentParameterName = parameterName;
 
-            if (parameterName.isNotEmpty() && radioValue.isVoid())
+            if (parameterName.isNotEmpty() && radioValue.isVoid() && ! parameterMissing)
                 attachment = getMagicState().createAttachment (parameterName, button);
         }
 

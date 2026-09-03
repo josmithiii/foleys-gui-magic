@@ -226,6 +226,46 @@ void GuiItem::configureVisibility()
 }
 // END JOS
 
+// BEGIN JOS CHANGE: hide, do not assert, when the bound parameter is absent.
+//
+// This runs from each factory's update(), i.e. AFTER configureVisibility()
+// (updateInternal fixes that order) - so a hide asked for here is the last word
+// on this item's visibility, and applyVisibilityBinding() re-asserts it when the
+// parent finally parents the item.
+//
+// The reflow is FREE and needed no new code: Container::updateLayout already
+// gives an INVISIBLE child no FlexItem, so a hidden row hands its space back to
+// its siblings instead of leaving a gap.  That is what setVisibleAndRelayout()
+// exists for and why this hides rather than zeroing the flex - a zero-flex item
+// still contributes its margin, its border and its caption to the row, and a
+// caption over nothing is exactly the "dead control" being removed.  (An item
+// inside an absolute-positioned Contents container has no flow to reclaim, so
+// there it is a plain hide; same rule as `visibility=`.)
+bool GuiItem::hideIfParameterMissing (const juce::String& paramID)
+{
+    if (paramID.isEmpty())
+        return false;
+
+    if (magicBuilder.getMagicState().getParameter (paramID) != nullptr)
+        return false;
+
+    if (missingParameterReported != paramID)
+    {
+        missingParameterReported = paramID;
+
+        const auto itemID = configNode.getProperty (IDs::id, juce::String()).toString();
+        std::cerr << "*** foleys_GuiItem.cpp: <" << configNode.getType().toString()
+                  << (itemID.isEmpty() ? juce::String() : " id=\"" + itemID + "\"")
+                  << " parameter=\"" << paramID
+                  << "\"> names no parameter of this processor - HIDING it "
+                  << "(the row reflows; nothing is drawn and nothing is bound)\n";
+    }
+
+    setVisibleAndRelayout (false);
+    return true;
+}
+// END JOS CHANGE
+
 void GuiItem::configureComponent()
 {
     auto* component = getWrappedComponent();
