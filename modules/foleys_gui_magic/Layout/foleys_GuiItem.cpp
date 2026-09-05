@@ -192,11 +192,13 @@ void GuiItem::configureVisibility()
 {
     auto visibilityNode = magicBuilder.getStyleProperty (IDs::visibility, configNode);
     visibilityAttachment.reset();
+    visibilityBound = false;
 
     if (visibilityNode.isVoid())
         return;
 
     const auto visibilityName = visibilityNode.toString();
+    visibilityBound = true;
 
     if (auto* parameter = magicBuilder.getMagicState().getParameter (visibilityName))
     {
@@ -473,14 +475,30 @@ void GuiItem::setVisibleAndRelayout (bool shouldBeVisible)
     // WALK UP, do not test the immediate parent: a Container adds its children
     // to its own `containerBox`, not to itself, so the parent of a GuiItem is
     // that box and a one-hop dynamic_cast never matched.
+    Container* nearest = nullptr;
     for (auto* c = getParentComponent(); c != nullptr; c = c->getParentComponent())
-        if (auto* container = dynamic_cast<Container*>(c))
-        {
-            container->updateLayout();
-            return;
-        }
+        if ((nearest = dynamic_cast<Container*>(c)) != nullptr)
+            break;
 
-    magicBuilder.updateLayout();
+    if (nearest == nullptr)
+    {
+        magicBuilder.updateLayout();
+        return;
+    }
+
+    nearest->updateLayout();
+
+    // JOS 2026-09-05: a container with `collapse-width` changes ITS OWN flex
+    // item when its last bound descendant hides (Container::collapseWidthIfEmpty),
+    // so the container ABOVE it must reflow as well - and so on up, as long as
+    // the container just reflowed was itself collapsible.
+    bool needsParent = nearest->hasCollapseWidth();
+    for (auto* c = nearest->getParentComponent(); c != nullptr && needsParent; c = c->getParentComponent())
+        if (auto* up = dynamic_cast<Container*>(c))
+        {
+            up->updateLayout();
+            needsParent = up->hasCollapseWidth();
+        }
 }
 // END JOS
 

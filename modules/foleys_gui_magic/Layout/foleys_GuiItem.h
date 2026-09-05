@@ -307,6 +307,12 @@ private:
     // ParameterAttachment marshals the change to the message thread for us.
     juce::Value     visibility { true };
     std::unique_ptr<juce::ParameterAttachment> visibilityAttachment;
+    // JOS 2026-09-05: true once configureVisibility() bound `visibility=` to a
+    // parameter or a property.  Container::hasVisibleBoundDescendant() asks it.
+    bool            visibilityBound = false;
+public:
+    bool isVisibilityBound() const noexcept { return visibilityBound; }
+protected:
 
     /** Read `visibility=` and bind it.  Called from updateInternal, NOT from
         configureComponent, which returns early for every Container. */
