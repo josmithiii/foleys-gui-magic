@@ -108,6 +108,63 @@ public:
      */
     void updateComponents();
 
+    // BEGIN JOS: THE VIEW CACHE (2026-09-05).
+    /**
+     Keep the built component tree of every <View> this builder has been shown,
+     so that going back to one is a SWAP rather than a rebuild.
+
+     WHY.  updateComponents() destroys `root` and builds a fresh GuiItem for
+     every element of the incoming tree; in jos-juce-plugins that is ~840
+     elements for an Edit view and it costs the better part of a second, every
+     time the player presses Edit.  Nothing about the OLD tree has gone stale
+     while the other one was up -- its GuiItems still hold live parameter and
+     property attachments, so it stayed in sync the whole time -- so the only
+     reason it was rebuilt is that nobody kept it.
+
+     WHAT IS CACHED, AND KEYED BY WHAT.  The key is the IDENTITY of the <View>
+     ValueTree node (juce::ValueTree::operator== compares the shared object, not
+     the contents), so the caller decides what "the same view" means simply by
+     handing back the same tree: see jos::loadPGMLayout, which caches the parsed
+     layout by name for exactly that purpose.  A caller that parses fresh XML
+     every time gets a new node every time and therefore never a cache hit --
+     which is what makes this safe to leave compiled in.
+
+     WHAT PARKING MEANS.  The outgoing root is removed from the parent component
+     and held here.  It is then NOT SHOWING (juce::Component::isShowing() walks
+     to a peer), which is the flag every self-polling GuiItem in this fleet
+     already tests before doing work, so a parked view costs no timers, no
+     repaints and no plot analysis.  It keeps its attachments, so parameter and
+     property changes made while it is away still reach it and it comes back
+     current.
+
+     SAME NODE, ASKED AGAIN = REBUILD.  clearGUI() empties the <View> node in
+     place and then calls updateComponents(); an explicit updateComponents()
+     after a tree edit means the same.  When the incoming node is the one
+     already built, the cache is bypassed AND any parked copy of that node is
+     dropped, so a stale tree can never be served.
+
+     Off by default: a fork of PGM must behave exactly as before unless the host
+     application asks for this.
+     */
+    void setViewCacheEnabled (bool shouldCacheViews);
+    bool isViewCacheEnabled() const;
+
+    /** How many built views are parked right now (the SHOWING one is not one of
+        them).  For probes and tests. */
+    int getNumCachedViews() const;
+
+    /** Throw away every parked view.  Their components are destroyed here, so
+        this must run on the message thread.  Call it whenever the trees behind
+        them may no longer be what was built (the ToolBox loading a layout from
+        disk does exactly that). */
+    void clearViewCache();
+
+    /** Did the LAST updateComponents() serve its root from the cache?  The
+        honest answer to "was that swap free"; read by jos::loadPGMLayout, which
+        reports it, and by the view-cache unit tests. */
+    bool lastUpdateWasCached() const;
+    // END JOS
+
     /**
      Recalculates the layout of all components
      */
@@ -261,6 +318,29 @@ private:
 #endif
 
     std::unique_ptr<GuiItem> root;
+
+    // BEGIN JOS: the view cache (see setViewCacheEnabled above).
+    //
+    // `builtRootNode` is the <View> node `root` was built from, tracked here
+    // rather than read back off the GuiItem because GuiItem::configNode is
+    // protected -- and because the builder wants the node it USED, which after
+    // a redirect is no longer the node getGuiRootNode() returns.
+    //
+    // A vector and not a std::map: juce::ValueTree has no operator<, the
+    // comparison that matters is identity, and a plugin has two or three views,
+    // not a thousand.
+    bool             viewCacheEnabled = false;
+    bool             viewWasCached    = false;   // did the last update hit?
+    juce::ValueTree  builtRootNode;
+    std::vector<std::pair<juce::ValueTree, std::unique_ptr<GuiItem>>> parkedViews;
+
+    /** Take the parked view built from `node`, or nullptr.  Removes it from the
+        cache: the caller owns it from here on. */
+    std::unique_ptr<GuiItem> takeParkedView (const juce::ValueTree& node);
+
+    /** Destroy the parked view built from `node`, if there is one. */
+    void dropParkedView (const juce::ValueTree& node);
+    // END JOS
 
     std::unique_ptr<juce::Component> overlayDialog;
 

@@ -162,7 +162,55 @@ void MagicGUIBuilder::updateComponents()
 
     updateStylesheet();
 
-    root = createGuiItem (getGuiRootNode());
+    // BEGIN JOS: THE VIEW CACHE (2026-09-05).  See setViewCacheEnabled() in the
+    // header for what this is and why the key is the node's IDENTITY.
+    //
+    // With the cache off this is exactly the line it always was -- one
+    // statement, the old root destroyed by the assignment after the new one is
+    // built -- so a build that does not ask for the cache is bit-for-bit the
+    // old behaviour.
+    const auto incomingRootNode = getGuiRootNode();
+
+    if (viewCacheEnabled)
+    {
+        viewWasCached = false;
+
+        if (incomingRootNode.isValid() && incomingRootNode == builtRootNode)
+        {
+            // THE SAME NODE, ASKED AGAIN.  clearGUI() empties the <View> in
+            // place and then calls us; an explicit updateComponents() after a
+            // tree edit means the same thing.  The contents changed under the
+            // components that were built from them, so rebuild -- and drop any
+            // parked copy of this node, which is stale for the same reason.
+            dropParkedView (incomingRootNode);
+            root.reset();
+        }
+        else
+        {
+            // PARK the outgoing view.  removeChildComponent, not setVisible:
+            // a root with no parent has no peer, so isShowing() is false all
+            // the way down and every self-polling GuiItem stands down.
+            if (root != nullptr && builtRootNode.isValid())
+            {
+                parent->removeChildComponent (root.get());
+                parkedViews.emplace_back (builtRootNode, std::move (root));
+            }
+
+            root = takeParkedView (incomingRootNode);   // nullptr = never built
+            viewWasCached = (root != nullptr);
+        }
+
+        if (root == nullptr)
+            root = createGuiItem (incomingRootNode);
+    }
+    else
+    {
+        root = createGuiItem (incomingRootNode);
+    }
+
+    builtRootNode = incomingRootNode;
+    // END JOS
+
     parent->addAndMakeVisible (root.get());
 
     root->setBounds (parent->getLocalBounds());
@@ -172,6 +220,66 @@ void MagicGUIBuilder::updateComponents()
         root->setEditMode (editMode);
 #endif
 }
+
+// BEGIN JOS: the view cache's own small methods.
+void MagicGUIBuilder::setViewCacheEnabled (bool shouldCacheViews)
+{
+    if (viewCacheEnabled == shouldCacheViews)
+        return;
+
+    viewCacheEnabled = shouldCacheViews;
+
+    // Turning it OFF must not leave components parked forever: they hold
+    // parameter attachments and would keep answering long after anybody could
+    // see them.
+    if (! viewCacheEnabled)
+        clearViewCache();
+}
+
+bool MagicGUIBuilder::isViewCacheEnabled() const { return viewCacheEnabled; }
+
+int MagicGUIBuilder::getNumCachedViews() const { return (int) parkedViews.size(); }
+
+bool MagicGUIBuilder::lastUpdateWasCached() const { return viewWasCached; }
+
+void MagicGUIBuilder::clearViewCache()
+{
+    parkedViews.clear();
+}
+
+std::unique_ptr<GuiItem> MagicGUIBuilder::takeParkedView (const juce::ValueTree& node)
+{
+    if (! node.isValid())
+        return {};
+
+    for (auto it = parkedViews.begin(); it != parkedViews.end(); ++it)
+    {
+        if (it->first == node)
+        {
+            auto item = std::move (it->second);
+            parkedViews.erase (it);
+            return item;
+        }
+    }
+
+    return {};
+}
+
+void MagicGUIBuilder::dropParkedView (const juce::ValueTree& node)
+{
+    if (! node.isValid())
+        return;
+
+    for (auto it = parkedViews.begin(); it != parkedViews.end(); ++it)
+    {
+        if (it->first == node)
+        {
+            parkedViews.erase (it);
+            return;
+        }
+    }
+}
+// END JOS
 
 void MagicGUIBuilder::updateLayout()
 {

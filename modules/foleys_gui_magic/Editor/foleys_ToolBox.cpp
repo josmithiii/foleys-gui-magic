@@ -214,6 +214,17 @@ void ToolBox::loadGUI (const juce::File& xmlFile)
 
     if (tree.isValid() && tree.getType() == IDs::magic)
     {
+        // BEGIN JOS (2026-09-05): loading a layout from disk retires every view
+        // this builder has parked.  The cache is keyed by <View> node identity
+        // (MagicGUIBuilder::setViewCacheEnabled), so the tree just read -- a
+        // brand-new object -- could never be a stale HIT; but the parked roots
+        // belong to a session the designer has just walked away from, and
+        // keeping them alive would keep their attachments and their memory for
+        // no reason at all.  Editing the SHOWING tree in place needs no such
+        // call: those edits reach the components through the GuiItems' own
+        // ValueTree listeners, exactly as they always did.
+        builder.clearViewCache();
+        // END JOS
         builder.getMagicState().setGuiValueTree (tree);
         stateWasReloaded();
     }

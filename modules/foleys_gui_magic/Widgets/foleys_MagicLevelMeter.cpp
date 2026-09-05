@@ -204,7 +204,22 @@ void MagicLevelMeter::timerCallback()
                 clipped [c] = 1;
     }
 
-    repaint();
+    // BEGIN JOS (2026-09-05): a meter that is NOT ON SCREEN must not repaint.
+    //
+    // The clip latch above deliberately keeps running -- that is the whole
+    // point of sampling it here rather than in paint(), and a meter behind
+    // another window is still showing -- but the 30 Hz repaint of a meter with
+    // no peer is pure waste.  It matters now because the view cache
+    // (MagicGUIBuilder::setViewCacheEnabled) keeps a whole PARKED layout alive
+    // while another one is on screen, and every timer in that layout keeps
+    // ticking; this is the same isShowing() stand-down every self-polling item
+    // in jos-juce-plugins already does.
+    //
+    // Self-healing: the next tick after it comes back repaints it, i.e. within
+    // 33 ms, and paint() reads the source live.
+    if (isShowing())
+        repaint();
+    // END JOS
 }
 
 } // namespace foleys
