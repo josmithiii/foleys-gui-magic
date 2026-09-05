@@ -109,6 +109,22 @@ public:
      */
     void updateLayout() override;
 
+    // BEGIN JOS 2026-09-05: `collapse-width`.  A View whose visibility-bound
+    // descendants are ALL hidden is laid out at this width (flex-grow 0) by its
+    // parent, instead of keeping the width its flex-grow / max-width would give
+    // an empty box.  The Edit view's left panel is the case: with the header
+    // (Show:presets) and the slider block (Show:controls) both off, only its
+    // 60 px rail should remain and the surfaces to the right take the rest.
+    /** True when any descendant with a `visibility=` binding is currently visible
+        (walking only through visible children). */
+    bool hasVisibleBoundDescendant() const;
+    /** The `collapse-width` this View states, or 0 when it states none. */
+    float collapseWidth() const;
+    bool hasCollapseWidth() const { return collapseWidth() > 0.0f; }
+    /** collapseWidth() when the rule applies (no bound descendant visible), else 0. */
+    float collapseWidthIfEmpty() const;
+    // END JOS
+
     void updateColours() override;
 
     void updateContinuousRedraw();

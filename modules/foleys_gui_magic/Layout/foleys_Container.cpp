@@ -202,6 +202,37 @@ LayoutType Container::getLayoutMode() const
     return layout;
 }
 
+// BEGIN JOS 2026-09-05: collapse-width (see the header)
+bool Container::hasVisibleBoundDescendant() const
+{
+    for (auto& child : children)
+    {
+        if (! child->isVisible())
+            continue;
+        if (child->isVisibilityBound())
+            return true;
+        if (auto* sub = dynamic_cast<Container*> (child.get()))
+            if (sub->hasVisibleBoundDescendant())
+                return true;
+    }
+    return false;
+}
+
+float Container::collapseWidth() const
+{
+    const auto v = magicBuilder.getStyleProperty (IDs::collapseWidth, configNode);
+    return v.isVoid() ? 0.0f : (float) v;
+}
+
+float Container::collapseWidthIfEmpty() const
+{
+    const auto w = collapseWidth();
+    if (w <= 0.0f || hasVisibleBoundDescendant())
+        return 0.0f;
+    return w;
+}
+// END JOS
+
 void Container::resized()
 {
     updateLayout();
@@ -238,7 +269,19 @@ void Container::updateLayout()
         flexBox.items.clear();
         for (auto& child : children)
             if (child->isVisible())
-                flexBox.items.add (child->getFlexItem());
+            {
+                auto item = child->getFlexItem();
+                // JOS 2026-09-05: a collapsible child with nothing bound showing
+                // is laid out at its collapse-width, no grow, no shrink.
+                if (auto* sub = dynamic_cast<Container*> (child.get()))
+                    if (const auto w = sub->collapseWidthIfEmpty(); w > 0.0f)
+                    {
+                        item.width = item.minWidth = item.maxWidth = w;
+                        item.flexGrow = 0.0f;
+                        item.flexShrink = 0.0f;
+                    }
+                flexBox.items.add (item);
+            }
 
         auto overall = clientBounds;
         flexBox.performLayout (overall);

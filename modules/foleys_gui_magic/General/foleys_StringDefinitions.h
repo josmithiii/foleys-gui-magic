@@ -191,6 +191,11 @@ namespace IDs
     static juce::Identifier recursive   { "recursive" };
     static juce::Identifier minWidth    { "min-width" };
     static juce::Identifier maxWidth    { "max-width" };
+    // JOS 2026-09-05: a View's width when NONE of its visibility-bound
+    // descendants is showing (Container::collapseWidthIfEmpty).  The Edit
+    // view's left panel keeps its rail (60 px) when both the header and the
+    // slider block are hidden, instead of a 390 px hole.
+    static juce::Identifier collapseWidth { "collapse-width" };
     static juce::Identifier minHeight   { "min-height" };
     static juce::Identifier maxHeight   { "max-height" };
     static juce::Identifier width       { "width" };
