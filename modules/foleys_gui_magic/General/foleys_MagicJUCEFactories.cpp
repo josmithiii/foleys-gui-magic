@@ -81,7 +81,8 @@ public:
     }
 };
 
-class SliderItem : public GuiItem
+class SliderItem : public GuiItem,
+                  private juce::Timer   // JOS: the flying knob's 30 Hz poll (see updateLiveDisplay)
 {
 
 public:
@@ -104,6 +105,11 @@ public:
     static const juce::Identifier  pFilmStrip;
     static const juce::Identifier  pNumImages;
 
+    // BEGIN JOS CHANGE: THE FLYING KNOB (jos-juce-plugins M8, 2026-09-16)
+    static const juce::Identifier  pLiveValue;
+    static const juce::Identifier  pLiveActive;
+    // END JOS CHANGE
+
     SliderItem (MagicGUIBuilder& builder, const juce::ValueTree& node) : GuiItem (builder, node)
     {
         setColourTranslation (
@@ -121,6 +127,10 @@ public:
 
         addAndMakeVisible (slider);
     }
+
+    // BEGIN JOS CHANGE: stop the flying knob's poll before the slider goes.
+    ~SliderItem() override { stopTimer(); }
+    // END JOS CHANGE
 
     void update() override
     {
@@ -201,6 +211,50 @@ public:
 
         int numFilmImages = getProperty (pNumImages);
         slider.setNumImages (numFilmImages, false);
+
+        // BEGIN JOS CHANGE: THE FLYING KNOB (jos-juce-plugins M8, 2026-09-16).
+        //
+        // `live-active="<Node:property>"` and `live-value="<Node:property>"`.
+        // While the ACTIVE property is true this slider stops being a control
+        // and becomes a DISPLAY: its one thumb flies to the live value, the
+        // textbox prints it, the thumb and track are dimmed (the palette's own
+        // colours at reduced alpha -- no colour is invented here), and the
+        // mouse is swallowed.  When it goes false the slider re-syncs from its
+        // parameter attachment and is a normal control again.
+        //
+        // WHAT IT IS FOR: a per-string, per-block value that cannot be a
+        // parameter -- jos-juce-plugins drives a control from MIDI pressure
+        // through a (Min, Max) pair, and while that pair is on the control's
+        // own knob is IGNORED by the engine.  A knob that keeps showing the
+        // ignored number is a lie; this makes it show what the engine is
+        // actually using.
+        //
+        // THE ONE TRAP: setValue() MUST be dontSendNotification.  With a
+        // notification the SliderParameterAttachment hears sliderValueChanged
+        // and writes the live value INTO the parameter -- which would turn a
+        // display into a writer and destroy the player's own setting the first
+        // time a finger moved.
+        // Land on the ground state first.  update() can run again on a slider
+        // that is already flying (PGM re-attaches items freely), and dimming a
+        // dimmed colour a second time would compound the alpha.
+        applyLiveFlying (false);
+        stopTimer();
+        liveValueID  = configNode.getProperty (pLiveValue,  juce::String()).toString();
+        liveActiveID = configNode.getProperty (pLiveActive, juce::String()).toString();
+        if (liveValueID.isNotEmpty() != liveActiveID.isNotEmpty())
+        {
+            // FAIL LOUD: half a binding is a slider that would silently never
+            // fly, or fly to nothing.  Both attributes or neither.
+            juce::Logger::writeToLog ("*** SliderItem: live-value and live-active must be given TOGETHER"
+                                      " (live-value=\"" + liveValueID + "\" live-active=\"" + liveActiveID + "\")");
+            liveValueID = liveActiveID = {};
+        }
+        else if (liveValueID.isNotEmpty())
+        {
+            updateLiveDisplay();
+            startTimerHz (30);
+        }
+        // END JOS CHANGE
     }
 
     std::vector<SettableProperty> getSettableProperties() const override
@@ -223,6 +277,10 @@ public:
         props.push_back ({ configNode, pSuffix, SettableProperty::Text, {}, {} });
         props.push_back ({ configNode, pFilmStrip, SettableProperty::Choice, 0.0f, magicBuilder.createChoicesMenuLambda(Resources::getResourceFileNames()) });
         props.push_back ({ configNode, pNumImages, SettableProperty::Number, 0.0f, {} });
+        // BEGIN JOS CHANGE: THE FLYING KNOB
+        props.push_back ({ configNode, pLiveValue,  SettableProperty::Choice, {}, magicBuilder.createPropertiesMenuLambda() });
+        props.push_back ({ configNode, pLiveActive, SettableProperty::Choice, {}, magicBuilder.createPropertiesMenuLambda() });
+        // END JOS CHANGE
 
         return props;
     }
@@ -238,6 +296,105 @@ public:
     }
 
 private:
+    // BEGIN JOS CHANGE: THE FLYING KNOB
+    /** Apply (or lift) the live display.  Called on every change of either
+        bound property, and once at the end of update(). */
+    void updateLiveDisplay()
+    {
+        if (liveActiveID.isEmpty())
+            return;
+
+        // READ FRESH, EVERY TICK, AND POLL RATHER THAN LISTEN.  This is not
+        // laziness, it is the only thing that works: a juce::Value referred to
+        // a property node is DETACHED the moment the host replaces the state
+        // (MagicProcessorState::setStateInformation copies a whole property
+        // tree over the old one, giving new child nodes), and after that the
+        // listener is never called again -- the slider simply stops flying,
+        // says nothing, and looks like a control that is merely ignoring you.
+        // Measured, 2026-09-16: the listener form bound five times during boot
+        // and fired exactly zero times afterwards.  A poll is also correct
+        // across every rebuild PGM does for its own reasons (a Perform/Edit
+        // swap, a tab page, the view cache), with no bookkeeping -- the same
+        // argument jos::ModalBridgeGreyer records for greying its knobs.
+        //
+        // A VOID property reads false, which is exactly the right default:
+        // "no live value has ever been published for this control".
+        const bool flying = static_cast<bool> (getMagicState().getPropertyAsValue (liveActiveID).getValue());
+
+        if (flying)
+        {
+            // THE ONE TRAP, again: dontSendNotification, or the attachment
+            // writes this number into the parameter.
+            const double v = static_cast<double> (getMagicState().getPropertyAsValue (liveValueID).getValue());
+            if (v != lastLiveValue)
+            {
+                lastLiveValue = v;
+                slider.setValue (v, juce::dontSendNotification);
+            }
+        }
+
+        applyLiveFlying (flying);
+    }
+
+    void timerCallback() override { updateLiveDisplay(); }
+
+    /** The TRANSITION, idempotent: enable/disable, dim/undim, re-sync. */
+    void applyLiveFlying (bool flying)
+    {
+        if (flying == liveFlying)
+            return;
+
+        liveFlying = flying;
+
+        // SWALLOW THE MOUSE.  juce::Slider::mouseDown / mouseDrag both test
+        // isEnabled() first, so a disabled slider receives the click and does
+        // nothing with it -- it does not fall through to whatever is behind.
+        // (The same device jos::ModalBridgeGreyer uses to grey a dead knob.)
+        slider.setEnabled (! flying);
+
+        // DIM THE THUMB AND THE TRACK, in the PALETTE'S OWN COLOURS: whatever
+        // findColour() resolves to right now, at reduced alpha.  Nothing here
+        // invents a colour, so a theme change still owns the look.  The text
+        // colours are left alone: the textbox is the number the player is
+        // meant to read.
+        static constexpr int dimmedIds[] = { juce::Slider::thumbColourId,
+                                             juce::Slider::trackColourId,
+                                             juce::Slider::rotarySliderFillColourId,
+                                             juce::Slider::rotarySliderOutlineColourId };
+        if (flying)
+        {
+            for (int i = 0; i < 4; ++i)
+            {
+                const int id = dimmedIds[i];
+                liveHadColour[i] = slider.isColourSpecified (id);
+                liveOldColour[i] = slider.findColour (id);
+                slider.setColour (id, liveOldColour[i].withMultipliedAlpha (0.42f));
+            }
+        }
+        else
+        {
+            for (int i = 0; i < 4; ++i)
+            {
+                const int id = dimmedIds[i];
+                if (liveHadColour[i]) slider.setColour (id, liveOldColour[i]);
+                else                  slider.removeColour (id);
+            }
+            // Back to the parameter's own value, from the attachment itself --
+            // never from anything this class remembered, which could be stale.
+            lastLiveValue = std::numeric_limits<double>::quiet_NaN();
+            if (attachment != nullptr)
+                attachment->sendInitialUpdate();
+        }
+        slider.repaint();
+    }
+
+    juce::String liveValueID, liveActiveID;   ///< empty = this slider never flies
+    double       lastLiveValue = std::numeric_limits<double>::quiet_NaN();
+    bool         liveFlying = false;
+    bool         liveHadColour[4] { false, false, false, false };
+    juce::Colour liveOldColour[4];
+    // END JOS CHANGE
+
     AutoOrientationSlider slider;
     std::unique_ptr<juce::SliderParameterAttachment> attachment;
 
@@ -260,6 +417,10 @@ const juce::Identifier  SliderItem::pInterval   { "interval" };
 const juce::Identifier  SliderItem::pSuffix     { "suffix" };
 const juce::Identifier  SliderItem::pFilmStrip  { "filmstrip" };
 const juce::Identifier  SliderItem::pNumImages  { "num-filmstrip-images" };
+// BEGIN JOS CHANGE: THE FLYING KNOB
+const juce::Identifier  SliderItem::pLiveValue  { "live-value" };
+const juce::Identifier  SliderItem::pLiveActive { "live-active" };
+// END JOS CHANGE
 
 
 //==============================================================================
