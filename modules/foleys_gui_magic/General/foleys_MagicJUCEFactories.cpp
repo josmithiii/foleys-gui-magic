@@ -368,7 +368,7 @@ private:
                 const int id = dimmedIds[i];
                 liveHadColour[i] = slider.isColourSpecified (id);
                 liveOldColour[i] = slider.findColour (id);
-                slider.setColour (id, liveOldColour[i].withMultipliedAlpha (0.42f));
+                slider.setColour (id, liveOldColour[i].withMultipliedAlpha (0.55f));
             }
         }
         else
