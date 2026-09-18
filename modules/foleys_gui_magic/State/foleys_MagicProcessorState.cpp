@@ -236,6 +236,16 @@ void MagicProcessorState::processMidiBuffer (juce::MidiBuffer& buffer, int numSa
     midiMapper.processMidiBuffer (buffer);
 }
 
+void MagicProcessorState::processMappedControllers (juce::MidiBuffer& buffer, int startSample, int numSamples)
+{
+    midiMapper.processMidiBuffer (buffer, startSample, numSamples);
+}
+
+bool MagicProcessorState::isMappedController (int ccNumber)
+{
+    return midiMapper.isMappedController (ccNumber);
+}
+
 void MagicProcessorState::mapMidiController (int cc, const juce::String& parameterID)
 {
     midiMapper.mapMidiController (cc, parameterID);

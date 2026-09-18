@@ -123,6 +123,21 @@ public:
     void processMidiBuffer (juce::MidiBuffer& buffer, int numSamples, bool injectIndirectEvents=true);
 
     /**
+     The SAMPLE-RANGE form of the MIDI-learn half: apply only the CC events whose
+     sample position lies in [startSample, startSample + numSamples).  The
+     keyboard injection is NOT repeated -- it belongs to the whole block and is
+     done once by processMidiBuffer() above -- so a host that splits its block at
+     control events calls that one first and this one per segment.
+
+     Added for jos-juce-plugins' PERFORMABLE_PARAMETERS_PLAN.md M3.
+     */
+    void processMappedControllers (juce::MidiBuffer& buffer, int startSample, int numSamples);
+
+    /** Is this CC currently MIDI-learned to a parameter?  Real-time safe; see
+        MidiParameterMapper::isMappedController. */
+    bool isMappedController (int ccNumber);
+
+    /**
      Connects a midi controller CC to a parameter for MIDI learn
      */
     void mapMidiController (int cc, const juce::String& parameterID);

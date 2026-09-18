@@ -33,6 +33,8 @@
 
 #include "foleys_MidiParameterMapper.h"
 
+#include <limits>
+
 namespace foleys
 {
 
@@ -55,10 +57,31 @@ MidiParameterMapper::~MidiParameterMapper()
 
 void MidiParameterMapper::processMidiBuffer (juce::MidiBuffer& buffer)
 {
+    processMidiBuffer (buffer, 0, std::numeric_limits<int>::max());
+}
+
+bool MidiParameterMapper::isMappedController (int ccNumber)
+{
+    if (! mappingLock.tryEnter())
+        return false;               // being edited: not a reason to block audio
+
+    const bool mapped = (midiMapper.find (ccNumber) != midiMapper.end());
+    mappingLock.exit();
+    return mapped;
+}
+
+void MidiParameterMapper::processMidiBuffer (juce::MidiBuffer& buffer, int startSample, int numSamples)
+{
     auto isLocked = mappingLock.tryEnter();
+    // A range that cannot contain anything still has to leave the buffer alone.
+    const int64_t endSample = (numSamples >= std::numeric_limits<int>::max() - startSample)
+                                ? int64_t (std::numeric_limits<int>::max())
+                                : int64_t (startSample) + int64_t (numSamples);
 
     for (auto m : buffer)
     {
+      if (m.samplePosition < startSample || int64_t (m.samplePosition) >= endSample)
+          continue;
       juce::MidiMessage mm = m.getMessage();
         if (mm.isController())
         {

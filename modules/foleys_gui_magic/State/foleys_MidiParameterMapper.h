@@ -51,6 +51,35 @@ public:
      */
     void processMidiBuffer (juce::MidiBuffer& buffer);
 
+    /*!
+     * The SAMPLE-RANGE form: apply only the events whose sample position lies in
+     * [startSample, startSample + numSamples), so a host that splits its block
+     * at a control event can let that event land on its own sample instead of at
+     * the top of the buffer.
+     *
+     * Added for jos-juce-plugins' PERFORMABLE_PARAMETERS_PLAN.md M3: a performed
+     * parameter is dezippered per sample, which only helps if the target it is
+     * gliding towards was set where the player actually moved the control.  The
+     * whole-buffer form above is exactly this one over the whole buffer, so
+     * nothing that does not split changes at all.
+     *
+     * @param buffer the last midi events
+     * @param startSample the first sample position to honour
+     * @param numSamples how many samples the range covers
+     */
+    void processMidiBuffer (juce::MidiBuffer& buffer, int startSample, int numSamples);
+
+    /*!
+     * Is this CC number currently MIDI-learned to at least one parameter?
+     * A caller that wants to split its audio block at control events needs to
+     * know which events are worth splitting for, and asking the mapper is the
+     * only way that cannot drift from what the mapper will actually do.
+     *
+     * Real-time safe and lock-free: it takes the same tryEnter() the audio path
+     * takes, and answers false rather than blocking if the map is being edited.
+     */
+    bool isMappedController (int ccNumber);
+
     /**
      * Map a MIDI CC to a parameter.
      *
