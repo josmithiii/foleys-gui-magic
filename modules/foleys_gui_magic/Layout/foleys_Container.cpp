@@ -135,8 +135,21 @@ void Container::createSubComponents()
             // BEGIN JOS: see addChildItem - add hidden, then honour the binding.
             containerBox.addChildComponent (childItem.get());
             childItem->applyVisibilityBinding();
+
+            // ONE BUILD PER <View>, NOT 2^depth (2026-09-24).  createGuiItem()
+            // has ALREADY called createSubComponents() on a View it made, so the
+            // upstream line here, unconditional, threw that whole subtree away
+            // and built it again -- at every level, so an item d Views deep was
+            // constructed 2^d times.  PBass's GeoKeys was built 16 times per
+            // editor (16 CoreMIDI sources), deeper items more, and every
+            // discarded copy left its messages in the queue: ~40 s of backlog
+            // after launch, which starved PGM's async `tab-selected`
+            // notifications (the --screenshot-tab race of 2026-09-24).  Only a
+            // View is built by createGuiItem; any other item (a factory-made
+            // Container included) still gets its call here.
+            if (childNode.getType() != IDs::view)
+                childItem->createSubComponents();
             // END JOS
-            childItem->createSubComponents();
 
             children.push_back (std::move (childItem));
         }
