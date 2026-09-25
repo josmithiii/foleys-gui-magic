@@ -183,12 +183,20 @@ private:
     ParameterManager    parameters { processor };
     MidiParameterMapper midiMapper { *this };
 
-    std::atomic<double> bpm;
-    std::atomic<int>    timeSigNumerator;
-    std::atomic<int>    timeSigDenominator;
-    std::atomic<double> timeInSeconds;
-    std::atomic<bool>   isPlaying;
-    std::atomic<bool>   isRecording;
+    // BEGIN JOS (2026-09-24): initialised.  They are written only from
+    // processBlock, but timerCallback reads them from the editor's first tick,
+    // which can come before the first audio block (a late or absent audio
+    // device, or a host that opens the editor before playing): an
+    // uninitialised std::atomic<bool> read there is undefined behaviour
+    // (UBSan "invalid bool load"), and the playhead showed garbage.
+    // Initialisers do not change the class layout.
+    std::atomic<double> bpm                { 120.0 };
+    std::atomic<int>    timeSigNumerator   { 4 };
+    std::atomic<int>    timeSigDenominator { 4 };
+    std::atomic<double> timeInSeconds      { 0.0 };
+    std::atomic<bool>   isPlaying          { false };
+    std::atomic<bool>   isRecording        { false };
+    // END JOS
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MagicProcessorState)
 };
