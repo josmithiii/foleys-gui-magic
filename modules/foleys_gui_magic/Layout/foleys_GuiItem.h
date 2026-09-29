@@ -82,7 +82,7 @@ public:
     /**
      Override this to return each settable option the designer should be able to configure on your component.
      */
-    virtual std::vector<SettableProperty> getSettableProperties() const { return {}; }
+    virtual std::vector<SettableProperty> getSettableProperties() { return {}; }
 
     /**
      For each factory you can register a translation table, which will forward the colours from the

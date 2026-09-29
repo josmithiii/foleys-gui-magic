@@ -95,7 +95,7 @@ public:
         addAndMakeVisible (lissajour);
     }
 
-    std::vector<foleys::SettableProperty> getSettableProperties() const override
+    std::vector<foleys::SettableProperty> getSettableProperties() override
     {
         std::vector<foleys::SettableProperty> newProperties;
 

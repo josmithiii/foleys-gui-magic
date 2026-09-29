@@ -110,10 +110,10 @@ public:
     struct LookAndFeelMethods
     {
         virtual ~LookAndFeelMethods()=default;
-        virtual void drawLevelMeter (juce::Graphics& g,
-                                     MagicLevelMeter& meter,
-                                     MagicLevelSource* source,
-                                     juce::Rectangle<int> bounds) = 0;
+        virtual void drawMagicLevelMeter (juce::Graphics& g,
+                                          MagicLevelMeter& meter,
+                                          MagicLevelSource* source,
+                                          juce::Rectangle<int> bounds) = 0;
     };
 
     MagicLevelMeter();

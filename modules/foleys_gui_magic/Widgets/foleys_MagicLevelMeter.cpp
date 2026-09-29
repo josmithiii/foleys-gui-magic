@@ -131,7 +131,7 @@ void MagicLevelMeter::paint (juce::Graphics& g)
 {
     if (auto* lnf = dynamic_cast<LookAndFeelMethods*>(&getLookAndFeel()))
     {
-        lnf->drawLevelMeter (g, *this, source, getLocalBounds());
+        lnf->drawMagicLevelMeter (g, *this, source, getLocalBounds());
         return;
     }
 

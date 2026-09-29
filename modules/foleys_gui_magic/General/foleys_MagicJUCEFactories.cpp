@@ -257,7 +257,7 @@ public:
         // END JOS CHANGE
     }
 
-    std::vector<SettableProperty> getSettableProperties() const override
+    std::vector<SettableProperty> getSettableProperties() override
     {
         std::vector<SettableProperty> props;
 
@@ -562,7 +562,7 @@ public:
         comboBox.setSelectedId (0, juce::dontSendNotification);
     }
 
-    std::vector<SettableProperty> getSettableProperties() const override
+    std::vector<SettableProperty> getSettableProperties() override
     {
         std::vector<SettableProperty> props;
         props.push_back ({ configNode, IDs::parameter, SettableProperty::Choice, {}, magicBuilder.createParameterMenuLambda() });
@@ -734,7 +734,7 @@ public:
         }
     }
 
-    std::vector<SettableProperty> getSettableProperties() const override
+    std::vector<SettableProperty> getSettableProperties() override
     {
         std::vector<SettableProperty> props;
 
@@ -836,7 +836,7 @@ public:
         }
     }
 
-    std::vector<SettableProperty> getSettableProperties() const override
+    std::vector<SettableProperty> getSettableProperties() override
     {
         std::vector<SettableProperty> props;
         props.push_back ({ configNode, pText, SettableProperty::Text, {}, {} });
@@ -949,7 +949,7 @@ public:
             label.getTextValue().referTo (getMagicState().getPropertyAsValue (propertyPath));
     }
 
-    std::vector<SettableProperty> getSettableProperties() const override
+    std::vector<SettableProperty> getSettableProperties() override
     {
         std::vector<SettableProperty> props;
         props.push_back ({ configNode, pText, SettableProperty::Text, {}, {} });
@@ -1031,7 +1031,7 @@ public:
       textEditor.getTextValue().referTo (getMagicState().getPropertyAsValue (propertyPath));
   }
 
-  std::vector<SettableProperty> getSettableProperties() const override
+  std::vector<SettableProperty> getSettableProperties() override
   {
     std::vector<SettableProperty> props;
     props.push_back ({ configNode, pText, SettableProperty::Text, {}, {} });
@@ -1095,7 +1095,7 @@ public:
         plot.setGradientFromString (gradient, magicBuilder.getStylesheet());
     }
 
-    std::vector<SettableProperty> getSettableProperties() const override
+    std::vector<SettableProperty> getSettableProperties() override
     {
         std::vector<SettableProperty> props;
         props.push_back ({ configNode, IDs::source, SettableProperty::Choice, {}, magicBuilder.createObjectsMenuLambda<MagicPlotSource>() });
@@ -1194,7 +1194,7 @@ public:
         plot.setPlotOffset (plotOffset);
     }
 
-    std::vector<SettableProperty> getSettableProperties() const override
+    std::vector<SettableProperty> getSettableProperties() override
     {
         std::vector<SettableProperty> props; //? { AudioPlotItem::getSettableProperties() };
         props.push_back ({ configNode, IDs::source, SettableProperty::Choice, {}, magicBuilder.createObjectsMenuLambda<MagicAudioPlotSource>() });
@@ -1308,7 +1308,7 @@ public:
             dragger.setJumpToClick (jumpToClick);
     }
 
-    std::vector<SettableProperty> getSettableProperties() const override
+    std::vector<SettableProperty> getSettableProperties() override
     {
         std::vector<SettableProperty> props;
 
@@ -1436,7 +1436,7 @@ public:
             draggerJOS.setJumpToClick (jumpToClick);
     }
 
-    std::vector<SettableProperty> getSettableProperties() const override
+    std::vector<SettableProperty> getSettableProperties() override
     {
         std::vector<SettableProperty> props;
 
@@ -1522,7 +1522,7 @@ public:
             keyboard.setOctaveForMiddleC (int (octaveForMiddleC));
     }
 
-    std::vector<SettableProperty> getSettableProperties() const override
+    std::vector<SettableProperty> getSettableProperties() override
     {
         std::vector<SettableProperty> props;
         props.push_back ({ configNode, "key-width", SettableProperty::Number, 50.0f, {} });
@@ -1585,7 +1585,7 @@ public:
             drumpad.setRootNote (rootNote);
     }
 
-    std::vector<SettableProperty> getSettableProperties() const override
+    std::vector<SettableProperty> getSettableProperties() override
     {
         std::vector<SettableProperty> props;
         props.push_back ({ configNode, pColumns,  SettableProperty::Number,  3, {}});
@@ -1664,7 +1664,7 @@ public:
         meter.setTickmarksEnabled (ticks.isVoid() || bool (ticks));
     }
 
-    std::vector<SettableProperty> getSettableProperties() const override
+    std::vector<SettableProperty> getSettableProperties() override
     {
         std::vector<SettableProperty> props;
         props.push_back ({ configNode, IDs::source, SettableProperty::Choice, {}, magicBuilder.createObjectsMenuLambda<MagicLevelSource>() });
@@ -1788,7 +1788,7 @@ public:
         }
     }
 
-    std::vector<SettableProperty> getSettableProperties() const override
+    std::vector<SettableProperty> getSettableProperties() override
     {
         std::vector<SettableProperty> props;
         props.push_back ({ configNode, "list-box-model", SettableProperty::Choice, {}, magicBuilder.createObjectsMenuLambda<juce::ListBoxModel>() });
