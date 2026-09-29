@@ -85,8 +85,12 @@ void Stylesheet::addPaletteEntry (const juce::String& name, juce::Colour colour,
     if (! currentPalette.isValid())
         return;
 
+    // JOS 2026-09-29: eight hex digits always, as GradientBackground::toString
+    // (89d2ef9).  juce::Colour::toString drops leading zeros, so an entry whose
+    // alpha is under 0x10 was stored as six or seven digits, which
+    // parseColour then read back as an OPAQUE colour (alpha 0 became ff).
     if (! keepIfExists || ! currentPalette.hasProperty (name))
-        currentPalette.setProperty (name, colour.toString(), &builder.getUndoManager());
+        currentPalette.setProperty (name, colour.toDisplayString (true).toLowerCase(), &builder.getUndoManager());
 }
 
 juce::StringArray Stylesheet::getPaletteEntryNames() const
