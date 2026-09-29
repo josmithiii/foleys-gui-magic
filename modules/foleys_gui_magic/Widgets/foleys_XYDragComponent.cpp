@@ -180,16 +180,20 @@ void XYDragComponent::mouseDown (const juce::MouseEvent& event)
         menu.showMenuAsync (juce::PopupMenu::Options()
                             .withTargetComponent (this)
                             .withTargetScreenArea ({event.getScreenX(), event.getScreenY(), 1, 1}),
-                            [=](int selected)
+                            // JOS (from Nick's copy): capture the PARAMETER, not
+                            // `this` - the menu is async and the component can be
+                            // rebuilt away while it is open; the parameter
+                            // belongs to the processor and outlives it.
+                            [cmp = contextMenuParameter] (int selected)
         {
             if (selected <= 0)
                 return;
 
-            const auto& range = contextMenuParameter->getNormalisableRange();
-            auto value = range.start + (selected-1) * range.interval;
-            contextMenuParameter->beginChangeGesture();
-            contextMenuParameter->setValueNotifyingHost (contextMenuParameter->convertTo0to1 (value));
-            contextMenuParameter->endChangeGesture();
+            const auto& range = cmp->getNormalisableRange();
+            auto value = range.start + static_cast<float> (selected - 1) * range.interval;
+            cmp->beginChangeGesture();
+            cmp->setValueNotifyingHost (cmp->convertTo0to1 (value));
+            cmp->endChangeGesture();
         });
 
         return;
