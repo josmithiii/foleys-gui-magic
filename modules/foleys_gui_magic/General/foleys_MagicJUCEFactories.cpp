@@ -657,7 +657,15 @@ public:
             button.setRadioGroupId (groupID);
 
 #if JOS_ALLOW_RADIO_BUTTONS == 1 // JOS temp workaround
-            handler.setRadioGroupValue(radioValue, getMagicState().getParameter(parameterName));
+            // BEGIN JOS (from Nick, shared/JUCE 79b1889544): radio semantics
+            // only for a button that DECLARES a radio value.  With a void
+            // radioValue the handler compared the parameter against 0 and
+            // overwrote the toggle state the ButtonParameterAttachment had
+            // just set (a plain parameter-bound button in a radio group drew
+            // the wrong state until the parameter next changed).
+            if (! radioValue.isVoid())
+                handler.setRadioGroupValue(radioValue, getMagicState().getParameter(parameterName));
+            // END JOS
 #endif
         }
 
@@ -820,7 +828,10 @@ public:
             button.setClickingTogglesState (true);
 
 #if JOS_ALLOW_RADIO_BUTTONS == 1 // JOS temp workaround
-            handler.setRadioGroupValue(radioValue, getMagicState().getParameter(parameterName));
+            // JOS (from Nick, shared/JUCE 79b1889544): same guard as
+            // TextButtonItem - a void radioValue is a plain toggle.
+            if (! radioValue.isVoid())
+                handler.setRadioGroupValue(radioValue, getMagicState().getParameter(parameterName));
 #endif
         }
     }
