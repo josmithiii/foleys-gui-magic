@@ -301,8 +301,24 @@ void GuiItem::configureComponent()
         }
     }
 
-    component->setAccessible (magicBuilder.getStyleProperty (IDs::accessibility, configNode));
-    component->setTitle (magicBuilder.getStyleProperty (IDs::accessibilityTitle, configNode));
+    // BEGIN JOS (from Nick, shared/JUCE 562206c315): accessible BY DEFAULT.
+    // A layout almost never carries an `accessibility` property, and the stock
+    // setAccessible (getStyleProperty (...)) turned the resulting void var into
+    // false, hiding every wrapped widget from VoiceOver and other screen
+    // readers - the opposite of juce::Component's own default.  An explicit
+    // accessibility="0" is still honoured.
+    {
+        const auto accessProp = magicBuilder.getStyleProperty (IDs::accessibility, configNode);
+        component->setAccessible (accessProp.isVoid() ? true : (bool) accessProp);
+    }
+    // Only override the accessible NAME when the node supplies one: an empty
+    // `title` must not clobber a name the widget set for itself.
+    {
+        const auto accessTitle = magicBuilder.getStyleProperty (IDs::accessibilityTitle, configNode).toString();
+        if (accessTitle.isNotEmpty())
+            component->setTitle (accessTitle);
+    }
+    // END JOS
     component->setDescription (magicBuilder.getStyleProperty (IDs::accessibilityDescription, configNode).toString());
     component->setHelpText (magicBuilder.getStyleProperty (IDs::accessibilityHelpText, configNode).toString());
     component->setExplicitFocusOrder (magicBuilder.getStyleProperty (IDs::accessibilityFocusOrder, configNode));
