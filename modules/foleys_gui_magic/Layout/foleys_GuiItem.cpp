@@ -675,8 +675,22 @@ void GuiItem::savePosition ()
 
     auto parent = container->getClientBounds();
 
-    auto px = posX.absolute ? juce::String (getX() - parent.getX()) : juce::String (100.0 * (getX() - parent.getX()) / parent.getWidth()) + "%";
-    auto py = posY.absolute ? juce::String (getY() - parent.getY()) : juce::String (100.0 * (getY() - parent.getY()) / parent.getHeight()) + "%";
+    // BEGIN JOS (from Nick, shared/JUCE fcbdac1595): getX()/getY() are ALREADY
+    // relative to the client rectangle.  The item is a child of the
+    // container's content box, not of the container: the viewport sits at
+    // getClientBounds(), the box fills the viewport from 0,0, and
+    // Container::updateLayout resolves Contents children against that
+    // 0,0-based rect.  Subtracting the client corner again moved every save
+    // in a container with margin or padding by that amount, so each drag put
+    // the item that many pixels up and left of where it was let go.  (Width
+    // and height still scale against the client size, which is right.)
+    jassert (getParentComponent() != container);
+    const auto x = getX();
+    const auto y = getY();
+
+    auto px = posX.absolute ? juce::String (x) : juce::String (100.0 * x / parent.getWidth()) + "%";
+    auto py = posY.absolute ? juce::String (y) : juce::String (100.0 * y / parent.getHeight()) + "%";
+    // END JOS
     auto pw = posWidth.absolute ? juce::String (getWidth()) : juce::String (100.0 * getWidth() / parent.getWidth()) + "%";
     auto ph = posHeight.absolute ? juce::String (getHeight()) : juce::String (100.0 * getHeight() / parent.getHeight()) + "%";
 

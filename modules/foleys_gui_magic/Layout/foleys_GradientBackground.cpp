@@ -122,8 +122,15 @@ juce::String GradientBackground::toString() const
     if (type == linear)
         colourNames += juce::String (juce::roundToInt (juce::radiansToDegrees (angle))) + ",";
 
+    // BEGIN JOS (from Nick, shared/JUCE fcbdac1595): eight hex digits always.
+    // juce::Colour::toString drops leading zeros, so a stop with alpha under
+    // 0x10 came out as six or seven digits, which setup() (via
+    // Stylesheet::parseColour) reads as RGB and makes opaque: alpha 0 on a
+    // gradient stop did nothing once the gradient had been written back.
     for (auto& c : colours)
-        colourNames += juce::String (juce::roundToInt (c.first * 100.0f)) + "% " + c.second.toString() + ",";
+        colourNames += juce::String (juce::roundToInt (c.first * 100.0f)) + "% "
+                     + c.second.toDisplayString (true).toLowerCase() + ",";
+    // END JOS
 
     colourNames = colourNames.trimCharactersAtEnd (", ");
 
