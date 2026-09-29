@@ -71,6 +71,10 @@ juce::StringArray ParameterManager::getParameterNames() const
     for (auto& parameter : parameterLookup)
         names.add (parameter.second->paramID);
 
+    // JOS (from Nick's copy; JOS 2026-09-29): natural order - case-insensitive,
+    // numbers by value - instead of the std::map's case-sensitive order.
+    names.sortNatural();
+
     return names;
 }
 

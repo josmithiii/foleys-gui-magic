@@ -61,20 +61,43 @@ juce::PopupMenu MagicProcessorState::createParameterMenu() const
 
 void MagicProcessorState::addParametersToMenu (const juce::AudioProcessorParameterGroup& group, juce::PopupMenu& menu, int& index) const
 {
+    // BEGIN JOS (from Nick's copy; JOS 2026-09-29): the editor's parameter
+    // chooser lists each group's parameters, then its sub-groups, each sorted
+    // case-insensitively - not in the processor's declaration order, which in
+    // a plugin with hundreds of parameters made the list unsearchable.  The
+    // chooser reads the picked item's TEXT, so the item ids may follow the
+    // sorted order.
+    std::vector<std::pair<juce::String, const juce::AudioProcessorParameterWithID*>> params;
+    std::vector<std::pair<juce::String, const juce::AudioProcessorParameterGroup*>> subGroups;
+
     for (const auto& node : group)
     {
         if (const auto* parameter = node->getParameter())
         {
             if (const auto* withID = dynamic_cast<const juce::AudioProcessorParameterWithID*>(parameter))
-                menu.addItem (++index, withID->paramID);
+                params.push_back ({ withID->paramID, withID });
         }
         else if (const auto* groupNode = node->getGroup())
         {
-            juce::PopupMenu subMenu;
-            addParametersToMenu (*groupNode, subMenu, index);
-            menu.addSubMenu (groupNode->getName(), subMenu);
+            subGroups.push_back ({ groupNode->getName(), groupNode });
         }
     }
+
+    std::sort (params.begin(), params.end(),
+        [] (const auto& a, const auto& b) { return a.first.compareIgnoreCase (b.first) < 0; });
+    std::sort (subGroups.begin(), subGroups.end(),
+        [] (const auto& a, const auto& b) { return a.first.compareIgnoreCase (b.first) < 0; });
+
+    for (const auto& param : params)
+        menu.addItem (++index, param.first);
+
+    for (const auto& subGroup : subGroups)
+    {
+        juce::PopupMenu subMenu;
+        addParametersToMenu (*subGroup.second, subMenu, index);
+        menu.addSubMenu (subGroup.first, subMenu);
+    }
+    // END JOS
 }
 
 juce::RangedAudioParameter* MagicProcessorState::getParameter (const juce::String& paramID)
