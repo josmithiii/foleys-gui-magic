@@ -120,6 +120,10 @@ MagicAnalyser::AnalyserJob::AnalyserJob (MagicAnalyser& ownerToUse)
 
 void MagicAnalyser::AnalyserJob::setupAnalyser (int audioFifoSize)
 {
+    // NICK_CHANGES: see setupLock in the header — the TimeSliceThread may be
+    // mid-useTimeSlice() reading audioFifo while prepareToPlay resizes it.
+    juce::ScopedLock lock (setupLock);
+
     audioFifo.setSize (1, audioFifoSize);
     abstractFifo.setTotalSize (audioFifoSize);
 
@@ -158,6 +162,9 @@ void MagicAnalyser::AnalyserJob::pushSamples (const juce::AudioBuffer<float>& bu
 
 int MagicAnalyser::AnalyserJob::useTimeSlice()
 {
+    // NICK_CHANGES: see setupLock in the header.
+    juce::ScopedLock lock (setupLock);
+
     if (abstractFifo.getNumReady() < fft.getSize())
         return 10;
 

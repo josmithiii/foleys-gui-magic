@@ -104,6 +104,13 @@ private:
     private:
         MagicAnalyser& owner;
 
+        // NICK_CHANGES: guards setupAnalyser (prepareToPlay resizing/clearing
+        // audioFifo on the message thread) against useTimeSlice (the analyser
+        // TimeSliceThread reading it) — TSan-flagged race under pluginval
+        // (2026-07-08). pushSamples (audio thread) never overlaps a compliant
+        // host's prepareToPlay, so it stays lock-free.
+        juce::CriticalSection setupLock;
+
         juce::AbstractFifo abstractFifo               { 48000 };
         juce::AudioBuffer<float> audioFifo;
 
