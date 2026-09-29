@@ -671,10 +671,17 @@ void GuiItem::setDraggable (bool selected)
         {
             magicBuilder.getUndoManager().beginNewTransaction ("Drag component position");
         };
-        borderDragger->onDragging = [&]
-        {
-            savePosition();
-        };
+        // BEGIN JOS (from Nick, shared/JUCE 6356117b56): a border RESIZE saves
+        // once, at the end, not on every drag tick.  Each savePosition()
+        // writes four pos-* properties, and each write re-runs the parent's
+        // updateInternal() - a full re-layout of the parent, four times per
+        // tick, which lagged the resize and made the SIBLINGS jump while one
+        // item was being resized.  ResizableBorderComponent::mouseDrag already
+        // sets the item's bounds live, so it tracks the pointer; onDragEnd
+        // below persists the final bounds in the undo transaction onDragStart
+        // opened.  (Moving an item - mouseDrag - still saves as it goes.)
+        borderDragger->onDragging = nullptr;
+        // END JOS
         borderDragger->onDragEnd = [&]
         {
             savePosition();
