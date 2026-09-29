@@ -127,6 +127,10 @@ void Container::createSubComponents()
 {
     children.clear();
 
+#if FOLEYS_SHOW_GUI_EDITOR_PALLETTE
+    GuiItem* selectedChild = nullptr;   // JOS: see "gets its dragger back" below
+#endif
+
     for (auto childNode : configNode)
     {
         auto childItem = magicBuilder.createGuiItem (childNode);
@@ -151,9 +155,30 @@ void Container::createSubComponents()
                 childItem->createSubComponents();
             // END JOS
 
+#if FOLEYS_SHOW_GUI_EDITOR_PALLETTE
+            if (childNode == magicBuilder.getSelectedNode())
+                selectedChild = childItem.get();
+#endif
+
             children.push_back (std::move (childItem));
         }
     }
+
+#if FOLEYS_SHOW_GUI_EDITOR_PALLETTE
+    // BEGIN JOS (from Nick, shared/JUCE 7000ccc66d): a rebuilt child whose
+    // node is selected gets its dragger back.  The builder hands a dragger
+    // out only in setSelectedNode, which returns at once for the node that is
+    // already selected -- so a selected item this rebuilt (dragged in the GUI
+    // tree onto another View, or moved back by Undo/Redo: both re-parent the
+    // node and rebuild both Views) could not be dragged until it was
+    // deselected and selected again.  Called after ALL children are added:
+    // setDraggable reads the parent's layout type and brings the item to the
+    // front, and keeps its own rules (Contents parent only, never the root).
+    // Edit mode off clears the selection, so outside the editor this is inert.
+    if (selectedChild != nullptr)
+        selectedChild->setDraggable (true);
+    // END JOS
+#endif
 
     updateLayout();
     updateContinuousRedraw();
