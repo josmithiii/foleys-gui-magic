@@ -56,6 +56,21 @@ MagicGUIBuilder::MagicGUIBuilder (MagicGUIState& state)
 
 MagicGUIBuilder::~MagicGUIBuilder()
 {
+    // BEGIN JOS (from Nick, shared/JUCE 20eaba3a85): THE ITEM TREES GO FIRST,
+    // before any member is destroyed.  Every GuiItem calls
+    // stylesheet.removeListener (this) from ~GuiItem, and members die in the
+    // reverse of their declaration order.  Here `root` and `parkedViews` (the
+    // view cache) are declared AFTER `stylesheet`, so they already die first -
+    // but only by that accident of position.  Nick's copy declares `root`
+    // above `stylesheet`, and there the stylesheet (with the ListenerList in
+    // its ValueTree) was freed before the items asked to leave it: a
+    // heap-use-after-free on every editor teardown, found by his sanitizer
+    // lane.  Resetting here states the order instead of leaving it to
+    // declaration position.
+    root.reset();
+    parkedViews.clear();
+    // END JOS
+
     getConfigTree().removeListener (this);
 }
 
