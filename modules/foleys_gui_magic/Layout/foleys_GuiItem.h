@@ -277,6 +277,13 @@ private:
     std::unique_ptr<BorderDragger>          borderDragger;
     std::unique_ptr<juce::ComponentDragger> componentDragger;
 
+    // JOS (from Nick, shared/JUCE 3af29b85e9): this item's index in its
+    // parent's child list, captured by setDraggable (true) just before its
+    // toFront() and restored by setDraggable (false), so selecting an item in
+    // the editor does not leave it drawn above its later siblings for good.
+    // -1 = nothing captured.
+    int savedZOrderIndex = -1;
+
 protected:
     // JOS: protected, not private - Container::valueChanged overrides it and
     // must chain here, or a <View> bound to a `visibility=` PROPERTY never hides.

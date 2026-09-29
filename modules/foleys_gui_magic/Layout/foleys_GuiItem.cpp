@@ -655,6 +655,14 @@ void GuiItem::setDraggable (bool selected)
         getParentsLayoutType() == LayoutType::Contents &&
         configNode != magicBuilder.getGuiRootNode())
     {
+        // BEGIN JOS (from Nick, shared/JUCE 3af29b85e9): remember where we sat
+        // before toFront(), so the deselect below can put us back.  Only on
+        // the FIRST call of a selection: a second setDraggable (true) would
+        // otherwise capture the front position itself.
+        if (savedZOrderIndex < 0)
+            if (auto* parentComp = getParentComponent())
+                savedZOrderIndex = parentComp->getIndexOfChildComponent (this);
+        // END JOS
         toFront (false);
         borderDragger = std::make_unique<BorderDragger>(this, nullptr);
         componentDragger = std::make_unique<juce::ComponentDragger>();
@@ -677,6 +685,26 @@ void GuiItem::setDraggable (bool selected)
     }
     else
     {
+        // BEGIN JOS (from Nick, shared/JUCE 3af29b85e9): put this item back at
+        // the z-order index it had before the select's toFront().  JUCE has no
+        // "move child to index", but remove + addChildComponent (child, index)
+        // does it on the same Component; visibility and bounds are untouched
+        // (Nick's setVisible (true) here is NOT taken: it would show an item
+        // its `visibility=` binding had hidden).
+        if (savedZOrderIndex >= 0)
+        {
+            if (auto* parentComp = getParentComponent())
+            {
+                const int currentIndex = parentComp->getIndexOfChildComponent (this);
+                if (currentIndex >= 0 && currentIndex != savedZOrderIndex)
+                {
+                    parentComp->removeChildComponent (this);
+                    parentComp->addChildComponent (this, savedZOrderIndex);
+                }
+            }
+            savedZOrderIndex = -1;
+        }
+        // END JOS
         borderDragger.reset();
         componentDragger.reset();
     }
