@@ -581,13 +581,25 @@ void MagicGUIBuilder::draggedItemOnto (juce::ValueTree dragged, juce::ValueTree 
     if (draggedParent.isValid())
         draggedParent.removeChild (dragged, &undo);
 
-    if (targetParent.isValid() != false && index < 0)
-        index = targetParent.indexOf (target);
-
+    // BEGIN JOS (from Nick, shared/JUCE 2ff13a55f7): the default index is
+    // worked out PER BRANCH.  Stock foleys computed it once, as the TARGET's
+    // position inside ITS parent, and then used it for a drop ONTO a View too
+    // - so an item dropped on a View that is its parent's first child landed
+    // at child 0 of that View (under everything drawn after it) instead of
+    // being appended.
     if (target.getType() == IDs::view)
+    {
+        // Dropped ONTO a View: index < 0 appends (ValueTree::addChild).
         target.addChild (dragged, index, &undo);
+    }
     else
+    {
+        // Dropped onto a sibling item: insert AT that item's position.
+        if (targetParent.isValid() && index < 0)
+            index = targetParent.indexOf (target);
         targetParent.addChild (dragged, index, &undo);
+    }
+    // END JOS
 }
 
 void MagicGUIBuilder::attachToolboxToWindow (juce::Component& window)
