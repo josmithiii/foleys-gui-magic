@@ -70,6 +70,23 @@ public:
 
     juce::Colour getBackgroundColour() const;
 
+    // BEGIN JOS (from Nick's copy; JOS 2026-09-29)
+    /** True when drawDecorator() covers EVERY pixel of the item with an opaque
+        background image, so the item may be marked opaque and JUCE need not
+        repaint what is behind it.  See imageCoversOpaquely() for the rule. */
+    bool hasOpaqueBackground() const;
+
+    /** The rule behind hasOpaqueBackground(), public so it can be tested
+        without BinaryData: the image is valid and has no alpha channel in the
+        FILE it came from, it is drawn at full opacity, its placement fills the
+        target (stretch or fill, not centred), and there is no margin (the
+        image is drawn into the margin-reduced rect, so a margin would leave a
+        frame unpainted).  On macOS every loaded image is ARGB in memory, so the
+        loaders' "originalImageHadAlpha" property is what is asked. */
+    static bool imageCoversOpaquely (const juce::Image& image, float alpha,
+                                     juce::RectanglePlacement placement, bool hasMargin);
+    // END JOS
+
 private:
 
     juce::Colour backgroundColour { juce::Colours::darkgrey };

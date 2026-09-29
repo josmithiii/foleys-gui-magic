@@ -128,6 +128,15 @@ void GuiItem::updateInternal()
     // END JOS.
 
     decorator.configure (magicBuilder, configNode);
+
+    // BEGIN JOS (from Nick's copy; JOS 2026-09-29): an item whose background
+    // image paints every one of its pixels opaquely is marked opaque, so a
+    // child's repaint (a meter, a plot at 30-60 Hz) stops there instead of
+    // repainting every ancestor behind it.  Re-evaluated on every update, so
+    // a style change that makes the image translucent clears it again.
+    setOpaque (decorator.hasOpaqueBackground());
+    // END JOS
+
     configureComponent();
     configureVisibility();   // JOS: NOT inside configureComponent - see there
     configureFlexBoxItem (configNode);

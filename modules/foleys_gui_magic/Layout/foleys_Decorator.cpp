@@ -107,6 +107,40 @@ juce::Colour Decorator::getBackgroundColour() const
     return backgroundColour;
 }
 
+// BEGIN JOS (from Nick's copy, where hasOpaqueBackground() predates his tree's
+// history; JOS 2026-09-29).  Nick's rule asks only "does the image have an
+// alpha channel?".  That also marks opaque an image drawn at
+// background-alpha < 1, centred inside a larger item, or inside a margin -
+// all of which leave pixels unpainted, and an opaque component that does not
+// paint all of itself shows garbage.  This asks all four questions.
+bool Decorator::imageCoversOpaquely (const juce::Image& image, float alpha,
+                                     juce::RectanglePlacement placement, bool hasMargin)
+{
+    if (image.isNull() || alpha < 1.0f || hasMargin)
+        return false;
+
+    const auto flags = placement.getFlags();
+    if ((flags & (juce::RectanglePlacement::stretchToFit | juce::RectanglePlacement::fillDestination)) == 0)
+        return false;
+
+    // CoreGraphics upgrades every RGB image to ARGB, so hasAlphaChannel() is
+    // true for all of them on macOS; JUCE's image loaders record what the FILE
+    // had in "originalImageHadAlpha".
+    if (auto* props = image.getProperties())
+        if (props->contains ("originalImageHadAlpha"))
+            return ! static_cast<bool> (props->getWithDefault ("originalImageHadAlpha", true));
+
+    return ! image.hasAlphaChannel();
+}
+
+bool Decorator::hasOpaqueBackground() const
+{
+    const juce::Rectangle<float> probe (0.0f, 0.0f, 100.0f, 100.0f);
+    return imageCoversOpaquely (backgroundImage, backgroundAlpha, backgroundPlacement,
+                                margin.reducedRect (probe) != probe);
+}
+// END JOS
+
 void Decorator::updateColours (MagicGUIBuilder& builder, const juce::ValueTree& node)
 {
     auto& stylesheet = builder.getStylesheet();
