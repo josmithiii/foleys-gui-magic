@@ -118,6 +118,15 @@ namespace IDs
     // stores an INDEX, which reordering tabs silently shifts.  One-way: clicking a
     // tab never writes the parameter.
     static juce::Identifier tabFollows   { "tab-follows" };
+    // tab-bar-item="1" on a DIRECT child of a display="tabbed" View: that child
+    // is NOT a tab.  It rides at the right-hand end of the tab bar's row (its
+    // `width`, else `min-width`, else 80 px wide) and the tab buttons give up
+    // that much of the row.  It is no page either: it is not among the
+    // container's children (begin()/end()), so tab indices, the tab-selected
+    // property and every walker that pairs tab buttons with pages are unmoved.
+    // The CPU meter at the end of the instruments' category tab bar is the first one
+    // (2026-10-06).  On any other View it is a layout error, reported with ***.
+    static juce::Identifier tabBarItem   { "tab-bar-item" };
     // END JOS
 
     static juce::Identifier focusContainerType { "focus-container" };

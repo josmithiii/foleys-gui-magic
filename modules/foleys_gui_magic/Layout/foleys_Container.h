@@ -183,6 +183,15 @@ private:
     std::unique_ptr<juce::ParameterAttachment> tabFollowAttachment;
     // END JOS
 
+    // BEGIN JOS 2026-10-06: tab-bar-item="1" - see IDs::tabBarItem.  Children of
+    // THIS component (beside the viewport), not of containerBox, so nothing that
+    // pairs the bar's buttons with containerBox's GuiItems can mistake one for a
+    // page.  layoutTabBarItems() returns the width they took from the bar's row.
+    bool isTabBarItemNode (const juce::ValueTree& node) const;
+    int  layoutTabBarItems (juce::Rectangle<int> barRow);
+    std::vector<std::unique_ptr<GuiItem>>   tabBarItems;
+    // END JOS
+
     juce::Value   currentTab { juce::var {0} };
     // BEGIN JOS 2026-09-06: a stale `tab-selected` index is reported ONCE per
     // container, not once per repaint - see Container::updateSelectedTab().

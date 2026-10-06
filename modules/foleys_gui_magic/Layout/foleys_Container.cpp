@@ -63,6 +63,8 @@ void Container::update()
 
     for (auto& child : *this)
         child->updateInternal();
+    for (auto& item : tabBarItems)    // JOS: tab-bar-item="1", see IDs::tabBarItem
+        item->updateInternal();
 
     setTitle (magicBuilder.getStyleProperty (IDs::accessibilityTitle, configNode).toString());
 
@@ -126,6 +128,7 @@ void Container::addChildItem (std::unique_ptr<GuiItem> child)
 void Container::createSubComponents()
 {
     children.clear();
+    tabBarItems.clear();   // JOS: see IDs::tabBarItem
 
 #if FOLEYS_SHOW_GUI_EDITOR_PALLETTE
     GuiItem* selectedChild = nullptr;   // JOS: see "gets its dragger back" below
@@ -134,6 +137,22 @@ void Container::createSubComponents()
     for (auto childNode : configNode)
     {
         auto childItem = magicBuilder.createGuiItem (childNode);
+        // BEGIN JOS 2026-10-06: tab-bar-item="1" - not a tab and not a page; it
+        // goes beside the viewport and rides at the end of the tab bar's row.
+        if (childItem && isTabBarItemNode (childNode))
+        {
+            addChildComponent (childItem.get());
+            childItem->applyVisibilityBinding();
+            if (childNode.getType() != IDs::view)
+                childItem->createSubComponents();
+#if FOLEYS_SHOW_GUI_EDITOR_PALLETTE
+            if (childNode == magicBuilder.getSelectedNode())
+                selectedChild = childItem.get();
+#endif
+            tabBarItems.push_back (std::move (childItem));
+            continue;
+        }
+        // END JOS
         if (childItem)
         {
             // BEGIN JOS: see addChildItem - add hidden, then honour the binding.
@@ -199,6 +218,10 @@ GuiItem* Container::findGuiItemWithId (const juce::String& name)
         if (auto* matching = item->findGuiItemWithId (name))
             return matching;
 
+    for (auto& item : tabBarItems)    // JOS: see IDs::tabBarItem
+        if (auto* matching = item->findGuiItemWithId (name))
+            return matching;
+
     return nullptr;
 }
 
@@ -208,6 +231,10 @@ GuiItem* Container::findGuiItem (const juce::ValueTree& node)
         return this;
 
     for (auto& child : children)
+        if (auto* item = child->findGuiItem (node))
+            return item;
+
+    for (auto& child : tabBarItems)    // JOS: see IDs::tabBarItem
         if (auto* item = child->findGuiItem (node))
             return item;
 
@@ -349,7 +376,9 @@ void Container::updateLayout()
         if (tabbedButtons) {
             containerBox.setBounds(clientBounds);
             updateTabbedButtons();
-            tabbedButtons->setBounds(clientBounds.removeFromTop (tabbarHeight));
+            // JOS 2026-10-06: tab-bar-item="1" children take the row's right end.
+            auto barRow = clientBounds.removeFromTop (tabbarHeight);
+            tabbedButtons->setBounds (barRow.withTrimmedRight (layoutTabBarItems (barRow)));
         }
 
         for (auto& child : children)
@@ -365,7 +394,56 @@ void Container::updateLayout()
 
     for (auto& child : children)
         child->updateLayout();
+
+    // JOS: a tab-bar item outside Tabbed layout has no row to ride in.
+    if (layout != LayoutType::Tabbed)
+        for (auto& item : tabBarItems)
+            item->setBounds ({});
+    for (auto& item : tabBarItems)
+        item->updateLayout();
 }
+
+// BEGIN JOS 2026-10-06: tab-bar-item="1" - see IDs::tabBarItem.
+bool Container::isTabBarItemNode (const juce::ValueTree& node) const
+{
+    if (! static_cast<bool> (node.getProperty (IDs::tabBarItem, false)))
+        return false;
+
+    if (layout != LayoutType::Tabbed)
+    {
+        // FAIL LOUD: the attribute promises a place that only a tab bar has.
+        std::cerr << "*** foleys::Container: <" << node.getType().toString()
+                  << " tab-bar-item=\"1\"> is a child of a View that is not display=\"tabbed\""
+                     "; laid out as an ordinary child\n";
+        jassertfalse;
+        return false;
+    }
+    return true;
+}
+
+int Container::layoutTabBarItems (juce::Rectangle<int> barRow)
+{
+    // barRow is in the viewport's coordinates; the items are OUR children.
+    auto row = barRow.translated (viewport.getX(), viewport.getY());
+    const int fullWidth = row.getWidth();
+
+    // Right to left, so the LAST item in the layout is the rightmost one.
+    for (auto it = tabBarItems.rbegin(); it != tabBarItems.rend(); ++it)
+    {
+        auto& item = *it;
+        if (! item->isVisible())
+            continue;
+
+        // `width`, else `min-width`, else 80 px: what configureFlexBoxItem read.
+        const auto& flex = item->getFlexItem();
+        const int width = flex.width > 0.0f ? juce::roundToInt (flex.width)
+                        : flex.minWidth > 0.0f ? juce::roundToInt (flex.minWidth)
+                        : 80;
+        item->setBounds (row.removeFromRight (juce::jmin (width, row.getWidth())));
+    }
+    return fullWidth - row.getWidth();
+}
+// END JOS
 
 void Container::updateColours()
 {
@@ -373,6 +451,8 @@ void Container::updateColours()
 
     for (auto& child : children)
         child->updateColours();
+    for (auto& item : tabBarItems)    // JOS: see IDs::tabBarItem
+        item->updateColours();
 
     repaint();
 }
@@ -680,6 +760,8 @@ void Container::setEditMode (bool shouldEdit)
 {
     for (auto& child : children)
         child->setEditMode (shouldEdit);
+    for (auto& item : tabBarItems)    // JOS: see IDs::tabBarItem
+        item->setEditMode (shouldEdit);
 
     GuiItem::setEditMode (shouldEdit);
 }
