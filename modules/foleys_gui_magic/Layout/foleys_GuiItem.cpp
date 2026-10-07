@@ -515,14 +515,33 @@ void GuiItem::setVisibleAndRelayout (bool shouldBeVisible)
 
     // JOS 2026-09-05: a container with `collapse-width` changes ITS OWN flex
     // item when its last bound descendant hides (Container::collapseWidthIfEmpty),
-    // so the container ABOVE it must reflow as well - and so on up, as long as
-    // the container just reflowed was itself collapsible.
-    bool needsParent = nearest->hasCollapseWidth();
-    for (auto* c = nearest->getParentComponent(); c != nullptr && needsParent; c = c->getParentComponent())
+    // so the container ABOVE it must reflow as well.
+    //
+    // JOS 2026-10-07: ANY collapsible ANCESTOR, not only an unbroken run of
+    // them starting at `nearest`.  The 09-05 walk stopped at the first
+    // non-collapsible container, so the Edit view's LeftPanel collapsed only
+    // when its LAST bound descendant was a direct child: hiding the header
+    // (Show:presets, inside the non-collapsible TopBlock) after the slider
+    // block left the panel at full width, and the order of the two clicks
+    // decided the layout.  So find the TOPMOST collapsible container on the
+    // path, and reflow everything from `nearest`'s parent up to and including
+    // the container that holds it (whose FlexBox owns its flex item).
+    Container* topCollapsible = nearest->hasCollapseWidth() ? nearest : nullptr;
+    for (auto* c = nearest->getParentComponent(); c != nullptr; c = c->getParentComponent())
+        if (auto* up = dynamic_cast<Container*>(c); up != nullptr && up->hasCollapseWidth())
+            topCollapsible = up;
+
+    if (topCollapsible == nullptr)
+        return;
+
+    bool passedTop = (nearest == topCollapsible);
+    for (auto* c = nearest->getParentComponent(); c != nullptr; c = c->getParentComponent())
         if (auto* up = dynamic_cast<Container*>(c))
         {
             up->updateLayout();
-            needsParent = up->hasCollapseWidth();
+            if (passedTop)
+                break;
+            passedTop = (up == topCollapsible);
         }
 }
 // END JOS
