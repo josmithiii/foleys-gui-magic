@@ -84,6 +84,15 @@ public:
 
     void stateWasReloaded();
 
+    // BEGIN JOS (2026-10-10): the GUI tree was REPLACED under a live editor
+    // (MagicGUIState::setGuiValueTree -> MagicGUIBuilder::valueTreeRedirected,
+    // e.g. an Edit <-> Perform layout swap).  Points the tree and properties
+    // panels at the new tree WITHOUT stateWasReloaded()'s updateComponents():
+    // the builder has just built (or re-adopted from its view cache) the new
+    // root, and a second updateComponents() on the same node is a full rebuild.
+    void guiTreeWasReplaced();
+    // END JOS
+
     bool keyPressed (const juce::KeyPress& key) override;
     bool keyPressed (const juce::KeyPress& key, juce::Component* originalComponent) override;
 

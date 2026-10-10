@@ -509,6 +509,14 @@ void MagicGUIBuilder::valueTreeRedirected (juce::ValueTree& treeWhichHasBeenChan
 {
     juce::ignoreUnused (treeWhichHasBeenChanged);
     updateComponents();
+
+#if FOLEYS_SHOW_GUI_EDITOR_PALLETTE
+    // BEGIN JOS (2026-10-10): a replaced GUI tree must reach the open ToolBox
+    // too, or its tree panel keeps showing (and searching) the old layout.
+    if (magicToolBox.get() != nullptr)
+        magicToolBox->guiTreeWasReplaced();
+    // END JOS
+#endif
 }
 
 MagicGUIState& MagicGUIBuilder::getMagicState()

@@ -278,6 +278,18 @@ void ToolBox::stateWasReloaded()
     builder.updateComponents();
 }
 
+// BEGIN JOS (2026-10-10).  Before this, an Edit <-> Perform swap left the GUI
+// tree panel on the OUTGOING layout: GUITreeEditor::setSelectedNode returns
+// early for a node outside the tree it holds, so clicking a widget on the new
+// layout no longer found it in the tree, while the "Editing node" panel
+// (handed the node directly) still did.
+void ToolBox::guiTreeWasReplaced()
+{
+    treeEditor.updateTree();
+    propertiesEditor.setStyle (builder.getStylesheet().getCurrentStyle());
+}
+// END JOS
+
 void ToolBox::paint (juce::Graphics& g)
 {
     g.fillAll (EditorColours::background);
